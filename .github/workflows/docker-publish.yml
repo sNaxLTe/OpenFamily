@@ -17,7 +17,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ghcr.io/nexaflowfrance/openfamily
+  IMAGE_PREFIX: ghcr.io/snaxlte/openfamily
 
 jobs:
   publish:

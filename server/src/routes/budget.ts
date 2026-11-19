@@ -50,7 +50,8 @@ const mapBudgetEntry = (row: any) => ({
 const mapBudgetLimit = (row: any) => ({
     ...row,
     monthly_limit: toNumber(row.monthly_limit),
-    month: toNumber(row.month),
+    // month is NULL for an annual limit (annual/0002): keep the null, never 0.
+    month: row.month === null || row.month === undefined ? null : toNumber(row.month),
     year: toNumber(row.year),
 });
 
@@ -529,6 +530,88 @@ router.post('/limits', requireParent, async (req: AuthRequest, res) => {
         res.json({ success: true, data: mapBudgetLimit(result.rows[0]) });
     } catch (error) {
         console.error('Set budget limit error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
+// ─── Annual category limits (month = NULL, migration annual/0002) ────────────
+// Dedicated routes because POST /limits above requires a month and its
+// ON CONFLICT (user_id, category, month, year) never matches NULL. Monthly
+// rows and the dashboard alerts are untouched: they join on bl.month, which
+// never matches NULL.
+
+// List annual limits, optionally for one year only.
+router.get('/limits/annual', async (req: AuthRequest, res) => {
+    try {
+        const parsedYear = toOptionalNumber(req.query.year);
+        if (req.query.year !== undefined && parsedYear === null) {
+            return res.status(400).json({ success: false, error: 'year must be a number' });
+        }
+
+        let queryText = 'SELECT * FROM budget_limits WHERE user_id = $1 AND month IS NULL';
+        const params: any[] = [req.userId];
+        if (parsedYear !== null) {
+            params.push(parsedYear);
+            queryText += ` AND year = $${params.length}`;
+        }
+        queryText += ' ORDER BY category ASC';
+
+        const result = await query(queryText, params);
+        res.json({ success: true, data: result.rows.map(mapBudgetLimit) });
+    } catch (error) {
+        console.error('Get annual budget limits error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
+// Create or update the annual limit of a category for a year (parents only).
+router.put('/limits/annual', requireParent, async (req: AuthRequest, res) => {
+    try {
+        const { category, annual_limit, year } = req.body;
+        const parsedLimit = toOptionalNumber(annual_limit);
+        const parsedYear = toOptionalNumber(year);
+
+        if (
+            typeof category !== 'string' || !category.trim() ||
+            parsedLimit === null ||
+            parsedYear === null || !Number.isInteger(parsedYear)
+        ) {
+            return res.status(400).json({ success: false, error: 'category, annual_limit and an integer year are required' });
+        }
+
+        const result = await query(
+            `INSERT INTO budget_limits (user_id, category, monthly_limit, month, year)
+       VALUES ($1, $2, $3, NULL, $4)
+       ON CONFLICT (user_id, category, year) WHERE month IS NULL
+       DO UPDATE SET monthly_limit = EXCLUDED.monthly_limit
+       RETURNING *`,
+            [req.userId, category.trim().slice(0, 50), parsedLimit, parsedYear]
+        );
+
+        broadcast(req.userId!, { type: 'update', entity: 'budget', action: 'updated' });
+        res.json({ success: true, data: mapBudgetLimit(result.rows[0]) });
+    } catch (error) {
+        console.error('Set annual budget limit error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
+// Delete one annual limit by id (parents only).
+router.delete('/limits/annual/:id', requireParent, async (req: AuthRequest, res) => {
+    try {
+        const result = await query(
+            'DELETE FROM budget_limits WHERE id = $1 AND user_id = $2 AND month IS NULL RETURNING id',
+            [req.params.id, req.userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Annual limit not found' });
+        }
+
+        broadcast(req.userId!, { type: 'update', entity: 'budget', action: 'deleted' });
+        res.json({ success: true, message: 'Annual limit deleted' });
+    } catch (error) {
+        console.error('Delete annual budget limit error:', error);
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
@@ -1151,6 +1234,66 @@ router.get('/recurring', async (req: AuthRequest, res) => {
     }
 });
 
+// List recurring transaction OCCURRENCES over any date range (the annual
+// schedule, feature 2): virtual occurrences from expandRecurringTransactions,
+// never materialised. Same series filter as everywhere else (active, started,
+// not past recurrence_until). The client groups by month itself.
+router.get('/recurring/schedule', async (req: AuthRequest, res) => {
+    try {
+        const start = parseDateOnly(req.query.start_date ?? req.query.start);
+        const end = parseDateOnly(req.query.end_date ?? req.query.end);
+
+        if (!start || !end) {
+            return res.status(400).json({ success: false, error: 'valid start_date and end_date are required' });
+        }
+
+        const startValue = formatDateOnly(start);
+        const endValue = formatDateOnly(end);
+
+        if (startValue > endValue) {
+            return res.status(400).json({ success: false, error: 'start_date must not be after end_date' });
+        }
+
+        // A daily series over a century would be tens of thousands of rows;
+        // five years covers the annual views and then some.
+        if ((end.getTime() - start.getTime()) / 86400000 > 5 * 366) {
+            return res.status(400).json({ success: false, error: 'date range too large (5 years max)' });
+        }
+
+        const seriesResult = await query(
+            `SELECT re.*,
+                    (SELECT a.id
+                     FROM appointments a
+                     WHERE a.user_id = re.user_id
+                       AND a.linked_recurring_expense_id = re.id
+                     LIMIT 1) as linked_calendar_event_id
+             FROM recurring_expenses re
+             WHERE re.user_id = $1
+               AND re.is_active = true
+               AND re.start_date <= $3::date
+               AND (re.recurrence_until IS NULL OR re.recurrence_until >= $2::date)
+             ORDER BY re.start_date ASC, re.label ASC`,
+            [req.userId, startValue, endValue]
+        );
+
+        const occurrences = expandRecurringTransactions(
+            seriesResult.rows.map(mapRecurringTransaction),
+            startValue,
+            endValue
+        )
+            .map((occurrence) => mapRecurringTransaction(occurrence))
+            .sort((a, b) =>
+                String(a.occurrence_date).localeCompare(String(b.occurrence_date)) ||
+                String(a.label).localeCompare(String(b.label))
+            );
+
+        res.json({ success: true, data: occurrences });
+    } catch (error) {
+        console.error('Get recurring schedule error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
 // Create recurring transaction series.
 router.post('/recurring', requireParent, async (req: AuthRequest, res) => {
     try {
@@ -1369,6 +1512,51 @@ router.delete('/recurring/:id', requireParent, async (req: AuthRequest, res) => 
         res.json({ success: true, message: 'Recurring expense deleted' });
     } catch (error) {
         console.error('Delete recurring transaction error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
+// Set or clear the budget reminder ("J-X days") of a recurring series
+// (feature 3, mechanism B; the linked all-day calendar event with its own
+// reminders is mechanism A and stays independent). Parents only, like every
+// write on a recurring series. NULL clears the reminder.
+router.put('/recurring/:id/reminder', requireParent, async (req: AuthRequest, res) => {
+    try {
+        const { id } = req.params;
+        const raw = req.body?.reminder_days;
+
+        if (raw === undefined) {
+            return res.status(400).json({ success: false, error: 'reminder_days is required (integer 0-365, or null to clear)' });
+        }
+
+        let reminderDays: number | null = null;
+        if (raw !== null) {
+            const parsed = typeof raw === 'number' ? raw : Number(raw);
+            if (!Number.isInteger(parsed) || parsed < 0 || parsed > 365) {
+                return res.status(400).json({ success: false, error: 'reminder_days must be an integer between 0 and 365, or null' });
+            }
+            reminderDays = parsed;
+        }
+
+        const result = await query(
+            `UPDATE recurring_expenses
+             SET reminder_days = $1, updated_at = NOW()
+             WHERE id = $2 AND user_id = $3
+             RETURNING *`,
+            [reminderDays, id, req.userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Recurring transaction not found' });
+        }
+
+        broadcast(req.userId!, { type: 'update', entity: 'budget', action: 'updated' });
+        res.json({
+            success: true,
+            data: mapRecurringTransaction({ ...result.rows[0], is_pointed: false }),
+        });
+    } catch (error) {
+        console.error('Set recurring reminder error:', error);
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });

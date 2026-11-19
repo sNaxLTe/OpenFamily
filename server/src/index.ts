@@ -5,6 +5,7 @@ import logger from './lib/logger';
 import { broadcast } from './lib/broadcaster';
 import { attachWebSocketServer } from './lib/wsServer';
 import { startReminderScheduler } from './lib/reminderScheduler';
+import { startBudgetReminderScheduler } from './lib/budgetReminderScheduler';
 import { startCalendarSubscriptionScheduler } from './lib/calendarSources';
 import { getAuthConfig } from './config/authConfig';
 
@@ -30,6 +31,7 @@ const startServer = async () => {
         getAuthConfig();
 
         startReminderScheduler();
+        startBudgetReminderScheduler();
         startCalendarSubscriptionScheduler();
 
         server.listen(PORT, () => {

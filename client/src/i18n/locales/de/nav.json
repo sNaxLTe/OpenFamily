@@ -84,5 +84,16 @@
   },
   "rail": {
     "label": "Bereiche"
+  },
+  "bar": {
+    "label": "Navigation"
+  },
+  "bottomBar": {
+    "title": "Fußleiste",
+    "subtitle": "Wähle die Abschnitte, die unten auf diesem Gerät angezeigt werden.",
+    "hint": "Schmaler Bildschirm: 4 bis 8 Tabs (Mehr eingeschlossen); großer Bildschirm: kein Limit. „Mehr“ bleibt immer zuletzt.",
+    "plusAlways": "Immer vorhanden, zuletzt",
+    "cannotAdd": "Maximal 8 Tabs auf schmalem Bildschirm",
+    "cannotRemove": "Mindestens 4 Tabs, Mehr eingeschlossen"
   }
 }

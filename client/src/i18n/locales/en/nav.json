@@ -84,5 +84,16 @@
   },
   "rail": {
     "label": "Sections"
+  },
+  "bar": {
+    "label": "Navigation"
+  },
+  "bottomBar": {
+    "title": "Bottom bar",
+    "subtitle": "Pick the sections shown at the bottom of this device.",
+    "hint": "Narrow screen: 4 to 8 tabs (More included); large screen: no limit. \"More\" always stays last.",
+    "plusAlways": "Always there, last",
+    "cannotAdd": "8 tabs max on a narrow screen",
+    "cannotRemove": "4 tabs minimum, More included"
   }
 }

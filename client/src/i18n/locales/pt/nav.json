@@ -84,5 +84,16 @@
   },
   "rail": {
     "label": "Seções"
+  },
+  "bar": {
+    "label": "Navegação"
+  },
+  "bottomBar": {
+    "title": "Barra inferior",
+    "subtitle": "Escolhe as secções mostradas em baixo neste dispositivo.",
+    "hint": "Ecrã estreito: 4 a 8 separadores (Mais incluído); ecrã grande: sem limite. \"Mais\" fica sempre em último.",
+    "plusAlways": "Sempre presente, em último",
+    "cannotAdd": "Máximo de 8 separadores em ecrã estreito",
+    "cannotRemove": "Mínimo de 4 separadores, Mais incluído"
   }
 }

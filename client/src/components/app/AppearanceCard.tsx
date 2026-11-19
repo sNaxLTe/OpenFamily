@@ -1,8 +1,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ALargeSmall, Check, Monitor, Moon, Palette, PanelBottom, PanelLeft, PanelRight, Sidebar, Square, Squircle, Sun, Type } from 'lucide-react';
+import { ALargeSmall, Check, Monitor, Moon, Palette, Square, Squircle, Sun, Type } from 'lucide-react';
 import { Card, CardContent } from '../ui';
-import { ACCENTS, useTheme, type Accent, type Corners, type NavStyle, type TextSize } from '../../contexts/ThemeContext';
+import { ACCENTS, useTheme, type Accent, type Corners, type TextSize } from '../../contexts/ThemeContext';
 
 type ThemeChoice = 'light' | 'dark' | 'system';
 type Option<T extends string> = { value: T; label: string; icon: typeof Sun };
@@ -19,24 +19,18 @@ const SWATCH: Record<Accent, string> = {
 
 /**
  * How the app looks on this device: its theme and colour, the shape of its
- * corners, the size of its text, and where its sections are listed on a wide
- * screen. All of it is kept on the device, not on the account: a tablet on
- * the wall and a laptop need not agree.
+ * corners and the size of its text. All of it is kept on the device, not on
+ * the account: a tablet on the wall and a laptop need not agree. The bottom
+ * bar holds the sections, on every screen; which ones is chosen in "More".
  */
 const AppearanceCard: React.FC = () => {
     const { t } = useTranslation('settings');
-    const { theme, setTheme, navStyle, setNavStyle, accent, setAccent, corners, setCorners, textSize, setTextSize } = useTheme();
+    const { theme, setTheme, accent, setAccent, corners, setCorners, textSize, setTextSize } = useTheme();
 
     const themes: Option<ThemeChoice>[] = [
         { value: 'light', label: t('appearance.themeLight'), icon: Sun },
         { value: 'dark', label: t('appearance.themeDark'), icon: Moon },
         { value: 'system', label: t('appearance.themeSystem'), icon: Monitor },
-    ];
-    const navigations: Option<NavStyle>[] = [
-        { value: 'dock', label: t('appearance.navDock'), icon: PanelBottom },
-        { value: 'dock-left', label: t('appearance.navDockLeft'), icon: PanelLeft },
-        { value: 'dock-right', label: t('appearance.navDockRight'), icon: PanelRight },
-        { value: 'sidebar', label: t('appearance.navSidebar'), icon: Sidebar },
     ];
     const cornerChoices: Option<Corners>[] = [
         { value: 'round', label: t('appearance.cornersRound'), icon: Squircle },
@@ -115,8 +109,6 @@ const AppearanceCard: React.FC = () => {
 
                             {choice(t('appearance.corners'), corners, cornerChoices, setCorners)}
                             {choice(t('appearance.text'), textSize, textSizes, setTextSize)}
-                            {choice(t('appearance.navigation'), navStyle, navigations, setNavStyle)}
-                            <p className="text-micro text-muted-foreground">{t('appearance.navHint')}</p>
                         </div>
                     </div>
                 </div>

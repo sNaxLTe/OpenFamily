@@ -84,5 +84,16 @@
   },
   "rail": {
     "label": "Secciones"
+  },
+  "bar": {
+    "label": "Navegación"
+  },
+  "bottomBar": {
+    "title": "Barra inferior",
+    "subtitle": "Elige las secciones que se muestran abajo en este dispositivo.",
+    "hint": "Pantalla estrecha: de 4 a 8 pestañas (Más incluido); pantalla grande: sin límite. «Más» siempre va al final.",
+    "plusAlways": "Siempre presente, al final",
+    "cannotAdd": "Máximo 8 pestañas en pantalla estrecha",
+    "cannotRemove": "Mínimo 4 pestañas, Más incluido"
   }
 }

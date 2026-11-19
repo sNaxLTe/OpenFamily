@@ -84,5 +84,16 @@
   },
   "rail": {
     "label": "Seccions"
+  },
+  "bar": {
+    "label": "Navegació"
+  },
+  "bottomBar": {
+    "title": "Barra inferior",
+    "subtitle": "Tria les seccions que es mostren a baix en aquest dispositiu.",
+    "hint": "Pantalla estreta: 4 a 8 pestanyes (Més inclòs); pantalla gran: sense límit. «Més» sempre va a l'últim.",
+    "plusAlways": "Sempre present, a l'últim",
+    "cannotAdd": "Màxim 8 pestanyes en pantalla estreta",
+    "cannotRemove": "Mínim 4 pestanyes, Més inclòs"
   }
 }

@@ -2,15 +2,6 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 
 type Theme = 'light' | 'dark' | 'system';
 
-/**
- * Where the sections of the app are listed on a wide screen: a bar with the
- * sections of every day, set at the bottom, on the left or on the right, with
- * everything else behind "More"; or a menu of every section down the side.
- * On a phone the bar is always at the bottom.
- */
-export type NavStyle = 'dock' | 'dock-left' | 'dock-right' | 'sidebar';
-export const NAV_STYLES: readonly NavStyle[] = ['dock', 'dock-left', 'dock-right', 'sidebar'];
-
 /** The colour of buttons, links and what is selected. Coral is the logo's. */
 export type Accent = 'coral' | 'blue' | 'green' | 'violet' | 'orange' | 'slate';
 export const ACCENTS: readonly Accent[] = ['coral', 'blue', 'green', 'violet', 'orange', 'slate'];
@@ -21,7 +12,6 @@ export type TextSize = 'normal' | 'large';
 // All of these are kept on the device, like the theme: a tablet on the wall
 // and a laptop need not agree, and nothing here is worth a request to the server.
 const KEYS = {
-    navStyle: 'of_nav_style',
     accent: 'of_accent',
     corners: 'of_corners',
     textSize: 'of_text_size',
@@ -48,8 +38,6 @@ interface ThemeContextType {
     theme: Theme;
     setTheme: (theme: Theme) => void;
     actualTheme: 'light' | 'dark';
-    navStyle: NavStyle;
-    setNavStyle: (style: NavStyle) => void;
     accent: Accent;
     setAccent: (accent: Accent) => void;
     corners: Corners;
@@ -67,12 +55,10 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     });
 
     const [actualTheme, setActualTheme] = useState<'light' | 'dark'>('light');
-    const [navStyle, setNavStyleState] = useState<NavStyle>(() => stored(KEYS.navStyle, NAV_STYLES, 'dock'));
     const [accent, setAccentState] = useState<Accent>(() => stored(KEYS.accent, ACCENTS, 'coral'));
     const [corners, setCornersState] = useState<Corners>(() => stored(KEYS.corners, ['round', 'square'] as const, 'round'));
     const [textSize, setTextSizeState] = useState<TextSize>(() => stored(KEYS.textSize, ['normal', 'large'] as const, 'normal'));
 
-    const setNavStyle = (style: NavStyle) => { setNavStyleState(style); keep(KEYS.navStyle, style); };
     const setAccent = (value: Accent) => { setAccentState(value); keep(KEYS.accent, value); };
     const setCorners = (value: Corners) => { setCornersState(value); keep(KEYS.corners, value); };
     const setTextSize = (value: TextSize) => { setTextSizeState(value); keep(KEYS.textSize, value); };
@@ -111,7 +97,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     return (
         <ThemeContext.Provider
-            value={{ theme, setTheme, actualTheme, navStyle, setNavStyle, accent, setAccent, corners, setCorners, textSize, setTextSize }}
+            value={{ theme, setTheme, actualTheme, accent, setAccent, corners, setCorners, textSize, setTextSize }}
         >
             {children}
         </ThemeContext.Provider>

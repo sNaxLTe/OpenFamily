@@ -84,5 +84,16 @@
   },
   "rail": {
     "label": "Sections"
+  },
+  "bar": {
+    "label": "Navigation"
+  },
+  "bottomBar": {
+    "title": "Barre du bas",
+    "subtitle": "Choisis les sections affichées en bas de cet appareil.",
+    "hint": "Écran étroit : 4 à 8 onglets (Plus compris) ; grand écran : aucun maximum. « Plus » reste toujours en dernier.",
+    "plusAlways": "Toujours présent, en dernier",
+    "cannotAdd": "8 onglets maximum sur écran étroit",
+    "cannotRemove": "4 onglets minimum, Plus compris"
   }
 }

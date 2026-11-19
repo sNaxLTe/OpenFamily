@@ -1,11 +1,21 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LogOut, MonitorPlay, Moon, Sun } from 'lucide-react';
-import { Button } from '../components/ui';
+import { LogOut, Moon, Sun, PanelBottom } from 'lucide-react';
+import { Button, Card, CardContent } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { moreItems } from '../components/layout/navigation';
+import { cn } from '../lib/utils';
+import {
+    MORE_TAB,
+    bottomBarPool,
+    loadBottomBarHrefs,
+    saveBottomBarHrefs,
+    isNarrowScreen,
+    BOTTOM_BAR_MIN_SLOTS,
+    BOTTOM_BAR_MAX_SLOTS,
+    NARROW_SCREEN_MAX_WIDTH,
+} from '../components/layout/navigation';
 
 // Each section has a colour of its own, like the apps of a phone's home screen:
 // the eye finds "Budget" by its green before it reads the word.
@@ -24,23 +34,135 @@ const TINTS: Record<string, string> = {
 };
 const DEFAULT_TINT = 'bg-primary-soft text-primary';
 
+// The same switch as the kiosk settings: a pill that slides.
+const Switch: React.FC<{ checked: boolean; onChange?: () => void; label: string; disabled?: boolean; hint?: string }> = ({
+    checked, onChange, label, disabled, hint,
+}) => (
+    <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        title={hint}
+        disabled={disabled}
+        onClick={onChange}
+        className={cn(
+            'relative h-7 w-12 shrink-0 rounded-full transition-colors',
+            checked ? 'bg-primary' : 'border border-border bg-surface-2',
+            disabled && 'cursor-not-allowed opacity-50'
+        )}
+    >
+        <span className={cn(
+            'absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all',
+            checked ? 'left-6' : 'left-1'
+        )} />
+    </button>
+);
+
 /**
- * "More", the last tab of the phone's bottom bar: every section that has no
- * tab of its own, as a grid of icons, with the account, the theme and the way
- * out. It replaces the side menu on a phone, so nothing is listed twice.
+ * The "Barre du bas" section (feature 12): which sections sit as tabs at the
+ * bottom of this device. Kept in localStorage (openfamily.bottomBar), so the
+ * choice is per device; "More" is always the last slot and cannot be removed.
+ * On a narrow screen the bar holds 4 to 8 slots, "More" included; on a wide
+ * screen there is no maximum.
+ */
+const BottomBarCard: React.FC = () => {
+    const { t } = useTranslation('nav');
+    const { isModuleEnabled } = useAuth();
+    const pool = bottomBarPool(isModuleEnabled);
+    const [hrefs, setHrefs] = React.useState<string[]>(() => loadBottomBarHrefs(pool));
+    const [narrow, setNarrow] = React.useState(isNarrowScreen);
+
+    React.useEffect(() => {
+        const mq = window.matchMedia(`(max-width: ${NARROW_SCREEN_MAX_WIDTH - 1}px)`);
+        const onChange = () => setNarrow(mq.matches);
+        onChange();
+        mq.addEventListener('change', onChange);
+        return () => mq.removeEventListener('change', onChange);
+    }, []);
+
+    const selected = new Set(hrefs);
+    // Slots = chosen sections + "More".
+    const minSelected = BOTTOM_BAR_MIN_SLOTS - 1;
+    const maxSelected = BOTTOM_BAR_MAX_SLOTS - 1;
+    const canRemove = hrefs.length > minSelected;
+    const canAdd = !narrow || hrefs.length < maxSelected;
+
+    const toggle = (href: string) => {
+        const next = selected.has(href) ? hrefs.filter((h) => h !== href) : [...hrefs, href];
+        if (next.length < minSelected || (narrow && next.length > maxSelected)) return;
+        // Keep the pool's order: a section toggled back on lands where it belongs.
+        const ordered = pool.filter((item) => next.includes(item.href)).map((item) => item.href);
+        saveBottomBarHrefs(ordered);
+        setHrefs(ordered);
+    };
+
+    return (
+        <Card>
+            <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-card bg-primary-soft text-primary">
+                        <PanelBottom className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <h3 className="text-caption font-semibold text-foreground">{t('bottomBar.title')}</h3>
+                        <p className="mt-1 text-micro text-muted-foreground">{t('bottomBar.subtitle')}</p>
+
+                        <ul className="mt-4 divide-y divide-border">
+                            {pool.map((item) => {
+                                const Icon = item.icon;
+                                const on = selected.has(item.href);
+                                const disabled = on ? !canRemove : !canAdd;
+                                const hint = on ? (canRemove ? undefined : t('bottomBar.cannotRemove')) : (canAdd ? undefined : t('bottomBar.cannotAdd'));
+                                return (
+                                    <li key={item.href} className="flex items-center gap-3 py-2.5">
+                                        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                        <span className="min-w-0 flex-1 truncate text-caption text-foreground">
+                                            {t(item.labelKey)}
+                                        </span>
+                                        <Switch
+                                            checked={on}
+                                            disabled={disabled}
+                                            hint={hint}
+                                            label={t(item.labelKey)}
+                                            onChange={() => toggle(item.href)}
+                                        />
+                                    </li>
+                                );
+                            })}
+                            <li className="flex items-center gap-3 py-2.5">
+                                <MORE_TAB.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                <span className="min-w-0 flex-1 truncate text-caption text-foreground">
+                                    {t(MORE_TAB.labelKey)}
+                                </span>
+                                <span className="text-micro text-muted-foreground">{t('bottomBar.plusAlways')}</span>
+                                <Switch checked disabled label={t(MORE_TAB.labelKey)} />
+                            </li>
+                        </ul>
+
+                        <p className="mt-3 text-micro text-muted-foreground">{t('bottomBar.hint')}</p>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
+/**
+ * "More", the last tab of the bottom bar: every section of the app, as a grid
+ * of icons, so nothing is reachable only from the bar — then this device's
+ * bottom bar, the account, the theme and the way out.
  */
 const More: React.FC = () => {
     const { t } = useTranslation(['nav', 'kiosk']);
     const { user, logout, isModuleEnabled } = useAuth();
     const { setTheme, actualTheme } = useTheme();
 
-    const tiles = [
-        ...moreItems()
-            .filter((item) => !item.module || isModuleEnabled(item.module))
-            .map((item) => ({ href: item.href, icon: item.icon, label: t(item.labelKey) })),
-        // The wall display leaves the app's frame: it is a section all the same.
-        ...(isModuleEnabled('kiosk') ? [{ href: '/kiosk', icon: MonitorPlay, label: t('kiosk:settings.title') }] : []),
-    ];
+    const tiles = bottomBarPool(isModuleEnabled).map((item) => ({
+        href: item.href,
+        icon: item.icon,
+        label: t(item.labelKey),
+    }));
 
     return (
         <div className="mx-auto max-w-3xl space-y-6">
@@ -80,6 +202,8 @@ const More: React.FC = () => {
                     })}
                 </ul>
             </nav>
+
+            <BottomBarCard />
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Button variant="secondary" onClick={() => setTheme(actualTheme === 'dark' ? 'light' : 'dark')}>

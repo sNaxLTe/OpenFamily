@@ -171,5 +171,60 @@
     "budgetLabel": "Budget reminder J-X days before",
     "budgetPlaceholder": "e.g. 3 (empty = none)",
     "budgetHint": "A notification is sent X days before each occurrence (0 = on the day). It coexists with the calendar reminders."
+  },
+  "explorer": {
+    "tab": "Explorer",
+    "range": {
+      "label": "Range",
+      "thisYear": "This year",
+      "last12Months": "Last 12 months",
+      "lastYear": "Last year",
+      "custom": "Custom dates",
+      "from": "From",
+      "to": "To",
+      "resolved": "{{start}} → {{end}}"
+    },
+    "type": {
+      "label": "Type",
+      "expenses": "Expenses",
+      "income": "Income",
+      "net": "Net"
+    },
+    "split": {
+      "label": "Split",
+      "month": "Month",
+      "category": "Category",
+      "member": "Member"
+    },
+    "includeRecurring": "Include recurring",
+    "filters": {
+      "categories": "Categories",
+      "members": "Members",
+      "all": "All",
+      "allMembers": "All"
+    },
+    "presets": {
+      "label": "Presets",
+      "none": "No preset",
+      "save": "Save",
+      "name": "Preset name",
+      "delete": "Delete preset"
+    },
+    "summary": {
+      "total": "Total",
+      "average": "Average",
+      "count": "Count",
+      "recurringShare": "Recurring share"
+    },
+    "results": {
+      "title": "Results",
+      "chart": "Chart",
+      "table": "Table",
+      "empty": "No data for this range.",
+      "error": "The report could not be loaded.",
+      "unassigned": "Unassigned",
+      "recurring": "Recurring",
+      "oneOff": "One-off"
+    }
   }
 }

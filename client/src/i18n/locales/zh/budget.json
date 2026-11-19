@@ -167,5 +167,60 @@
     "budgetLabel": "预算提醒：提前 J-X 天",
     "budgetPlaceholder": "如 3（留空 = 不提醒）",
     "budgetHint": "每次发生前 X 天发送通知（0 = 当天），与日历提醒并存。"
+  },
+  "explorer": {
+    "tab": "探索",
+    "range": {
+      "label": "范围",
+      "thisYear": "今年",
+      "last12Months": "最近 12 个月",
+      "lastYear": "去年",
+      "custom": "自定义日期",
+      "from": "从",
+      "to": "到",
+      "resolved": "{{start}} 至 {{end}}"
+    },
+    "type": {
+      "label": "类型",
+      "expenses": "支出",
+      "income": "收入",
+      "net": "净额"
+    },
+    "split": {
+      "label": "分组",
+      "month": "月份",
+      "category": "类别",
+      "member": "成员"
+    },
+    "includeRecurring": "包含经常性项目",
+    "filters": {
+      "categories": "类别",
+      "members": "成员",
+      "all": "全部",
+      "allMembers": "全部"
+    },
+    "presets": {
+      "label": "预设",
+      "none": "无预设",
+      "save": "保存",
+      "name": "预设名称",
+      "delete": "删除预设"
+    },
+    "summary": {
+      "total": "总和",
+      "average": "平均",
+      "count": "数量",
+      "recurringShare": "经常性占比"
+    },
+    "results": {
+      "title": "结果",
+      "chart": "图表",
+      "table": "表格",
+      "empty": "该范围内暂无数据。",
+      "error": "无法加载报表。",
+      "unassigned": "未分配",
+      "recurring": "经常性",
+      "oneOff": "一次性"
+    }
   }
 }

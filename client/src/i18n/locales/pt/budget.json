@@ -171,5 +171,60 @@
     "budgetLabel": "Lembrete de orçamento J-X dias antes",
     "budgetPlaceholder": "ex. 3 (vazio = nenhum)",
     "budgetHint": "Uma notificação é enviada X dias antes de cada ocorrência (0 = no próprio dia). Coexiste com os lembretes do calendário."
+  },
+  "explorer": {
+    "tab": "Explorador",
+    "range": {
+      "label": "Período",
+      "thisYear": "Este ano",
+      "last12Months": "Últimos 12 meses",
+      "lastYear": "Ano passado",
+      "custom": "Datas personalizadas",
+      "from": "De",
+      "to": "Até",
+      "resolved": "{{start}} → {{end}}"
+    },
+    "type": {
+      "label": "Tipo",
+      "expenses": "Despesas",
+      "income": "Receitas",
+      "net": "Líquido"
+    },
+    "split": {
+      "label": "Agrupar por",
+      "month": "Mês",
+      "category": "Categoria",
+      "member": "Membro"
+    },
+    "includeRecurring": "Incluir recorrentes",
+    "filters": {
+      "categories": "Categorias",
+      "members": "Membros",
+      "all": "Todas",
+      "allMembers": "Todos"
+    },
+    "presets": {
+      "label": "Predefinições",
+      "none": "Sem predefinição",
+      "save": "Guardar",
+      "name": "Nome da predefinição",
+      "delete": "Eliminar predefinição"
+    },
+    "summary": {
+      "total": "Total",
+      "average": "Média",
+      "count": "Quantidade",
+      "recurringShare": "Parte recorrente"
+    },
+    "results": {
+      "title": "Resultados",
+      "chart": "Gráfico",
+      "table": "Tabela",
+      "empty": "Sem dados neste período.",
+      "error": "Não foi possível carregar o relatório.",
+      "unassigned": "Não atribuído",
+      "recurring": "Recorrente",
+      "oneOff": "Eventual"
+    }
   }
 }

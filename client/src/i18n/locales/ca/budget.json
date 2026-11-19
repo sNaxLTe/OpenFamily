@@ -171,5 +171,60 @@
     "budgetLabel": "Recordatori de pressupost J-X dies abans",
     "budgetPlaceholder": "ex. 3 (buit = cap)",
     "budgetHint": "S'envia una notificació X dies abans de cada ocurrència (0 = el mateix dia). Coexisteix amb els recordatoris del calendari."
+  },
+  "explorer": {
+    "tab": "Explorador",
+    "range": {
+      "label": "Període",
+      "thisYear": "Enguany",
+      "last12Months": "Últims 12 mesos",
+      "lastYear": "Any passat",
+      "custom": "Dates personalitzades",
+      "from": "Des de",
+      "to": "Fins a",
+      "resolved": "{{start}} → {{end}}"
+    },
+    "type": {
+      "label": "Tipus",
+      "expenses": "Despeses",
+      "income": "Ingressos",
+      "net": "Net"
+    },
+    "split": {
+      "label": "Agrupació",
+      "month": "Mes",
+      "category": "Categoria",
+      "member": "Membre"
+    },
+    "includeRecurring": "Incloure recurrents",
+    "filters": {
+      "categories": "Categories",
+      "members": "Membres",
+      "all": "Totes",
+      "allMembers": "Tots"
+    },
+    "presets": {
+      "label": "Preajustaments",
+      "none": "Cap preajustament",
+      "save": "Desa",
+      "name": "Nom del preajustament",
+      "delete": "Suprimeix el preajustament"
+    },
+    "summary": {
+      "total": "Suma",
+      "average": "Mitjana",
+      "count": "Nombre",
+      "recurringShare": "Part recurrent"
+    },
+    "results": {
+      "title": "Resultats",
+      "chart": "Gràfic",
+      "table": "Taula",
+      "empty": "Sense dades en aquest període.",
+      "error": "No s'ha pogut carregar l'informe.",
+      "unassigned": "No assignat",
+      "recurring": "Recurrent",
+      "oneOff": "Puntual"
+    }
   }
 }

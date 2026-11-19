@@ -171,5 +171,60 @@
     "budgetLabel": "Budget-Erinnerung J-X Tage vorher",
     "budgetPlaceholder": "z. B. 3 (leer = keiner)",
     "budgetHint": "X Tage vor jedem Vorkommen wird eine Benachrichtigung gesendet (0 = am Tag selbst). Koexistiert mit den Kalender-Erinnerungen."
+  },
+  "explorer": {
+    "tab": "Explorer",
+    "range": {
+      "label": "Zeitraum",
+      "thisYear": "Dieses Jahr",
+      "last12Months": "Letzte 12 Monate",
+      "lastYear": "Letztes Jahr",
+      "custom": "Eigene Daten",
+      "from": "Von",
+      "to": "Bis",
+      "resolved": "{{start}} bis {{end}}"
+    },
+    "type": {
+      "label": "Art",
+      "expenses": "Ausgaben",
+      "income": "Einnahmen",
+      "net": "Netto"
+    },
+    "split": {
+      "label": "Aufteilung",
+      "month": "Monat",
+      "category": "Kategorie",
+      "member": "Mitglied"
+    },
+    "includeRecurring": "Wiederkehrende einschließen",
+    "filters": {
+      "categories": "Kategorien",
+      "members": "Mitglieder",
+      "all": "Alle",
+      "allMembers": "Alle"
+    },
+    "presets": {
+      "label": "Vorlagen",
+      "none": "Keine Vorlage",
+      "save": "Speichern",
+      "name": "Name der Vorlage",
+      "delete": "Vorlage löschen"
+    },
+    "summary": {
+      "total": "Summe",
+      "average": "Durchschnitt",
+      "count": "Anzahl",
+      "recurringShare": "Anteil wiederkehrend"
+    },
+    "results": {
+      "title": "Ergebnisse",
+      "chart": "Diagramm",
+      "table": "Tabelle",
+      "empty": "Keine Daten in diesem Zeitraum.",
+      "error": "Der Bericht konnte nicht geladen werden.",
+      "unassigned": "Nicht zugewiesen",
+      "recurring": "Wiederkehrend",
+      "oneOff": "Einmalig"
+    }
   }
 }

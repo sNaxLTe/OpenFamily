@@ -171,5 +171,60 @@
     "budgetLabel": "Rappel budget J-X jours avant",
     "budgetPlaceholder": "ex. 3 (vide = aucun)",
     "budgetHint": "Une notification est envoyée X jours avant chaque occurrence (0 = le jour J). Ce rappel coexiste avec ceux du calendrier."
+  },
+  "explorer": {
+    "tab": "Explorateur",
+    "range": {
+      "label": "Plage",
+      "thisYear": "Cette année",
+      "last12Months": "12 derniers mois",
+      "lastYear": "Année dernière",
+      "custom": "Dates personnalisées",
+      "from": "Du",
+      "to": "Au",
+      "resolved": "{{start}} → {{end}}"
+    },
+    "type": {
+      "label": "Type",
+      "expenses": "Dépenses",
+      "income": "Revenus",
+      "net": "Net"
+    },
+    "split": {
+      "label": "Découpage",
+      "month": "Mois",
+      "category": "Catégorie",
+      "member": "Membre"
+    },
+    "includeRecurring": "Inclure les récurrents",
+    "filters": {
+      "categories": "Catégories",
+      "members": "Membres",
+      "all": "Toutes",
+      "allMembers": "Tous"
+    },
+    "presets": {
+      "label": "Presets",
+      "none": "Aucun preset",
+      "save": "Sauvegarder",
+      "name": "Nom du preset",
+      "delete": "Supprimer le preset"
+    },
+    "summary": {
+      "total": "Somme",
+      "average": "Moyenne",
+      "count": "Nombre",
+      "recurringShare": "Part des récurrents"
+    },
+    "results": {
+      "title": "Résultats",
+      "chart": "Graphique",
+      "table": "Tableau",
+      "empty": "Aucune donnée sur cette plage.",
+      "error": "Le rapport n'a pas pu être chargé.",
+      "unassigned": "Non assigné",
+      "recurring": "Récurrent",
+      "oneOff": "Ponctuel"
+    }
   }
 }

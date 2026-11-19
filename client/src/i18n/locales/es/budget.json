@@ -171,5 +171,60 @@
     "budgetLabel": "Recordatorio de presupuesto J-X días antes",
     "budgetPlaceholder": "p. ej. 3 (vacío = ninguno)",
     "budgetHint": "Se envía una notificación X días antes de cada ocurrencia (0 = el mismo día). Coexiste con los recordatorios del calendario."
+  },
+  "explorer": {
+    "tab": "Explorador",
+    "range": {
+      "label": "Período",
+      "thisYear": "Este año",
+      "last12Months": "Últimos 12 meses",
+      "lastYear": "Año pasado",
+      "custom": "Fechas personalizadas",
+      "from": "Desde",
+      "to": "Hasta",
+      "resolved": "{{start}} → {{end}}"
+    },
+    "type": {
+      "label": "Tipo",
+      "expenses": "Gastos",
+      "income": "Ingresos",
+      "net": "Neto"
+    },
+    "split": {
+      "label": "Desglose",
+      "month": "Mes",
+      "category": "Categoría",
+      "member": "Miembro"
+    },
+    "includeRecurring": "Incluir recurrentes",
+    "filters": {
+      "categories": "Categorías",
+      "members": "Miembros",
+      "all": "Todas",
+      "allMembers": "Todos"
+    },
+    "presets": {
+      "label": "Preajustes",
+      "none": "Sin preajuste",
+      "save": "Guardar",
+      "name": "Nombre del preajuste",
+      "delete": "Eliminar preajuste"
+    },
+    "summary": {
+      "total": "Suma",
+      "average": "Media",
+      "count": "Cantidad",
+      "recurringShare": "Parte recurrente"
+    },
+    "results": {
+      "title": "Resultados",
+      "chart": "Gráfico",
+      "table": "Tabla",
+      "empty": "Sin datos en este período.",
+      "error": "No se pudo cargar el informe.",
+      "unassigned": "Sin asignar",
+      "recurring": "Recurrente",
+      "oneOff": "Puntual"
+    }
   }
 }

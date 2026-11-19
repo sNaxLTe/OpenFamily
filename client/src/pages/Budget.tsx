@@ -11,6 +11,7 @@ import {
 import KakeiboView from './budget/KakeiboView';
 import KakeiboAnnualView from './budget/KakeiboAnnualView';
 import AnnualBudgetView from './budget/AnnualBudgetView';
+import ReportExplorer from './budget/ReportExplorer';
 import { Sheet, Field, CategorySelect } from './budget/budgetParts';
 import {
     PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -119,11 +120,12 @@ const Budget: React.FC = () => {
     const currency = user?.currency || 'EUR';
     const canEdit = Boolean(user?.is_owner) || (user?.role ?? '').toLowerCase() !== 'enfant';
 
-    // Classic budget, analytics, or kakeibo. Persisted per browser so the choice sticks.
-    type BudgetMode = 'classic' | 'analytics' | 'kakeibo';
+    // Classic budget, analytics, kakeibo, or the report explorer (feature 10).
+    // Persisted per browser so the choice sticks.
+    type BudgetMode = 'classic' | 'analytics' | 'kakeibo' | 'explorer';
     const [mode, setMode] = useState<BudgetMode>(() => {
         const saved = localStorage.getItem('openfamily.budgetMode');
-        return saved === 'analytics' || saved === 'kakeibo' ? saved : 'classic';
+        return saved === 'analytics' || saved === 'kakeibo' || saved === 'explorer' ? saved : 'classic';
     });
     const switchMode = (next: BudgetMode) => {
         setMode(next);
@@ -151,8 +153,8 @@ const Budget: React.FC = () => {
             });
         }
     };
-    // In year view, only the annual blocks are shown.
-    const showAnnual = view === 'year' && mode !== 'kakeibo';
+    // In year view, only the annual blocks are shown (the explorer has its own range).
+    const showAnnual = view === 'year' && mode !== 'kakeibo' && mode !== 'explorer';
 
     const [forecast, setForecast] = useState<Forecast | null>(null);
     const [recurring, setRecurring] = useState<RecurringTransaction[]>([]);
@@ -515,7 +517,8 @@ const Budget: React.FC = () => {
         // strip down the middle.
         <div className="mx-auto max-w-2xl pb-24 xl:max-w-6xl">
 
-            {/* Navigation mois / année */}
+            {/* Navigation mois / année (the explorer picks its own range) */}
+            {mode !== 'explorer' && (
             <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-background/80 backdrop-blur-md z-10 border-b border-border">
                 <button
                     onClick={() => (view === 'month' ? navigateMonth(-1) : navigateYear(-1))}
@@ -535,8 +538,10 @@ const Budget: React.FC = () => {
                     <ChevronRight className="w-5 h-5" />
                 </button>
             </div>
+            )}
 
             {/* Toggle Mois / Année (feature 1 ; default month) */}
+            {mode !== 'explorer' && (
             <div className="px-4 pt-3">
                 <div className="flex gap-1 rounded-input border border-border bg-surface-2 p-1 max-w-xs">
                     <button
@@ -559,8 +564,9 @@ const Budget: React.FC = () => {
                     </button>
                 </div>
             </div>
+            )}
 
-            {/* Budget view switch: classic, analytics, kakeibo */}
+            {/* Budget view switch: classic, analytics, kakeibo, explorer */}
             <div className="px-4 pt-4">
                 <div className="flex flex-wrap gap-1 rounded-input border border-border bg-surface-2 p-1">
                     <button
@@ -592,8 +598,24 @@ const Budget: React.FC = () => {
                     >
                         {t('kakeibo:mode.kakeibo')}
                     </button>
+                    <button
+                        type="button"
+                        onClick={() => switchMode('explorer')}
+                        className={`flex-1 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
+                            mode === 'explorer' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        {t('budget:explorer.tab')}
+                    </button>
                 </div>
             </div>
+
+            {/* Report explorer (feature 10): read-only, its own range controls */}
+            {mode === 'explorer' && (
+                <div className="px-4 pt-4">
+                    <ReportExplorer currency={currency} categoryLabel={categoryLabel} />
+                </div>
+            )}
 
             {mode === 'kakeibo' && view === 'year' && (
                 <div className="px-4 pt-3 xl:mx-auto xl:max-w-3xl">

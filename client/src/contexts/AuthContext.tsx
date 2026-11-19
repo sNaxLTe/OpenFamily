@@ -25,7 +25,7 @@ export type DashboardWidget = typeof DASHBOARD_WIDGETS[number];
 export interface DashboardPrefs {
     order: DashboardWidget[];
     hidden: DashboardWidget[];
-    agendaView: 'day' | 'week';
+    agendaView: 'day' | 'week' | 'month';
 }
 
 export const DEFAULT_DASHBOARD_PREFS: DashboardPrefs = {
@@ -65,7 +65,9 @@ export function normalizeDashboardPrefs(raw: unknown): DashboardPrefs {
         order.splice(at, 0, widget);
     });
     const hidden = Array.isArray(src.hidden) ? src.hidden.filter(isWidget) : [];
-    const agendaView = src.agendaView === 'week' ? 'week' : 'day';
+    // 'month' accepted since the annual-budget lot 6; any unknown value still
+    // falls back to 'day' so stored prefs are never broken.
+    const agendaView = src.agendaView === 'week' || src.agendaView === 'month' ? src.agendaView : 'day';
     return { order, hidden, agendaView };
 }
 

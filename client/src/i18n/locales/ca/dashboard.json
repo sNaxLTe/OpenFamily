@@ -24,7 +24,10 @@
     "emptyCta": "Afegeix una cita",
     "weekTitle": "Aquesta setmana",
     "viewDay": "dia",
-    "emptyWeekSubtitle": "Aquesta setmana no hi ha cites."
+    "emptyWeekSubtitle": "Aquesta setmana no hi ha cites.",
+    "viewMonth": "Mes",
+    "monthTitle": "Aquest mes",
+    "emptyMonthSubtitle": "Sense cites en els propers 30 dies."
   },
   "aside": {
     "shopping": "Compres",

@@ -5,7 +5,7 @@ import { api } from '../lib/api';
 import { apiBase } from '../lib/serverConfig';
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Edit2, Trash2, MapPin, Clock, CalendarPlus, Copy, Check, RefreshCw, Search, X, Cake } from 'lucide-react';
 import { Card, CardContent, Button, Dialog, Input, Textarea, Badge, Select, DatePicker } from '../components/ui';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths, startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths, addDays, startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { dateLocale, formatTime, orderIsoWeekdays, weekStartsOn } from '../i18n/format';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -170,6 +170,9 @@ const Calendar: React.FC = () => {
     const [budgetIsExpense, setBudgetIsExpense] = useState(true);
     const [currentDate, setCurrentDate] = useState(new Date());
     const [appointments, setAppointments] = useState<Appointment[]>([]);
+    // Feature 8: the "upcoming" list reads a rolling 30-day window from today,
+    // separate from the month grid's own query.
+    const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
     const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
@@ -209,21 +212,24 @@ const Calendar: React.FC = () => {
 
     // A birthday that was tapped: shown, never edited.
     const [birthdayShown, setBirthdayShown] = useState<Appointment | null>(null);
+    // A tapped calendar day: its detail panel opens directly (feature 7, the
+    // old "choice" intermediate is gone); the "+" button lives inside the panel.
     const [dayAction, setDayAction] = useState<{
         date: Date;
         appointments: Appointment[];
-        mode: 'choice' | 'display';
     } | null>(null);
 
     useEffect(() => {
         loadAppointments();
         loadAllAppointments();
+        loadUpcomingAppointments();
         loadFamilyMembers();
     }, [currentDate]);
 
     useWebSocketUpdates('appointments', () => {
         void loadAppointments();
         void loadAllAppointments();
+        void loadUpcomingAppointments();
     });
 
     const loadAllAppointments = async () => {
@@ -236,6 +242,23 @@ const Calendar: React.FC = () => {
             }
         } catch (error) {
             console.error('Failed to load Calendar Events for search:', error);
+        }
+    };
+
+    // Feature 8: upcoming appointments over a rolling 30-day window from today
+    // (the API accepts any date range; only the bounds change).
+    const loadUpcomingAppointments = async () => {
+        try {
+            const start = format(new Date(), "yyyy-MM-dd'T'00:00:00");
+            const end = format(addDays(new Date(), 30), "yyyy-MM-dd'T'23:59:59");
+            const response = await api.get<{ success: boolean; data: Appointment[] }>(
+                `/api/appointments?start_date=${start}&end_date=${end}`
+            );
+            if (response.success) {
+                setUpcomingAppointments(response.data);
+            }
+        } catch (error) {
+            console.error('Failed to load upcoming appointments:', error);
         }
     };
 
@@ -563,17 +586,10 @@ const Calendar: React.FC = () => {
         setDialogOpen(true);
     };
 
+    // Feature 7: a click on a day opens its detail panel directly, whether or
+    // not the day has appointments — the "+" button is inside the panel.
     const handleCalendarDayClick = (date: Date, dayAppointments: Appointment[]) => {
-        if (dayAppointments.length === 0) {
-            openNewEventForDate(date);
-            return;
-        }
-
-        setDayAction({
-            date,
-            appointments: dayAppointments,
-            mode: 'choice',
-        });
+        setDayAction({ date, appointments: dayAppointments });
     };
 
     const resetForm = () => {
@@ -720,6 +736,11 @@ const Calendar: React.FC = () => {
             </div>
         );
     }
+
+    // Feature 8: "à venir" at day granularity — today counts, past days do not.
+    const visibleUpcoming = upcomingAppointments
+        .filter((apt) => new Date(apt.start_time) >= startOfDay(new Date()))
+        .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
     return (
         <div className="space-y-6">
@@ -968,12 +989,10 @@ const Calendar: React.FC = () => {
             {/* Upcoming Appointments */}
             <Card>
                 <CardContent className="p-6">
-                    <h3 className="text-h2 font-semibold mb-4">{t('calendar:upcoming.title')}</h3>
+                    <h3 className="text-h2 font-semibold mb-1">{t('calendar:upcoming.title')}</h3>
+                    <p className="text-body-sm text-muted-foreground mb-4">{t('calendar:upcoming.window')}</p>
                     <div className="space-y-3">
-                        {appointments
-                            .filter((apt) => new Date(apt.start_time) >= new Date())
-                            .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-                            .slice(0, 5)
+                        {visibleUpcoming
                             .map((apt) => (
                                 <div
                                     key={apt.occurrence_id || apt.id}
@@ -1037,7 +1056,7 @@ const Calendar: React.FC = () => {
                                     </div>
                                 </div>
                             ))}
-                        {appointments.filter((apt) => new Date(apt.start_time) >= new Date()).length === 0 && (
+                        {visibleUpcoming.length === 0 && (
                             <p className="text-center text-muted-foreground py-8">
                                 {t('calendar:upcoming.empty')}
                             </p>
@@ -1430,7 +1449,7 @@ const Calendar: React.FC = () => {
                 </form>
             </Dialog>
 
-            {/* Calendar day Display / Add choice */}
+            {/* Calendar day detail (feature 7: direct click, no intermediate choice) */}
             <Dialog
                 open={Boolean(dayAction)}
                 onOpenChange={(open) => {
@@ -1441,49 +1460,9 @@ const Calendar: React.FC = () => {
                         ? format(dayAction.date, 'EEEE, MMMM d, yyyy', { locale: dateLocale() })
                         : ''
                 }
-                description={
-                    dayAction?.mode === 'display'
-                        ? t('calendar:dayAction.displayDescription')
-                        : t('calendar:dayAction.choiceDescription')
-                }
+                description={t('calendar:dayAction.displayDescription')}
             >
-                {dayAction?.mode === 'choice' ? (
-                    <div className="space-y-3">
-                        <Button
-                            type="button"
-                            className="w-full"
-                            onClick={() =>
-                                setDayAction((prev) =>
-                                    prev ? { ...prev, mode: 'display' } : prev
-                                )
-                            }
-                        >
-                            {t('calendar:dayAction.display')}
-                        </Button>
-
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            className="w-full"
-                            onClick={() => {
-                                const date = dayAction.date;
-                                setDayAction(null);
-                                openNewEventForDate(date);
-                            }}
-                        >
-                            {t('calendar:dayAction.add')}
-                        </Button>
-
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            className="w-full"
-                            onClick={() => setDayAction(null)}
-                        >
-                            {t('common:actions.cancel')}
-                        </Button>
-                    </div>
-                ) : dayAction ? (
+                {dayAction ? (
                     <div className="space-y-3">
                         {dayAction.appointments
                             .slice()
@@ -1538,19 +1517,6 @@ const Calendar: React.FC = () => {
                                 }}
                             >
                                 {t('calendar:dayAction.add')}
-                            </Button>
-
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                className="flex-1"
-                                onClick={() =>
-                                    setDayAction((prev) =>
-                                        prev ? { ...prev, mode: 'choice' } : prev
-                                    )
-                                }
-                            >
-                                {t('calendar:dayAction.back')}
                             </Button>
                         </div>
                     </div>

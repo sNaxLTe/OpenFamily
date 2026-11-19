@@ -6,7 +6,8 @@
   "moreOthers": "+{{count}} mais",
   "upcoming": {
     "title": "Próximos compromissos",
-    "empty": "Nenhum compromisso agendado"
+    "empty": "Nenhum compromisso agendado",
+    "window": "Próximos 30 dias"
   },
   "dialog": {
     "editTitle": "Editar compromisso",

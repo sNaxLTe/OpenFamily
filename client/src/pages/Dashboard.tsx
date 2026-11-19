@@ -51,6 +51,9 @@ const EAT_SOON_DAYS = 7;
 const BIRTHDAY_DAYS = 120;
 /** The agenda's day view: today, and this many days after it. */
 const AGENDA_DAYS_AHEAD = 2;
+// Feature 9: the "month" view is appointments only, over a rolling 31-day
+// window (today + 30 days ahead) — tasks and routines stay in their own blocks.
+const AGENDA_MONTH_DAYS = 30;
 
 /** A small card of the home page: a title, a way to the whole section, a few lines. */
 const HomeCard: React.FC<{
@@ -227,8 +230,11 @@ const Dashboard: React.FC = () => {
                     // Week view spans Monday to Sunday, day view just today.
                     // The day view also brings the two days that follow:
                     // what comes next is part of knowing where the day is going.
+                    // Month view spans today plus the 30 days ahead (feature 9).
                     const from = agendaView === 'week' ? weekStart : new Date();
-                    const to = agendaView === 'week' ? addDays(weekStart, 6) : addDays(new Date(), AGENDA_DAYS_AHEAD);
+                    const to = agendaView === 'week'
+                        ? addDays(weekStart, 6)
+                        : addDays(new Date(), agendaView === 'month' ? AGENDA_MONTH_DAYS : AGENDA_DAYS_AHEAD);
                     const start = format(from, "yyyy-MM-dd'T'00:00:00");
                     const end = format(to, "yyyy-MM-dd'T'23:59:59");
                     return api.get<{ success: boolean; data: Appointment[] }>(
@@ -265,7 +271,7 @@ const Dashboard: React.FC = () => {
         savePrefs({ ...prefs, order });
     };
 
-    const setAgendaView = (view: 'day' | 'week') => savePrefs({ ...prefs, agendaView: view });
+    const setAgendaView = (view: 'day' | 'week' | 'month') => savePrefs({ ...prefs, agendaView: view });
 
     if (loading) {
         return (
@@ -292,10 +298,14 @@ const Dashboard: React.FC = () => {
     ];
 
     // Appointments grouped by day: the seven days of the week view, today and
-    // the two days after it for the day view. A day with nothing is left out.
+    // the two days after it for the day view, today plus 30 days for the month
+    // view (feature 9, appointments only). A day with nothing is left out.
     const appointmentDays = (agendaView === 'week'
         ? Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
-        : Array.from({ length: AGENDA_DAYS_AHEAD + 1 }, (_, i) => addDays(new Date(), i))
+        : Array.from(
+            { length: (agendaView === 'month' ? AGENDA_MONTH_DAYS : AGENDA_DAYS_AHEAD) + 1 },
+            (_, i) => addDays(new Date(), i)
+        )
     ).map((date) => ({
         date,
         items: appointments.filter((a) => isSameDay(new Date(a.start_time), date)),
@@ -305,7 +315,11 @@ const Dashboard: React.FC = () => {
         <section key="agenda" className="h-full rounded-card border border-border bg-card p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2 mb-4">
                 <h2 className="font-serif text-h2">
-                    {agendaView === 'week' ? t('dashboard:today.weekTitle') : t('dashboard:today.title')}
+                    {agendaView === 'week'
+                        ? t('dashboard:today.weekTitle')
+                        : agendaView === 'month'
+                            ? t('dashboard:today.monthTitle')
+                            : t('dashboard:today.title')}
                 </h2>
                 <div className="flex items-center gap-1 rounded-input border border-border p-0.5">
                     <button
@@ -322,6 +336,13 @@ const Dashboard: React.FC = () => {
                     >
                         {t('dashboard:today.viewWeek')}
                     </button>
+                    <button
+                        type="button"
+                        onClick={() => setAgendaView('month')}
+                        className={`px-2.5 py-1 text-caption rounded transition-colors ${agendaView === 'month' ? 'bg-primary-soft text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                        {t('dashboard:today.viewMonth')}
+                    </button>
                 </div>
             </div>
 
@@ -329,7 +350,11 @@ const Dashboard: React.FC = () => {
                 <div className="rounded-card border border-dashed border-border-strong p-8 text-center">
                     <p className="font-serif text-h2 text-muted-foreground mb-1">{t('dashboard:today.emptyTitle')}</p>
                     <p className="text-caption text-muted-foreground">
-                        {agendaView === 'week' ? t('dashboard:today.emptyWeekSubtitle') : t('dashboard:today.emptySubtitle')}
+                        {agendaView === 'week'
+                            ? t('dashboard:today.emptyWeekSubtitle')
+                            : agendaView === 'month'
+                                ? t('dashboard:today.emptyMonthSubtitle')
+                                : t('dashboard:today.emptySubtitle')}
                     </p>
                     <button
                         type="button"
@@ -343,7 +368,7 @@ const Dashboard: React.FC = () => {
                 <div className="space-y-4">
                     {appointmentDays.map((group) => (
                         <div key={group.date.toISOString()}>
-                            {(agendaView === 'week' || !isSameDay(group.date, new Date())) && (
+                            {(agendaView !== 'day' || !isSameDay(group.date, new Date())) && (
                                 <p className="text-micro uppercase tracking-[0.08em] text-muted-foreground mb-2 first-letter:uppercase">
                                     {format(group.date, 'EEEE d MMMM', { locale: dateLocale() })}
                                 </p>
@@ -976,6 +1001,15 @@ const Dashboard: React.FC = () => {
                                 onClick={() => setAgendaView('week')}
                             >
                                 {t('dashboard:today.viewWeek')}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={agendaView === 'month' ? 'primary' : 'secondary'}
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => setAgendaView('month')}
+                            >
+                                {t('dashboard:today.viewMonth')}
                             </Button>
                         </div>
                     </div>

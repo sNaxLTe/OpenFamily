@@ -6,7 +6,8 @@
   "moreOthers": "+{{count}} més",
   "upcoming": {
     "title": "Properes cites",
-    "empty": "No hi ha cap cita propera"
+    "empty": "No hi ha cap cita propera",
+    "window": "Propers 30 dies"
   },
   "dialog": {
     "editTitle": "Edita la cita",

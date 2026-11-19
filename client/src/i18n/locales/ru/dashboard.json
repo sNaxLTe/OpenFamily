@@ -26,7 +26,10 @@
     "emptyCta": "Добавить событие",
     "weekTitle": "На этой неделе",
     "viewDay": "День",
-    "emptyWeekSubtitle": "На этой неделе событий нет."
+    "emptyWeekSubtitle": "На этой неделе событий нет.",
+    "viewMonth": "Месяц",
+    "monthTitle": "Этот месяц",
+    "emptyMonthSubtitle": "Нет событий в ближайшие 30 дней."
   },
   "aside": {
     "shopping": "Покупки",

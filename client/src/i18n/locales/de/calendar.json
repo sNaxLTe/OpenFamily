@@ -6,7 +6,8 @@
   "moreOthers": "+{{count}} weitere",
   "upcoming": {
     "title": "Anstehende Termine",
-    "empty": "Keine anstehenden Termine"
+    "empty": "Keine anstehenden Termine",
+    "window": "Nächste 30 Tage"
   },
   "dialog": {
     "editTitle": "Termin bearbeiten",

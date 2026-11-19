@@ -6,7 +6,8 @@
   "moreOthers": "+{{count}} more",
   "upcoming": {
     "title": "Upcoming appointments",
-    "empty": "No upcoming appointments"
+    "empty": "No upcoming appointments",
+    "window": "Next 30 days"
   },
   "dialog": {
     "editTitle": "Edit appointment",

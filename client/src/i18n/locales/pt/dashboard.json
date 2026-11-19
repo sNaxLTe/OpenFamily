@@ -24,7 +24,10 @@
     "emptyCta": "Adicionar compromisso",
     "weekTitle": "Esta semana",
     "viewDay": "Dia",
-    "emptyWeekSubtitle": "Nenhum compromisso esta semana."
+    "emptyWeekSubtitle": "Nenhum compromisso esta semana.",
+    "viewMonth": "Mês",
+    "monthTitle": "Este mês",
+    "emptyMonthSubtitle": "Sem agendamentos nos próximos 30 dias."
   },
   "aside": {
     "shopping": "Compras",

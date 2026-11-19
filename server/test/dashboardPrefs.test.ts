@@ -68,4 +68,25 @@ describe('the layout of the home page', () => {
         expect(answer.body.data.hidden).toEqual(['birthdays']);
         expect(await read()).toEqual(answer.body.data);
     });
+
+    it("accepts the 'month' agenda view (annual-budget lot 6)", async () => {
+        const answer = await request(app).put('/api/auth/dashboard-prefs').set(bearer())
+            .send({ agendaView: 'month' });
+        expect(answer.status).toBe(200);
+        expect(answer.body.data.agendaView).toBe('month');
+        expect((await read()).agendaView).toBe('month');
+    });
+
+    it("falls back to 'day' on an unknown agenda view, without breaking stored prefs", async () => {
+        // A value a future version might not know must never poison the prefs.
+        await saved({ order: ['stats', 'agenda'], hidden: ['quick'], agendaView: 'fortnight' });
+        expect((await read()).agendaView).toBe('day');
+        const answer = await request(app).put('/api/auth/dashboard-prefs').set(bearer())
+            .send({ agendaView: 42, hidden: ['quick'] });
+        expect(answer.status).toBe(200);
+        expect(answer.body.data.agendaView).toBe('day');
+        // The rest of the layout survived the round trip.
+        expect(answer.body.data.hidden).toEqual(['quick']);
+        expect(answer.body.data.order).toContain('agenda');
+    });
 });

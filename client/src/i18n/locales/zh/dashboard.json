@@ -24,7 +24,10 @@
     "emptyCta": "添加日程",
     "weekTitle": "本周",
     "viewDay": "日",
-    "emptyWeekSubtitle": "本周没有约会。"
+    "emptyWeekSubtitle": "本周没有约会。",
+    "viewMonth": "月",
+    "monthTitle": "本月",
+    "emptyMonthSubtitle": "未来 30 天内没有日程。"
   },
   "aside": {
     "shopping": "购物",

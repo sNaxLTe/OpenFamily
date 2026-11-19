@@ -24,7 +24,10 @@
     "emptyCta": "Ajouter un rendez-vous",
     "weekTitle": "Cette semaine",
     "viewDay": "Jour",
-    "emptyWeekSubtitle": "Aucun rendez-vous cette semaine."
+    "emptyWeekSubtitle": "Aucun rendez-vous cette semaine.",
+    "viewMonth": "Mois",
+    "monthTitle": "Ce mois-ci",
+    "emptyMonthSubtitle": "Aucun rendez-vous sur les 30 prochains jours."
   },
   "aside": {
     "shopping": "Courses",

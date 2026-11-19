@@ -24,7 +24,10 @@
     "emptyCta": "Add an appointment",
     "weekTitle": "This week",
     "viewDay": "Day",
-    "emptyWeekSubtitle": "No appointments this week."
+    "emptyWeekSubtitle": "No appointments this week.",
+    "viewMonth": "Month",
+    "monthTitle": "This month",
+    "emptyMonthSubtitle": "No appointments over the next 30 days."
   },
   "aside": {
     "shopping": "Shopping",

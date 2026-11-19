@@ -6,7 +6,8 @@
   "moreOthers": "另有 {{count}} 项",
   "upcoming": {
     "title": "即将开始的日程",
-    "empty": "暂无即将开始的日程"
+    "empty": "暂无即将开始的日程",
+    "window": "未来 30 天"
   },
   "dialog": {
     "editTitle": "编辑日程",

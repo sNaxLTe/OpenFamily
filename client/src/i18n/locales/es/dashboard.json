@@ -24,7 +24,10 @@
     "emptyCta": "Añadir un evento",
     "weekTitle": "Esta semana",
     "viewDay": "Día",
-    "emptyWeekSubtitle": "No hay eventos esta semana."
+    "emptyWeekSubtitle": "No hay eventos esta semana.",
+    "viewMonth": "Mes",
+    "monthTitle": "Este mes",
+    "emptyMonthSubtitle": "Sin citas en los próximos 30 días."
   },
   "aside": {
     "shopping": "Compras",

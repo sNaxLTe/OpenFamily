@@ -34,7 +34,7 @@ export type DashboardWidget = typeof DASHBOARD_WIDGETS[number];
 export interface DashboardPrefs {
     order: DashboardWidget[];
     hidden: DashboardWidget[];
-    agendaView: 'day' | 'week';
+    agendaView: 'day' | 'week' | 'month';
 }
 
 const isWidget = (v: unknown): v is DashboardWidget =>
@@ -83,7 +83,12 @@ export const parseDashboardPrefs = (raw: unknown): DashboardPrefs => {
         return {
             order: dedupedOrder,
             hidden,
-            agendaView: parsed.agendaView === 'week' ? 'week' : 'day',
+            // 'month' accepted since the annual-budget lot 6; any unknown
+            // value still falls back to 'day' so stored prefs never break.
+            agendaView:
+                parsed.agendaView === 'week' || parsed.agendaView === 'month'
+                    ? parsed.agendaView
+                    : 'day',
         };
     } catch {
         return defaults;

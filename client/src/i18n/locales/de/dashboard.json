@@ -24,7 +24,10 @@
     "emptyCta": "Termin hinzufügen",
     "weekTitle": "Diese Woche",
     "viewDay": "Tag",
-    "emptyWeekSubtitle": "Keine Termine diese Woche."
+    "emptyWeekSubtitle": "Keine Termine diese Woche.",
+    "viewMonth": "Monat",
+    "monthTitle": "Dieser Monat",
+    "emptyMonthSubtitle": "Keine Termine in den nächsten 30 Tagen."
   },
   "aside": {
     "shopping": "Einkaufen",

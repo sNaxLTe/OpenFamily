@@ -162,6 +162,24 @@
       "hint": "Alert at 80% of the limit reached in {{year}}.",
       "delete": "Delete limit",
       "deleteConfirm": "Delete this annual limit?"
+    },
+    "forecast": {
+      "toggle": "Projection",
+      "title": "Projection",
+      "subtitle": "{{year}} realized, projected after {{asOfMonth}}",
+      "horizon": "Horizon (months)",
+      "variableWindow": "Estimate window (months)",
+      "asOf": "Reference month: {{month}}",
+      "assumptions": "Assumptions: recurring items are projected up to their end (recurrence_until); the one-off part is estimated from the average of the last {{variableMonths}} months; the starting balance is the realized balance at the end of {{asOfMonth}}.",
+      "chartProjectedIncome": "Projected income",
+      "chartProjectedRecurring": "Projected recurring",
+      "chartProjectedVariable": "Estimated one-off",
+      "chartCumulative": "Projected cumulative balance",
+      "summaryProjected": "Projected balance at horizon",
+      "summaryCommitted": "Recurring committed over the horizon",
+      "summaryDelta": "Change vs current balance",
+      "loading": "Computing projection…",
+      "error": "Projection unavailable."
     }
   },
   "reminders": {

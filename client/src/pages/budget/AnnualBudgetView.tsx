@@ -5,7 +5,7 @@ import {
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import {
-    AlertTriangle, CalendarClock, PiggyBank, Plus, RefreshCw, Trash2,
+    AlertTriangle, CalendarClock, LineChart as LineChartIcon, PiggyBank, Plus, RefreshCw, Trash2,
     TrendingDown, TrendingUp, Wallet,
 } from 'lucide-react';
 import { api } from '../../lib/api';
@@ -14,6 +14,7 @@ import { dateLocale, intlLocale } from '../../i18n/format';
 import { useWebSocketUpdates } from '../../hooks/useWebSocketUpdates';
 import ChartCard from '../../components/app/ChartCard';
 import { CategorySelect, Field, Sheet } from './budgetParts';
+import ForecastCard from './ForecastCard';
 
 // Annual view of the classic Budget tab (feature 1): year recap, 12-month
 // chart with the recurring / one-off split, the annual recurring block
@@ -99,6 +100,10 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
     const [sheetLimit, setSheetLimit] = useState(false);
     const [limitForm, setLimitForm] = useState({ category: 'Alimentation', annual_limit: '' });
     const [formError, setFormError] = useState('');
+
+    // Feature 11: the projection card is only mounted while this toggle is on,
+    // so /api/budget/forecast is never requested while it is closed.
+    const [showForecast, setShowForecast] = useState(false);
 
     const yearStart = `${year}-01-01`;
     const yearEnd = `${year}-12-31`;
@@ -288,7 +293,24 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
             )}
 
             {/* ── 12-month chart, recurring / one-off split ───────────────── */}
-            <ChartCard title={t('budget:annual.chartTitle', { year })} subtitle={`${year}`}>
+            <ChartCard
+                title={t('budget:annual.chartTitle', { year })}
+                subtitle={`${year}`}
+                action={(
+                    <button
+                        onClick={() => setShowForecast((v) => !v)}
+                        aria-pressed={showForecast}
+                        className={`flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                            showForecast
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-border text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        <LineChartIcon className="h-3.5 w-3.5 shrink-0" />
+                        {t('budget:annual.forecast.toggle')}
+                    </button>
+                )}
+            >
                 {chartData.some((m) => m.income !== 0 || m.recurring !== 0 || m.oneOff !== 0) ? (
                     <ResponsiveContainer width="100%" height={260}>
                         <BarChart data={chartData}>
@@ -305,6 +327,11 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
                     <p className="py-8 text-center text-sm text-muted-foreground">{t('budget:annual.noData', { year })}</p>
                 )}
             </ChartCard>
+
+            {/* ── Projection card (feature 11, read-only) ─────────────────── */}
+            {showForecast && (
+                <ForecastCard year={year} currency={currency} monthly={monthly} />
+            )}
 
             {/* ── Recurring annual block (feature 2, read-only) ───────────── */}
             <section>

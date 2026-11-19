@@ -158,6 +158,24 @@
       "hint": "{{year}} 达到限额 80% 时提醒。",
       "delete": "删除限额",
       "deleteConfirm": "删除此年度限额？"
+    },
+    "forecast": {
+      "toggle": "预测",
+      "title": "预测",
+      "subtitle": "{{year}} 已实现，{{asOfMonth}} 之后为预测",
+      "horizon": "预测期（月）",
+      "variableWindow": "估算窗口（月）",
+      "asOf": "参考月份：{{month}}",
+      "assumptions": "假设：周期项按原计划预测至结束（recurrence_until）；一次性支出按最近 {{variableMonths}} 个月的平均值估算；初始余额为 {{asOfMonth}} 月底的实际余额。",
+      "chartProjectedIncome": "预计收入",
+      "chartProjectedRecurring": "预计周期支出",
+      "chartProjectedVariable": "预计一次性支出",
+      "chartCumulative": "预计累计余额",
+      "summaryProjected": "预测期末余额",
+      "summaryCommitted": "预测期内已承诺周期支出",
+      "summaryDelta": "较当前余额变化",
+      "loading": "正在计算预测…",
+      "error": "预测不可用。"
     }
   },
   "reminders": {

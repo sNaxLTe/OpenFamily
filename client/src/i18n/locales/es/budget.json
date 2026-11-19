@@ -162,6 +162,24 @@
       "hint": "Alerta al 80 % del límite alcanzado en {{year}}.",
       "delete": "Eliminar límite",
       "deleteConfirm": "¿Eliminar este límite anual?"
+    },
+    "forecast": {
+      "toggle": "Proyección",
+      "title": "Proyección",
+      "subtitle": "{{year}} realizado, proyectado después de {{asOfMonth}}",
+      "horizon": "Horizonte (meses)",
+      "variableWindow": "Ventana de estimación (meses)",
+      "asOf": "Mes de referencia: {{month}}",
+      "assumptions": "Hipótesis: los recurrentes se proyectan hasta su fin (recurrence_until); la parte puntual se estima con la media de los últimos {{variableMonths}} meses; el saldo inicial es el saldo real al cierre de {{asOfMonth}}.",
+      "chartProjectedIncome": "Ingresos proyectados",
+      "chartProjectedRecurring": "Recurrente proyectado",
+      "chartProjectedVariable": "Puntual estimado",
+      "chartCumulative": "Saldo acumulado proyectado",
+      "summaryProjected": "Saldo proyectado en el horizonte",
+      "summaryCommitted": "Recurrente comprometido en el horizonte",
+      "summaryDelta": "Variación respecto al saldo actual",
+      "loading": "Calculando proyección…",
+      "error": "Proyección no disponible."
     }
   },
   "reminders": {

@@ -162,6 +162,24 @@
       "hint": "Warnung bei 80 % des Limits in {{year}}.",
       "delete": "Limit löschen",
       "deleteConfirm": "Dieses Jahreslimit löschen?"
+    },
+    "forecast": {
+      "toggle": "Prognose",
+      "title": "Prognose",
+      "subtitle": "{{year}} Ist, nach {{asOfMonth}} Prognose",
+      "horizon": "Horizont (Monate)",
+      "variableWindow": "Schätzfenster (Monate)",
+      "asOf": "Referenzmonat: {{month}}",
+      "assumptions": "Annahmen: Wiederkehrende Posten werden bis zu ihrem Ende (recurrence_until) prognostiziert; der Einmalanteil wird über den Durchschnitt der letzten {{variableMonths}} Monate geschätzt; das Startsaldo ist das Ist-Saldo am Ende von {{asOfMonth}}.",
+      "chartProjectedIncome": "Prognostizierte Einnahmen",
+      "chartProjectedRecurring": "Prognostiziert wiederkehrend",
+      "chartProjectedVariable": "Geschätzt einmalig",
+      "chartCumulative": "Prognostiziertes kumuliertes Saldo",
+      "summaryProjected": "Prognostiziertes Saldo am Horizont",
+      "summaryCommitted": "Wiederkehrend gebunden über den Horizont",
+      "summaryDelta": "Veränderung zum aktuellen Saldo",
+      "loading": "Prognose wird berechnet…",
+      "error": "Prognose nicht verfügbar."
     }
   },
   "reminders": {

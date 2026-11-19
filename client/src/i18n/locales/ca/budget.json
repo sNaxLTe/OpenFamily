@@ -162,6 +162,24 @@
       "hint": "Alerta al 80 % del límit assolit el {{year}}.",
       "delete": "Eliminar límit",
       "deleteConfirm": "Eliminar aquest límit anual?"
+    },
+    "forecast": {
+      "toggle": "Projecció",
+      "title": "Projecció",
+      "subtitle": "{{year}} real, projectat després de {{asOfMonth}}",
+      "horizon": "Horitzó (mesos)",
+      "variableWindow": "Finestra d'estimació (mesos)",
+      "asOf": "Mes de referència: {{month}}",
+      "assumptions": "Hipòtesis: els recurrents es projecten fins al seu final (recurrence_until); la part puntual s'estima amb la mitjana dels últims {{variableMonths}} mesos; el saldo inicial és el saldo real a tancament de {{asOfMonth}}.",
+      "chartProjectedIncome": "Ingressos projectats",
+      "chartProjectedRecurring": "Recurrent projectat",
+      "chartProjectedVariable": "Puntual estimat",
+      "chartCumulative": "Saldo acumulat projectat",
+      "summaryProjected": "Saldo projectat a l'horitzó",
+      "summaryCommitted": "Recurrent compromès a l'horitzó",
+      "summaryDelta": "Variació respecte el saldo actual",
+      "loading": "Calculant la projecció…",
+      "error": "Projecció no disponible."
     }
   },
   "reminders": {

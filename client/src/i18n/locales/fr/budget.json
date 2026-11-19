@@ -162,6 +162,24 @@
       "hint": "Alerte à 80 % du plafond atteint sur {{year}}.",
       "delete": "Supprimer le plafond",
       "deleteConfirm": "Supprimer ce plafond annuel ?"
+    },
+    "forecast": {
+      "toggle": "Projection",
+      "title": "Projection",
+      "subtitle": "Réalisé {{year}}, projeté après {{asOfMonth}}",
+      "horizon": "Horizon (mois)",
+      "variableWindow": "Fenêtre d'estimation (mois)",
+      "asOf": "Mois de référence : {{month}}",
+      "assumptions": "Hypothèses : les récurrents sont projetés jusqu'à leur fin (recurrence_until) ; la part ponctuelle est estimée par la moyenne des {{variableMonths}} derniers mois ; le solde de départ est le solde réalisé à fin {{asOfMonth}}.",
+      "chartProjectedIncome": "Revenus projetés",
+      "chartProjectedRecurring": "Récurrent projeté",
+      "chartProjectedVariable": "Ponctuel estimé",
+      "chartCumulative": "Solde cumulé projeté",
+      "summaryProjected": "Solde projeté à l'horizon",
+      "summaryCommitted": "Récurrent engagé sur l'horizon",
+      "summaryDelta": "Variation vs solde actuel",
+      "loading": "Calcul de la projection…",
+      "error": "Projection indisponible."
     }
   },
   "reminders": {

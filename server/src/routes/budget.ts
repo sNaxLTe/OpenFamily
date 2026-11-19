@@ -650,6 +650,75 @@ router.get('/statistics', async (req: AuthRequest, res) => {
     }
 });
 
+// The 12-month series of a year: one-off entries grouped by month plus the
+// virtual recurring occurrences bucketed by month (same series filter as
+// everywhere: active, started, not past recurrence_until). Shared by
+// /statistics/monthly and /statistics/annual so the annual totals are
+// exactly the sum of the 12 months it returns.
+const getMonthlySeries = async (userId: string, year: number) => {
+    const result = await query(
+        `SELECT
+             EXTRACT(MONTH FROM date)::int as month,
+             SUM(amount) FILTER (WHERE is_expense = true) as total_expenses,
+             SUM(amount) FILTER (WHERE is_expense = false) as total_income
+         FROM budget_entries
+         WHERE user_id = $1
+           AND EXTRACT(YEAR FROM date) = $2
+         GROUP BY EXTRACT(MONTH FROM date)
+         ORDER BY month`,
+        [userId, year]
+    );
+
+    const yearStart = `${year}-01-01`;
+    const yearEnd = `${year}-12-31`;
+
+    const recurringSeriesResult = await query(
+        `SELECT *
+         FROM recurring_expenses
+         WHERE user_id = $1
+           AND is_active = true
+           AND start_date <= $3::date
+           AND (recurrence_until IS NULL OR recurrence_until >= $2::date)`,
+        [userId, yearStart, yearEnd]
+    );
+
+    const recurringOccurrences = expandRecurringTransactions(
+        recurringSeriesResult.rows.map(mapRecurringTransaction),
+        yearStart,
+        yearEnd
+    );
+
+    const recurringByMonth = new Map<number, { income: number; expenses: number }>();
+
+    for (const occurrence of recurringOccurrences) {
+        const monthNum = Number(String(occurrence.occurrence_date).slice(5, 7));
+        const bucket = recurringByMonth.get(monthNum) || { income: 0, expenses: 0 };
+        if (occurrence.is_expense) {
+            bucket.expenses += toNumber(occurrence.amount);
+        } else {
+            bucket.income += toNumber(occurrence.amount);
+        }
+        recurringByMonth.set(monthNum, bucket);
+    }
+
+    return Array.from({ length: 12 }, (_, i) => {
+        const monthNum = i + 1;
+        const row = result.rows.find((r) => r.month === monthNum);
+        const recurring = recurringByMonth.get(monthNum) || { income: 0, expenses: 0 };
+        const totalExpenses = (row ? toNumber(row.total_expenses) : 0) + recurring.expenses;
+        const totalIncome = (row ? toNumber(row.total_income) : 0) + recurring.income;
+
+        return {
+            month: monthNum,
+            totalExpenses,
+            totalIncome,
+            recurringExpenses: recurring.expenses,
+            recurringIncome: recurring.income,
+            balance: totalIncome - totalExpenses,
+        };
+    });
+};
+
 // Get monthly budget statistics for a year
 router.get('/statistics/monthly', async (req: AuthRequest, res) => {
     try {
@@ -660,71 +729,66 @@ router.get('/statistics/monthly', async (req: AuthRequest, res) => {
             return res.status(400).json({ success: false, error: 'year is required' });
         }
 
-        const result = await query(
-            `SELECT
-                 EXTRACT(MONTH FROM date)::int as month,
-                 SUM(amount) FILTER (WHERE is_expense = true) as total_expenses,
-                 SUM(amount) FILTER (WHERE is_expense = false) as total_income
-             FROM budget_entries
-             WHERE user_id = $1
-               AND EXTRACT(YEAR FROM date) = $2
-             GROUP BY EXTRACT(MONTH FROM date)
-             ORDER BY month`,
-            [req.userId, parsedYear]
-        );
-
-        const yearStart = `${parsedYear}-01-01`;
-        const yearEnd = `${parsedYear}-12-31`;
-
-        const recurringSeriesResult = await query(
-            `SELECT *
-             FROM recurring_expenses
-             WHERE user_id = $1
-               AND is_active = true
-               AND start_date <= $3::date
-               AND (recurrence_until IS NULL OR recurrence_until >= $2::date)`,
-            [req.userId, yearStart, yearEnd]
-        );
-
-        const recurringOccurrences = expandRecurringTransactions(
-            recurringSeriesResult.rows.map(mapRecurringTransaction),
-            yearStart,
-            yearEnd
-        );
-
-        const recurringByMonth = new Map<number, { income: number; expenses: number }>();
-
-        for (const occurrence of recurringOccurrences) {
-            const monthNum = Number(String(occurrence.occurrence_date).slice(5, 7));
-            const bucket = recurringByMonth.get(monthNum) || { income: 0, expenses: 0 };
-            if (occurrence.is_expense) {
-                bucket.expenses += toNumber(occurrence.amount);
-            } else {
-                bucket.income += toNumber(occurrence.amount);
-            }
-            recurringByMonth.set(monthNum, bucket);
-        }
-
-        const monthlyData = Array.from({ length: 12 }, (_, i) => {
-            const monthNum = i + 1;
-            const row = result.rows.find((r) => r.month === monthNum);
-            const recurring = recurringByMonth.get(monthNum) || { income: 0, expenses: 0 };
-            const totalExpenses = (row ? toNumber(row.total_expenses) : 0) + recurring.expenses;
-            const totalIncome = (row ? toNumber(row.total_income) : 0) + recurring.income;
-
-            return {
-                month: monthNum,
-                totalExpenses,
-                totalIncome,
-                recurringExpenses: recurring.expenses,
-                recurringIncome: recurring.income,
-                balance: totalIncome - totalExpenses,
-            };
-        });
+        const monthlyData = await getMonthlySeries(req.userId!, parsedYear);
 
         res.json({ success: true, data: monthlyData });
     } catch (error) {
         console.error('Get monthly budget statistics error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
+// Get annual budget statistics for a year: the totals of the same 12-month
+// series /statistics/monthly returns (one-off entries + virtual recurring
+// occurrences), savings rate, average monthly balance, best/worst month and
+// the previous year for comparison. Read-only; no schema involved.
+router.get('/statistics/annual', async (req: AuthRequest, res) => {
+    try {
+        const { year } = req.query;
+        const parsedYear = toOptionalNumber(year);
+
+        if (parsedYear === null || !Number.isInteger(parsedYear)) {
+            return res.status(400).json({ success: false, error: 'year is required' });
+        }
+
+        const monthly = await getMonthlySeries(req.userId!, parsedYear);
+
+        const totalExpenses = monthly.reduce((sum, m) => sum + m.totalExpenses, 0);
+        const totalIncome = monthly.reduce((sum, m) => sum + m.totalIncome, 0);
+        const balance = totalIncome - totalExpenses;
+        const hasActivity = totalExpenses !== 0 || totalIncome !== 0;
+
+        const best = hasActivity
+            ? monthly.reduce((a, b) => (b.balance > a.balance ? b : a))
+            : null;
+        const worst = hasActivity
+            ? monthly.reduce((a, b) => (b.balance < a.balance ? b : a))
+            : null;
+
+        const previousMonthly = await getMonthlySeries(req.userId!, parsedYear - 1);
+        const previousYearIncome = previousMonthly.reduce((sum, m) => sum + m.totalIncome, 0);
+        const previousYearExpenses = previousMonthly.reduce((sum, m) => sum + m.totalExpenses, 0);
+
+        res.json({
+            success: true,
+            data: {
+                year: parsedYear,
+                totalIncome,
+                totalExpenses,
+                balance,
+                savingsRate: totalIncome > 0 ? balance / totalIncome : 0,
+                monthlyAverage: balance / 12,
+                bestMonth: best ? { month: best.month, balance: best.balance } : null,
+                worstMonth: worst ? { month: worst.month, balance: worst.balance } : null,
+                previousYear: {
+                    totalIncome: previousYearIncome,
+                    totalExpenses: previousYearExpenses,
+                    balance: previousYearIncome - previousYearExpenses,
+                },
+            },
+        });
+    } catch (error) {
+        console.error('Get annual budget statistics error:', error);
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });

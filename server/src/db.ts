@@ -3,6 +3,7 @@ import { loadEnv } from './config/loadEnv';
 import logger from './lib/logger';
 import { runVersionedMigrations } from './migrations/runner';
 import { coreMigrations } from './migrations/registry';
+import { annualMigrations } from './migrations/annual';
 
 loadEnv();
 
@@ -684,7 +685,11 @@ export const runMigrations = async () => {
             for (const migration of migrations) {
                 await client.query(migration);
             }
-            const report = await runVersionedMigrations(client, coreMigrations);
+            // Upstream migrations first, then this fork's downstream list
+            // ('annual/…'): the runner records each id with its checksum, so
+            // both namespaces coexist in openfamily_schema_migrations and the
+            // official images only log the fork's ids as unknown, never fail.
+            const report = await runVersionedMigrations(client, [...coreMigrations, ...annualMigrations]);
             if (report.unknown.length > 0) {
                 // A newer OpenFamily ran against this database before this one.
                 // Its tables are still there; say so rather than refuse to start.

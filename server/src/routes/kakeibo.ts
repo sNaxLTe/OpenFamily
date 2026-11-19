@@ -171,6 +171,160 @@ router.get('/', async (req: AuthRequest, res) => {
     }
 });
 
+// GET /api/kakeibo/annual?year=YYYY — the year's Kakeibo (feature 5): savings
+// goals of the 12 months vs what was actually saved each month, expenses rolled
+// up by pillar over the whole year, and the end-of-year notes (annual/0004).
+// Same data and same semantics as GET / per month: salaries + one-off income
+// minus (one-off expenses + recurring expense occurrences). Read-only, open
+// to every account of the family like GET /.
+router.get('/annual', async (req: AuthRequest, res) => {
+    try {
+        const year = Number(req.query.year);
+        if (!Number.isInteger(year)) {
+            return res.status(400).json({ success: false, error: 'year is required' });
+        }
+
+        // Household salaries (fixed, carried every month).
+        const salaryResult = await query(
+            'SELECT COALESCE(SUM(monthly_income), 0) AS total FROM family_members WHERE user_id = $1',
+            [req.userId]
+        );
+        const salaryIncome = toNumber(salaryResult.rows[0]?.total);
+
+        // One-off entries of the year, bucketed by month and category.
+        const entryRows = await query(
+            `SELECT EXTRACT(MONTH FROM date)::int AS month, is_expense, category, SUM(amount) AS total
+             FROM budget_entries
+             WHERE user_id = $1 AND EXTRACT(YEAR FROM date) = $2
+             GROUP BY 1, 2, 3`,
+            [req.userId, year]
+        );
+
+        // Recurring expense occurrences of the year (same series filter as the
+        // monthly view), bucketed by month and category.
+        const yearStart = `${year}-01-01`;
+        const yearEnd = `${year}-12-31`;
+        const recurringSeries = await query(
+            `SELECT * FROM recurring_expenses
+             WHERE user_id = $1 AND is_active = true AND is_expense = true
+               AND start_date <= $3::date
+               AND (recurrence_until IS NULL OR recurrence_until >= $2::date)`,
+            [req.userId, yearStart, yearEnd]
+        );
+        const recurringOccurrences = expandRecurringTransactions(recurringSeries.rows, yearStart, yearEnd);
+
+        const months = Array.from({ length: 12 }, (_, i) => ({
+            month: i + 1,
+            extraIncome: 0,
+            expenses: 0,
+            byCategory: new Map<string, number>(),
+        }));
+        const yearByCategory = new Map<string, number>();
+
+        for (const row of entryRows.rows as Array<{ month: number; is_expense: boolean; category: string; total: unknown }>) {
+            const bucket = months[row.month - 1];
+            const amount = toNumber(row.total);
+            if (row.is_expense) {
+                bucket.expenses += amount;
+                bucket.byCategory.set(row.category, (bucket.byCategory.get(row.category) ?? 0) + amount);
+                yearByCategory.set(row.category, (yearByCategory.get(row.category) ?? 0) + amount);
+            } else {
+                bucket.extraIncome += amount;
+            }
+        }
+        for (const occurrence of recurringOccurrences as Array<{ occurrence_date: string; category: string; amount: unknown }>) {
+            const monthNum = Number(String(occurrence.occurrence_date).slice(5, 7));
+            const amount = toNumber(occurrence.amount);
+            const bucket = months[monthNum - 1];
+            bucket.expenses += amount;
+            bucket.byCategory.set(occurrence.category, (bucket.byCategory.get(occurrence.category) ?? 0) + amount);
+            yearByCategory.set(occurrence.category, (yearByCategory.get(occurrence.category) ?? 0) + amount);
+        }
+
+        // Savings goals per month.
+        const goalsResult = await query(
+            'SELECT month, savings_goal FROM kakeibo_months WHERE user_id = $1 AND year = $2',
+            [req.userId, year]
+        );
+        const goalByMonth = new Map<number, number>(
+            (goalsResult.rows as Array<{ month: number; savings_goal: unknown }>).map((r) => [r.month, toNumber(r.savings_goal)])
+        );
+        const goalsTotal = Array.from(goalByMonth.values()).reduce((s, v) => s + v, 0);
+
+        // Pillars over the whole year.
+        const overridesResult = await query('SELECT kakeibo_pillars FROM users WHERE id = $1', [req.userId]);
+        const overrides = parsePillars(overridesResult.rows[0]?.kakeibo_pillars);
+        const byPillar: Record<Pillar, number> = { survival: 0, wants: 0, culture: 0, extra: 0 };
+        const byCategory: Array<{ category: string; amount: number; pillar: Pillar }> = [];
+        for (const [category, amount] of yearByCategory.entries()) {
+            const pillar = pillarFor(category, overrides);
+            byPillar[pillar] += amount;
+            byCategory.push({ category, amount, pillar });
+        }
+        byCategory.sort((a, b) => b.amount - a.amount);
+
+        const monthly = months.map((m) => ({
+            month: m.month,
+            savings_goal: goalByMonth.get(m.month) ?? 0,
+            realized: salaryIncome + m.extraIncome - m.expenses,
+        }));
+        const realizedTotal = monthly.reduce((s, m) => s + m.realized, 0);
+
+        // End-of-year notes (annual/0004), null when none.
+        const notesResult = await query(
+            'SELECT notes FROM kakeibo_annual_notes WHERE user_id = $1 AND year = $2',
+            [req.userId, year]
+        );
+        const notes: string | null = notesResult.rows[0]?.notes ?? null;
+
+        res.json({
+            success: true,
+            data: {
+                year,
+                goalsTotal,
+                realizedTotal,
+                savingsGoalReached: realizedTotal >= goalsTotal,
+                byPillar,
+                byCategory,
+                monthly,
+                notes,
+            },
+        });
+    } catch (error) {
+        console.error('Get annual kakeibo error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
+// PUT /api/kakeibo/annual/notes — parents set (or clear, notes: null) the
+// end-of-year notes. body: { year, notes }
+router.put('/annual/notes', requireParent, async (req: AuthRequest, res) => {
+    try {
+        const { year, notes } = req.body as { year?: unknown; notes?: unknown };
+        const y = Number(year);
+        if (!Number.isInteger(y)) {
+            return res.status(400).json({ success: false, error: 'year is required' });
+        }
+        if (notes === undefined) {
+            return res.status(400).json({ success: false, error: 'notes is required (string, or null to clear)' });
+        }
+        const cleanNotes = notes === null ? null : typeof notes === 'string' ? notes.slice(0, 2000) : null;
+
+        await query(
+            `INSERT INTO kakeibo_annual_notes (user_id, year, notes)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (user_id, year)
+             DO UPDATE SET notes = EXCLUDED.notes, updated_at = CURRENT_TIMESTAMP`,
+            [req.userId, y, cleanNotes]
+        );
+        broadcast(req.userId!, { type: 'update', entity: 'budget', action: 'updated' });
+        res.json({ success: true, data: { year: y, notes: cleanNotes } });
+    } catch (error) {
+        console.error('Update annual kakeibo notes error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
 // PUT /api/kakeibo/income — parents set each member's fixed monthly salary.
 // body: { incomes: { [memberId]: number } }
 router.put('/income', requireParent, async (req: AuthRequest, res) => {

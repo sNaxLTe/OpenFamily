@@ -57,4 +57,22 @@ export const annualMigrations: readonly Migration[] = [
             'CREATE INDEX IF NOT EXISTS idx_annual_reminder_log_sent_at ON annual_reminder_log(sent_at)',
         ],
     },
+    {
+        // End-of-year notes of the Kakeibo mode (fonctionnalité 5): one free
+        // text per family and per year. Decision taken at the chantier: an
+        // additive table, like kakeibo_months, rather than a column.
+        id: 'annual/0004-kakeibo-annual-notes',
+        statements: [
+            `CREATE TABLE IF NOT EXISTS kakeibo_annual_notes (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                year INTEGER NOT NULL,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (user_id, year)
+            )`,
+            'CREATE INDEX IF NOT EXISTS idx_kakeibo_annual_notes_user ON kakeibo_annual_notes(user_id)',
+        ],
+    },
 ];

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { query, getClient } from '../db';
 import { authMiddleware, AuthRequest, requireParent } from '../middleware/auth';
 import { toNullIfEmpty, toOptionalNumber } from '../lib/normalize';
@@ -1632,11 +1632,171 @@ router.post('/recurring/:id/point', requireParent, async (req: AuthRequest, res)
     }
 });
 
+// ─── Forecast projection (feature 11): GET /api/budget/forecast?months=N ─────
+// With months=N (integer 1..24) the route projects the N months AFTER the
+// current one: recurring occurrences via expandRecurringTransactions (same
+// series filter as everywhere), the one-off ("variable") part estimated as the
+// average per month of the last variable_months real months (default 6, 0 =
+// recurring only), and the cumulative balance opened on what is realized
+// through the end of the current month. Pointed recurring payments live in
+// recurring_expense_logs, never in budget_entries, so nothing is counted twice.
+// Without the months param, the month/year behaviour of the route is unchanged.
+
+const shiftMonth = (year: number, month: number, offset: number) => {
+    const total = year * 12 + (month - 1) + offset;
+    return { year: Math.floor(total / 12), month: (total % 12) + 1 };
+};
+
+const handleForecastProjection = async (req: AuthRequest, res: Response) => {
+    const months = toOptionalNumber(req.query.months);
+    if (months === null || !Number.isInteger(months) || months < 1 || months > 24) {
+        return res.status(400).json({ success: false, error: 'months must be an integer between 1 and 24' });
+    }
+    const rawVariableMonths = req.query.variable_months;
+    const variableMonths = rawVariableMonths === undefined ? 6 : toOptionalNumber(rawVariableMonths);
+    if (variableMonths === null || !Number.isInteger(variableMonths) || variableMonths < 0 || variableMonths > 36) {
+        return res.status(400).json({ success: false, error: 'variable_months must be an integer between 0 and 36' });
+    }
+
+    // "Today" follows the client's local date, like the month/year mode below.
+    const requestedAsOf = parseDateOnly(req.query.as_of);
+    const fallbackNow = new Date();
+    const asOf = requestedAsOf ?? new Date(Date.UTC(
+        fallbackNow.getUTCFullYear(),
+        fallbackNow.getUTCMonth(),
+        fallbackNow.getUTCDate()
+    ));
+    const asOfValue = formatDateOnly(asOf);
+    const currentYear = asOf.getUTCFullYear();
+    const currentMonth = asOf.getUTCMonth() + 1;
+    const currentRange = getMonthRange(currentYear, currentMonth);
+
+    // Opening balance: everything realized through the end of the current
+    // month — one-off entries plus every recurring occurrence up to then
+    // (series that have since ended included), same semantics as statistics.
+    const entriesHist = await query(
+        `SELECT
+             SUM(amount) FILTER (WHERE is_expense = false) as total_income,
+             SUM(amount) FILTER (WHERE is_expense = true) as total_expenses
+         FROM budget_entries
+         WHERE user_id = $1 AND date <= $2::date`,
+        [req.userId, currentRange.end]
+    );
+    const histSeries = await query(
+        `SELECT *
+         FROM recurring_expenses
+         WHERE user_id = $1
+           AND is_active = true
+           AND start_date <= $2::date`,
+        [req.userId, currentRange.end]
+    );
+    let opening =
+        toNumber(entriesHist.rows[0]?.total_income) -
+        toNumber(entriesHist.rows[0]?.total_expenses);
+    for (const row of histSeries.rows) {
+        const series = mapRecurringTransaction(row);
+        if (!series.start_date || series.start_date > currentRange.end) continue;
+        for (const occurrence of expandRecurringTransactions([series], series.start_date, currentRange.end)) {
+            if (occurrence.is_expense) opening -= toNumber(occurrence.amount);
+            else opening += toNumber(occurrence.amount);
+        }
+    }
+
+    // Variable (one-off) estimate: average per month over the last
+    // variable_months real months, ending with the current one.
+    let estimatedVariable = 0;
+    let estimatedVariableIncome = 0;
+    if (variableMonths > 0) {
+        const windowFirst = shiftMonth(currentYear, currentMonth, -(variableMonths - 1));
+        const windowStart = getMonthRange(windowFirst.year, windowFirst.month).start;
+        const variableRows = await query(
+            `SELECT
+                 SUM(amount) FILTER (WHERE is_expense = true) as expenses,
+                 SUM(amount) FILTER (WHERE is_expense = false) as income
+             FROM budget_entries
+             WHERE user_id = $1
+               AND date >= $2::date
+               AND date <= $3::date`,
+            [req.userId, windowStart, currentRange.end]
+        );
+        estimatedVariable = toNumber(variableRows.rows[0]?.expenses) / variableMonths;
+        estimatedVariableIncome = toNumber(variableRows.rows[0]?.income) / variableMonths;
+    }
+
+    // Horizon: the N months after the current one.
+    const horizon: Array<Record<string, unknown>> = [];
+    let cumulative = opening;
+    for (let i = 1; i <= months; i++) {
+        const { year, month } = shiftMonth(currentYear, currentMonth, i);
+        const range = getMonthRange(year, month);
+        const seriesResult = await query(
+            `SELECT *
+             FROM recurring_expenses
+             WHERE user_id = $1
+               AND is_active = true
+               AND start_date <= $3::date
+               AND (recurrence_until IS NULL OR recurrence_until >= $2::date)`,
+            [req.userId, range.start, range.end]
+        );
+
+        let recurringExpenses = 0;
+        let recurringIncome = 0;
+        for (const occurrence of expandRecurringTransactions(
+            seriesResult.rows.map(mapRecurringTransaction),
+            range.start,
+            range.end
+        )) {
+            if (occurrence.is_expense) recurringExpenses += toNumber(occurrence.amount);
+            else recurringIncome += toNumber(occurrence.amount);
+        }
+
+        const projectedExpenses = recurringExpenses + estimatedVariable;
+        const projectedIncome = recurringIncome + estimatedVariableIncome;
+        const monthlyBalance = projectedIncome - projectedExpenses;
+        cumulative += monthlyBalance;
+
+        horizon.push({
+            month: `${year}-${String(month).padStart(2, '0')}`,
+            recurring_expenses: recurringExpenses,
+            recurring_income: recurringIncome,
+            estimated_variable: estimatedVariable,
+            estimated_variable_income: estimatedVariableIncome,
+            projected_expenses: projectedExpenses,
+            projected_income: projectedIncome,
+            monthly_balance: monthlyBalance,
+            cumulative_balance: cumulative,
+        });
+    }
+
+    return res.json({
+        success: true,
+        data: {
+            generated_at: new Date().toISOString(),
+            as_of: asOfValue,
+            horizon: months,
+            variable_months: variableMonths,
+            opening_balance: opening,
+            months: horizon,
+            assumptions: {
+                base: 'balance realized through the end of the current month (entries + recurring occurrences)',
+                variable_window_months: variableMonths,
+                no_double_count: 'pointed recurring payments live in recurring_expense_logs, not budget_entries',
+            },
+        },
+    });
+};
+
 // Current Balance carries forward every prior Budget transaction and includes
 // recurring occurrences in the selected month only once their due date arrives.
 // Forecast Balance also includes upcoming recurring income and expenses.
+// With ?months=N (feature 11) this same route projects the N following months
+// instead; without it, the behaviour below is exactly what it always was.
 router.get('/forecast', async (req: AuthRequest, res) => {
     try {
+        if (req.query.months !== undefined) {
+            return handleForecastProjection(req, res);
+        }
+
         const parsedMonth = toOptionalNumber(req.query.month);
         const parsedYear = toOptionalNumber(req.query.year);
 

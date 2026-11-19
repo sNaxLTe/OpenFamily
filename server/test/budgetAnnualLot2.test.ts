@@ -50,19 +50,19 @@ const makeChild = async (): Promise<{ token: string; user: { id: string } }> => 
 describe('migrations annual/0002 and annual/0003', () => {
     it('validate in the combined registry and are recorded in the database', async () => {
         expect(() => validateRegistry([...coreMigrations, ...annualMigrations])).not.toThrow();
-        expect(annualMigrations.map((m) => m.id)).toEqual([
+        const ids = annualMigrations.map((m) => m.id);
+        expect(ids).toEqual(expect.arrayContaining([
             'annual/0001-recurring-reminder-days',
             'annual/0002-annual-budget-limits',
             'annual/0003-budget-reminder-log',
-        ]);
+        ]));
+        // Ordered, unique, and each one applied exactly once.
+        expect(new Set(ids).size).toBe(ids.length);
+        expect([...ids].sort()).toEqual(ids);
         const recorded = await query(
             "SELECT id FROM openfamily_schema_migrations WHERE id LIKE 'annual/%' ORDER BY id"
         );
-        expect(recorded.rows.map((r) => r.id)).toEqual([
-            'annual/0001-recurring-reminder-days',
-            'annual/0002-annual-budget-limits',
-            'annual/0003-budget-reminder-log',
-        ]);
+        expect(recorded.rows.map((r) => r.id)).toEqual([...ids].sort());
     });
 
     it('made budget_limits.month nullable and enforces one annual row per (user, category, year)', async () => {

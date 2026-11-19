@@ -33,6 +33,7 @@ export const FAMILY_TABLES: ReadonlyArray<{ table: string; column: string }> = [
     { table: 'recurring_expenses', column: 'user_id' },
     { table: 'recurring_expense_logs', column: 'user_id' },
     { table: 'kakeibo_months', column: 'user_id' },
+    { table: 'kakeibo_annual_notes', column: 'user_id' },
     { table: 'reward_transactions', column: 'user_id' },
     { table: 'reward_settings', column: 'user_id' },
     { table: 'reward_goals', column: 'user_id' },

@@ -29,5 +29,20 @@
   "goalReached": "Goal reached: {{amount}} above target!",
   "goalMissed": "{{amount}} short of your goal.",
   "notesLabel": "Reflection notes",
-  "notesPlaceholder": "What went well? What can improve next month?"
+  "notesPlaceholder": "What went well? What can improve next month?",
+  "annual": {
+    "title": "{{year}} summary",
+    "goalsTotal": "Total goals",
+    "realized": "Actually saved",
+    "reached": "Goals reached ✓",
+    "missed": "{{amount}} left to save",
+    "pillarsTitle": "The 4 pillars over the year",
+    "monthlyTitle": "Savings month by month",
+    "month": "Month",
+    "goal": "Goal",
+    "realizedCol": "Saved",
+    "notesTitle": "End-of-year notes",
+    "notesPlaceholder": "Year review: what worked, what changes next year…",
+    "noData": "No data for {{year}}."
+  }
 }

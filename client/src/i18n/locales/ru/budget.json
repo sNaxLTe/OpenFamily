@@ -127,5 +127,61 @@
     "deleteRecurring": "Удалить это регулярное списание?",
     "deleteEntry": "Удалить эту запись?"
   },
-  "classic": "Классический"
+  "classic": "Классический",
+  "view": {
+    "month": "Месяц",
+    "year": "Год"
+  },
+  "annual": {
+    "recap": {
+      "income": "Доходы",
+      "expenses": "Расходы",
+      "balance": "Баланс",
+      "savingsRate": "Норма сбережений",
+      "monthlyAverage": "В среднем за месяц",
+      "bestMonth": "Лучший месяц",
+      "worstMonth": "Худший месяц",
+      "vsPrevious": "К {{year}}"
+    },
+    "noData": "Нет данных за {{year}}.",
+    "chartTitle": "Расходы и доходы {{year}}",
+    "chartRecurring": "Регулярные",
+    "chartOneOff": "Разовые",
+    "chartIncome": "Доходы",
+    "recurring": {
+      "title": "Регулярные {{year}}",
+      "seriesCount_one": "{{count}} активная серия",
+      "seriesCount_other": "{{count}} активных серий",
+      "committed": "за год: {{amount}}",
+      "nextDue": "Ближайший платёж",
+      "nextTen": "Ближайшие 10 платежей",
+      "schedule": "График {{year}}",
+      "filterCategory": "Категория",
+      "allCategories": "Все категории",
+      "filterType": "Тип",
+      "all": "Все",
+      "expenses": "Расходы",
+      "incomes": "Доходы",
+      "empty": "Нет событий."
+    },
+    "limits": {
+      "title": "Годовые лимиты",
+      "subtitle": "Расходы года по категориям",
+      "define": "Задать",
+      "none": "Годовой лимит не задан",
+      "sheet": "Годовой лимит",
+      "field": "Годовой лимит ({{currency}})",
+      "hint": "Предупреждение при 80 % лимита за {{year}}.",
+      "delete": "Удалить лимит",
+      "deleteConfirm": "Удалить этот годовой лимит?"
+    }
+  },
+  "reminders": {
+    "title": "Напоминания",
+    "calendarLinked": "Связанное событие календаря: напоминания настраиваются в нём.",
+    "calendarLink": "Открыть календарь",
+    "budgetLabel": "Напоминание о бюджете за J-X дней",
+    "budgetPlaceholder": "напр. 3 (пусто = нет)",
+    "budgetHint": "Уведомление отправляется за X дней до каждого события (0 = в тот же день). Совмещается с напоминаниями календаря."
+  }
 }

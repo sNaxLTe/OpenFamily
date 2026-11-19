@@ -29,5 +29,20 @@
   "goalReached": "Objetivo alcanzado: {{amount}} por encima de la meta.",
   "goalMissed": "Te faltan {{amount}} para alcanzar tu objetivo.",
   "notesLabel": "Notas de reflexión",
-  "notesPlaceholder": "¿Qué salió bien? ¿Qué puede mejorar el mes que viene?"
+  "notesPlaceholder": "¿Qué salió bien? ¿Qué puede mejorar el mes que viene?",
+  "annual": {
+    "title": "Resumen {{year}}",
+    "goalsTotal": "Objetivos acumulados",
+    "realized": "Ahorrado real",
+    "reached": "Objetivos cumplidos ✓",
+    "missed": "Faltan {{amount}} por ahorrar",
+    "pillarsTitle": "Los 4 pilares en el año",
+    "monthlyTitle": "Ahorro mes a mes",
+    "month": "Mes",
+    "goal": "Objetivo",
+    "realizedCol": "Ahorrado",
+    "notesTitle": "Notas de fin de año",
+    "notesPlaceholder": "Balance del año: qué funcionó, qué cambiar el año que viene…",
+    "noData": "Sin datos para {{year}}."
+  }
 }

@@ -29,5 +29,20 @@
   "goalReached": "Objectiu assolit: {{amount}} per sobre de la meta!",
   "goalMissed": "Et falten {{amount}} per assolir l’objectiu.",
   "notesLabel": "Notes de reflexió",
-  "notesPlaceholder": "Què ha anat bé? Què es pot millorar el mes vinent?"
+  "notesPlaceholder": "Què ha anat bé? Què es pot millorar el mes vinent?",
+  "annual": {
+    "title": "Balanç {{year}}",
+    "goalsTotal": "Objectius acumulats",
+    "realized": "Estalviat realment",
+    "reached": "Objectius assolits ✓",
+    "missed": "Falten {{amount}} per estalviar",
+    "pillarsTitle": "Els 4 pilars a l'any",
+    "monthlyTitle": "Estalvi mes a mes",
+    "month": "Mes",
+    "goal": "Objectiu",
+    "realizedCol": "Estalviat",
+    "notesTitle": "Notes de final d'any",
+    "notesPlaceholder": "Balanç de l'any: què ha funcionat, què canviem el proper any…",
+    "noData": "Sense dades per a {{year}}."
+  }
 }

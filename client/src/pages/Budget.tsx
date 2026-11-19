@@ -6,18 +6,21 @@ import { formatCurrency } from '../lib/utils';
 import {
     Plus, ChevronLeft, ChevronRight, Check, RefreshCw,
     Trash2, Edit2, TrendingUp, TrendingDown, Wallet, Eye,
-    X, Calendar, AlertTriangle, Lock
+    Calendar, AlertTriangle, Lock
 } from 'lucide-react';
 import KakeiboView from './budget/KakeiboView';
+import KakeiboAnnualView from './budget/KakeiboAnnualView';
+import AnnualBudgetView from './budget/AnnualBudgetView';
+import { Sheet, Field, CategorySelect } from './budget/budgetParts';
 import {
     PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
     ResponsiveContainer, Legend,
 } from 'recharts';
 import ChartCard from '../components/app/ChartCard';
 import { format, parseISO } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { dateLocale, intlLocale } from '../i18n/format';
-import { useCategories } from '../hooks/useCategories';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,6 +42,7 @@ interface RecurringTransaction {
     is_pointed: boolean;
     pointed_at?: string | null;
     linked_calendar_event_id?: string | null;
+    reminder_days?: number | null;
 }
 
 interface BudgetEntry {
@@ -105,89 +109,13 @@ const toNumber = (v: unknown): number => {
     return 0;
 };
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-const Sheet: React.FC<{ open: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({
-    open, onClose, title, children
-}) => {
-    if (!open) return null;
-    return (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-            <div
-                className="relative bg-background rounded-t-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex items-center justify-between p-4 border-b border-border">
-                    <h2 className="text-lg font-semibold">{title}</h2>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-surface-2 transition-colors">
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
-                <div className="p-4">{children}</div>
-            </div>
-        </div>
-    );
-};
-
-const Field: React.FC<{
-    label: string;
-    type?: string;
-    value: string;
-    onChange: (v: string) => void;
-    placeholder?: string;
-    required?: boolean;
-    min?: string;
-    max?: string;
-    step?: string;
-}> = ({ label, type = 'text', value, onChange, placeholder, required, min, max, step }) => (
-    <div>
-        <label className="block text-sm font-medium text-foreground mb-1">{label}</label>
-        <input
-            type={type}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            required={required}
-            min={min}
-            max={max}
-            step={step}
-            className="w-full px-3 py-2.5 rounded-xl border border-border bg-surface-1 text-foreground text-base
-                       focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
-        />
-    </div>
-);
-
-const CategorySelect: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => {
-    const { t } = useTranslation('budget');
-    // Family-customizable list (Settings → Categories). If the current value is no
-    // longer in the list (legacy row, renamed category), keep it selectable so the
-    // form doesn't silently change the entry's category.
-    const { categories: familyCategories } = useCategories();
-    const list = !value || familyCategories.budget.includes(value)
-        ? familyCategories.budget
-        : [value, ...familyCategories.budget];
-    return (
-        <div>
-            <label className="block text-sm font-medium text-foreground mb-1">{t('fields.category')}</label>
-            <select
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-border bg-surface-1 text-foreground text-base
-                           focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
-            >
-                {list.map((c) => <option key={c} value={c}>{t(`categories.${c}`, { defaultValue: c })}</option>)}
-            </select>
-        </div>
-    );
-};
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const Budget: React.FC = () => {
     const { t } = useTranslation(['budget', 'kakeibo', 'common']);
     const categoryLabel = (v: string) => t(`budget:categories.${v}`, { defaultValue: v });
     const { user } = useAuth();
+    const navigate = useNavigate();
     const currency = user?.currency || 'EUR';
     const canEdit = Boolean(user?.is_owner) || (user?.role ?? '').toLowerCase() !== 'enfant';
 
@@ -204,6 +132,27 @@ const Budget: React.FC = () => {
 
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
     const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+
+    // Month (default) or year view of the Budget page (feature 1). The choice
+    // sticks per browser; the default stays "month".
+    type ViewMode = 'month' | 'year';
+    const [view, setView] = useState<ViewMode>(() =>
+        localStorage.getItem('openfamily.budgetView') === 'year' ? 'year' : 'month'
+    );
+    const switchView = (next: ViewMode) => {
+        setView(next);
+        localStorage.setItem('openfamily.budgetView', next);
+        // The analytics tab is month-oriented; the annual view replaces it.
+        if (next === 'year') {
+            setMode((m) => {
+                const nextMode = m === 'analytics' ? 'classic' : m;
+                if (nextMode !== m) localStorage.setItem('openfamily.budgetMode', nextMode);
+                return nextMode;
+            });
+        }
+    };
+    // In year view, only the annual blocks are shown.
+    const showAnnual = view === 'year' && mode !== 'kakeibo';
 
     const [forecast, setForecast] = useState<Forecast | null>(null);
     const [recurring, setRecurring] = useState<RecurringTransaction[]>([]);
@@ -299,6 +248,14 @@ const Budget: React.FC = () => {
         setCurrentYear(y);
     };
 
+    const navigateYear = (dir: -1 | 1) => {
+        setCurrentYear((y) => y + dir);
+    };
+
+    // Budget reminder ("J-X days") of the recurring series being edited
+    // (feature 3, mechanism B). Empty string = no budget reminder.
+    const [reminderDays, setReminderDays] = useState('');
+
     const handleTogglePoint = async (r: RecurringTransaction) => {
         if (!r.occurrence_date) return;
 
@@ -325,6 +282,7 @@ const Budget: React.FC = () => {
         setEditingRecurring(null);
         setEditingEntry(null);
         setTransactionAddToCalendar(false);
+        setReminderDays('');
         setTransactionForm({
             description: '',
             amount: '',
@@ -343,6 +301,7 @@ const Budget: React.FC = () => {
         setEditingRecurring(r);
         setEditingEntry(null);
         setTransactionAddToCalendar(Boolean(r.linked_calendar_event_id));
+        setReminderDays(r.reminder_days != null ? String(r.reminder_days) : '');
         setTransactionForm({
             description: r.label,
             amount: r.amount.toString(),
@@ -433,10 +392,23 @@ const Budget: React.FC = () => {
                 };
 
                 if (editingRecurring) {
-                    await api.put(
-                        `/api/budget/recurring/${editingRecurring.series_id ?? editingRecurring.id}`,
-                        payload
-                    );
+                    const seriesId = editingRecurring.series_id ?? editingRecurring.id;
+                    await api.put(`/api/budget/recurring/${seriesId}`, payload);
+                    // Feature 3, mechanism B: the budget reminder "J-X days"
+                    // lives on its own endpoint and coexists with the calendar
+                    // link (mechanism A). Empty field = reminder cleared.
+                    const rawReminder = reminderDays.trim();
+                    const parsedReminder = rawReminder === '' ? null : parseInt(rawReminder, 10);
+                    const previousReminder = editingRecurring.reminder_days ?? null;
+                    if (
+                        parsedReminder !== previousReminder &&
+                        (parsedReminder === null ||
+                            (Number.isInteger(parsedReminder) && parsedReminder >= 0 && parsedReminder <= 365))
+                    ) {
+                        await api.put(`/api/budget/recurring/${seriesId}/reminder`, {
+                            reminder_days: parsedReminder,
+                        });
+                    }
                 } else {
                     await api.post('/api/budget/recurring', payload);
                 }
@@ -543,23 +515,49 @@ const Budget: React.FC = () => {
         // strip down the middle.
         <div className="mx-auto max-w-2xl pb-24 xl:max-w-6xl">
 
-            {/* Navigation mois */}
+            {/* Navigation mois / année */}
             <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-background/80 backdrop-blur-md z-10 border-b border-border">
                 <button
-                    onClick={() => navigateMonth(-1)}
+                    onClick={() => (view === 'month' ? navigateMonth(-1) : navigateYear(-1))}
                     className="p-2 rounded-full hover:bg-surface-2 active:scale-95 transition-all"
                 >
                     <ChevronLeft className="w-5 h-5" />
                 </button>
                 <span className="text-lg font-semibold capitalize">
-                    {format(new Date(currentYear, currentMonth - 1), 'MMMM yyyy', { locale: dateLocale() })}
+                    {view === 'month'
+                        ? format(new Date(currentYear, currentMonth - 1), 'MMMM yyyy', { locale: dateLocale() })
+                        : `${currentYear}`}
                 </span>
                 <button
-                    onClick={() => navigateMonth(1)}
+                    onClick={() => (view === 'month' ? navigateMonth(1) : navigateYear(1))}
                     className="p-2 rounded-full hover:bg-surface-2 active:scale-95 transition-all"
                 >
                     <ChevronRight className="w-5 h-5" />
                 </button>
+            </div>
+
+            {/* Toggle Mois / Année (feature 1 ; default month) */}
+            <div className="px-4 pt-3">
+                <div className="flex gap-1 rounded-input border border-border bg-surface-2 p-1 max-w-xs">
+                    <button
+                        type="button"
+                        onClick={() => switchView('month')}
+                        className={`flex-1 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
+                            view === 'month' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        {t('budget:view.month')}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => switchView('year')}
+                        className={`flex-1 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
+                            view === 'year' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        {t('budget:view.year')}
+                    </button>
+                </div>
             </div>
 
             {/* Budget view switch: classic, analytics, kakeibo */}
@@ -574,15 +572,17 @@ const Budget: React.FC = () => {
                     >
                         {t('budget:classic')}
                     </button>
-                    <button
-                        type="button"
-                        onClick={() => switchMode('analytics')}
-                        className={`flex-1 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
-                            mode === 'analytics' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                        {t('budget:analytics')}
-                    </button>
+                    {view === 'month' && (
+                        <button
+                            type="button"
+                            onClick={() => switchMode('analytics')}
+                            className={`flex-1 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
+                                mode === 'analytics' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            {t('budget:analytics')}
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={() => switchMode('kakeibo')}
@@ -595,7 +595,18 @@ const Budget: React.FC = () => {
                 </div>
             </div>
 
-            {mode === 'kakeibo' && (
+            {mode === 'kakeibo' && view === 'year' && (
+                <div className="px-4 pt-3 xl:mx-auto xl:max-w-3xl">
+                    <KakeiboAnnualView
+                        year={currentYear}
+                        canEdit={canEdit}
+                        currency={currency}
+                        categoryLabel={categoryLabel}
+                    />
+                </div>
+            )}
+
+            {mode === 'kakeibo' && view === 'month' && (
                 <div className="px-4 pt-3 xl:mx-auto xl:max-w-3xl">
                     <KakeiboView
                         month={currentMonth}
@@ -608,7 +619,17 @@ const Budget: React.FC = () => {
                 </div>
             )}
 
-            {mode === 'classic' && canEdit && (
+            {/* Annual view of the classic tab (feature 1 + 2 + 4) */}
+            {showAnnual && (
+                <AnnualBudgetView
+                    year={currentYear}
+                    currency={currency}
+                    canEdit={canEdit}
+                    categoryLabel={categoryLabel}
+                />
+            )}
+
+            {mode === 'classic' && !showAnnual && canEdit && (
                 <div className="px-4 pt-4 flex justify-end">
                     <button
                         type="button"
@@ -621,7 +642,7 @@ const Budget: React.FC = () => {
                 </div>
             )}
 
-            {mode === 'analytics' && (
+            {mode === 'analytics' && view === 'month' && (
                 <div className="px-4 pt-4 [&>*]:mb-3 [&>*]:break-inside-avoid xl:columns-2 xl:gap-6">
                             {/* Répartition par catégorie */}
                             <ChartCard
@@ -722,7 +743,7 @@ const Budget: React.FC = () => {
                 </div>
             )}
 
-            <div className="px-4 pt-4 [&>*]:mb-3 [&>*]:break-inside-avoid xl:columns-2 xl:gap-6" style={{ display: mode === 'classic' ? undefined : 'none' }}>
+            <div className="px-4 pt-4 [&>*]:mb-3 [&>*]:break-inside-avoid xl:columns-2 xl:gap-6" style={{ display: mode === 'classic' && !showAnnual ? undefined : 'none' }}>
 
                 {/* Bannière lecture seule (enfant) */}
                 {!canEdit && (
@@ -1132,6 +1153,38 @@ const Budget: React.FC = () => {
                             </span>
                         </span>
                     </label>
+
+                    {/* Rappels de la série récurrente (feature 3) : les deux
+                        mécanismes coexistent — A = rappels de l'événement de
+                        calendrier lié (case ci-dessus), B = rappel budget J-X. */}
+                    {editingRecurring && (
+                        <div className="space-y-3 rounded-xl border border-border bg-surface-2/40 p-3">
+                            <p className="text-sm font-medium">{t('budget:reminders.title')}</p>
+                            {editingRecurring.linked_calendar_event_id && (
+                                <p className="text-xs text-muted-foreground">
+                                    {t('budget:reminders.calendarLinked')}{' '}
+                                    <button
+                                        type="button"
+                                        onClick={() => { setSheetTransaction(false); navigate('/calendar'); }}
+                                        className="text-primary underline"
+                                    >
+                                        {t('budget:reminders.calendarLink')}
+                                    </button>
+                                </p>
+                            )}
+                            <Field
+                                label={t('budget:reminders.budgetLabel')}
+                                type="number"
+                                value={reminderDays}
+                                onChange={setReminderDays}
+                                placeholder={t('budget:reminders.budgetPlaceholder')}
+                                min="0"
+                                max="365"
+                                step="1"
+                            />
+                            <p className="text-xs text-muted-foreground">{t('budget:reminders.budgetHint')}</p>
+                        </div>
+                    )}
 
                     <div className="flex gap-3 pt-2">
                         <button

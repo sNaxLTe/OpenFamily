@@ -111,5 +111,61 @@
     "deleteRecurring": "删除这条定期记录？",
     "deleteEntry": "删除这条记录？"
   },
-  "classic": "经典"
+  "classic": "经典",
+  "view": {
+    "month": "月",
+    "year": "年"
+  },
+  "annual": {
+    "recap": {
+      "income": "收入",
+      "expenses": "支出",
+      "balance": "结余",
+      "savingsRate": "储蓄率",
+      "monthlyAverage": "月均",
+      "bestMonth": "最佳月份",
+      "worstMonth": "最差月份",
+      "vsPrevious": "对比{{year}}"
+    },
+    "noData": "{{year}} 年暂无数据。",
+    "chartTitle": "{{year}} 收支",
+    "chartRecurring": "经常性",
+    "chartOneOff": "一次性",
+    "chartIncome": "收入",
+    "recurring": {
+      "title": "{{year}} 经常性",
+      "seriesCount_one": "{{count}} 个生效系列",
+      "seriesCount_other": "{{count}} 个生效系列",
+      "committed": "年度已承诺 {{amount}}",
+      "nextDue": "下次到期",
+      "nextTen": "接下来 10 笔",
+      "schedule": "{{year}} 时间表",
+      "filterCategory": "类别",
+      "allCategories": "全部类别",
+      "filterType": "类型",
+      "all": "全部",
+      "expenses": "支出",
+      "incomes": "收入",
+      "empty": "无记录。"
+    },
+    "limits": {
+      "title": "年度限额",
+      "subtitle": "年度支出（按类别）",
+      "define": "设置",
+      "none": "未设置年度限额",
+      "sheet": "年度限额",
+      "field": "年度限额（{{currency}}）",
+      "hint": "{{year}} 达到限额 80% 时提醒。",
+      "delete": "删除限额",
+      "deleteConfirm": "删除此年度限额？"
+    }
+  },
+  "reminders": {
+    "title": "提醒",
+    "calendarLinked": "已关联日历事件：提醒在该事件上设置。",
+    "calendarLink": "打开日历",
+    "budgetLabel": "预算提醒：提前 J-X 天",
+    "budgetPlaceholder": "如 3（留空 = 不提醒）",
+    "budgetHint": "每次发生前 X 天发送通知（0 = 当天），与日历提醒并存。"
+  }
 }

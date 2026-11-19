@@ -29,5 +29,20 @@
   "goalReached": "已达成目标，并超出 {{amount}}！",
   "goalMissed": "距离目标还差 {{amount}}。",
   "notesLabel": "复盘笔记",
-  "notesPlaceholder": "哪些方面做得好？下个月可以如何改进？"
+  "notesPlaceholder": "哪些方面做得好？下个月可以如何改进？",
+  "annual": {
+    "title": "{{year}} 总结",
+    "goalsTotal": "累计目标",
+    "realized": "实际存款",
+    "reached": "目标已达成 ✓",
+    "missed": "还差 {{amount}} 达成目标",
+    "pillarsTitle": "年度四大支柱",
+    "monthlyTitle": "逐月储蓄",
+    "month": "月份",
+    "goal": "目标",
+    "realizedCol": "已存",
+    "notesTitle": "年终备注",
+    "notesPlaceholder": "年度总结：哪些做得好，明年要改什么…",
+    "noData": "{{year}} 年暂无数据。"
+  }
 }

@@ -115,5 +115,61 @@
     "deleteRecurring": "Vols suprimir aquest moviment recurrent?",
     "deleteEntry": "Vols suprimir aquest moviment?"
   },
-  "classic": "Clàssic"
+  "classic": "Clàssic",
+  "view": {
+    "month": "Mes",
+    "year": "Any"
+  },
+  "annual": {
+    "recap": {
+      "income": "Ingressos",
+      "expenses": "Despeses",
+      "balance": "Saldo",
+      "savingsRate": "Taxa d'estalvi",
+      "monthlyAverage": "Mitjana mensual",
+      "bestMonth": "Millor mes",
+      "worstMonth": "Pitjor mes",
+      "vsPrevious": "Vs {{year}}"
+    },
+    "noData": "Sense dades per a {{year}}.",
+    "chartTitle": "Despeses i ingressos {{year}}",
+    "chartRecurring": "Recurrent",
+    "chartOneOff": "Puntual",
+    "chartIncome": "Ingressos",
+    "recurring": {
+      "title": "Recurrents {{year}}",
+      "seriesCount_one": "{{count}} sèrie activa",
+      "seriesCount_other": "{{count}} sèries actives",
+      "committed": "{{amount}} compromesos l'any",
+      "nextDue": "Proper venciment",
+      "nextTen": "Propers 10 pagaments",
+      "schedule": "Calendari {{year}}",
+      "filterCategory": "Categoria",
+      "allCategories": "Totes les categories",
+      "filterType": "Tipus",
+      "all": "Tots",
+      "expenses": "Despeses",
+      "incomes": "Ingressos",
+      "empty": "Sense ocurrències."
+    },
+    "limits": {
+      "title": "Límits anuals",
+      "subtitle": "Despesa de l'any per categoria",
+      "define": "Definir",
+      "none": "Sense límit anual definit",
+      "sheet": "Límit anual",
+      "field": "Límit anual ({{currency}})",
+      "hint": "Alerta al 80 % del límit assolit el {{year}}.",
+      "delete": "Eliminar límit",
+      "deleteConfirm": "Eliminar aquest límit anual?"
+    }
+  },
+  "reminders": {
+    "title": "Recordatoris",
+    "calendarLinked": "Esdeveniment de calendari vinculat: els recordatoris es configuren a l'esdeveniment.",
+    "calendarLink": "Obrir calendari",
+    "budgetLabel": "Recordatori de pressupost J-X dies abans",
+    "budgetPlaceholder": "ex. 3 (buit = cap)",
+    "budgetHint": "S'envia una notificació X dies abans de cada ocurrència (0 = el mateix dia). Coexisteix amb els recordatoris del calendari."
+  }
 }

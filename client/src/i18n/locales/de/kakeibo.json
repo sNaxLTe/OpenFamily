@@ -29,5 +29,20 @@
   "goalReached": "Ziel erreicht: {{amount}} über dem Ziel!",
   "goalMissed": "{{amount}} unter deinem Ziel.",
   "notesLabel": "Gedanken zum Monat",
-  "notesPlaceholder": "Was lief gut? Was lässt sich nächsten Monat verbessern?"
+  "notesPlaceholder": "Was lief gut? Was lässt sich nächsten Monat verbessern?",
+  "annual": {
+    "title": "Jahresbilanz {{year}}",
+    "goalsTotal": "Ziele gesamt",
+    "realized": "Tatsächlich gespart",
+    "reached": "Ziele erreicht ✓",
+    "missed": "Noch {{amount}} zu sparen",
+    "pillarsTitle": "Die 4 Säulen im Jahr",
+    "monthlyTitle": "Sparen Monat für Monat",
+    "month": "Monat",
+    "goal": "Ziel",
+    "realizedCol": "Gespart",
+    "notesTitle": "Jahresendnotizen",
+    "notesPlaceholder": "Jahresrückblick: was lief gut, was ändert sich nächstes Jahr…",
+    "noData": "Keine Daten für {{year}}."
+  }
 }

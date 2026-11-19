@@ -115,5 +115,61 @@
     "deleteRecurring": "¿Eliminar este movimiento recurrente?",
     "deleteEntry": "¿Eliminar este movimiento?"
   },
-  "classic": "Clásico"
+  "classic": "Clásico",
+  "view": {
+    "month": "Mes",
+    "year": "Año"
+  },
+  "annual": {
+    "recap": {
+      "income": "Ingresos",
+      "expenses": "Gastos",
+      "balance": "Saldo",
+      "savingsRate": "Tasa de ahorro",
+      "monthlyAverage": "Media mensual",
+      "bestMonth": "Mejor mes",
+      "worstMonth": "Peor mes",
+      "vsPrevious": "Vs {{year}}"
+    },
+    "noData": "Sin datos para {{year}}.",
+    "chartTitle": "Gastos e ingresos {{year}}",
+    "chartRecurring": "Recurrente",
+    "chartOneOff": "Puntual",
+    "chartIncome": "Ingresos",
+    "recurring": {
+      "title": "Recurrentes {{year}}",
+      "seriesCount_one": "{{count}} serie activa",
+      "seriesCount_other": "{{count}} series activas",
+      "committed": "{{amount}} comprometidos este año",
+      "nextDue": "Próximo vencimiento",
+      "nextTen": "Próximos 10 pagos",
+      "schedule": "Calendario {{year}}",
+      "filterCategory": "Categoría",
+      "allCategories": "Todas las categorías",
+      "filterType": "Tipo",
+      "all": "Todos",
+      "expenses": "Gastos",
+      "incomes": "Ingresos",
+      "empty": "Sin ocurrencias."
+    },
+    "limits": {
+      "title": "Límites anuales",
+      "subtitle": "Gasto del año por categoría",
+      "define": "Definir",
+      "none": "Sin límite anual definido",
+      "sheet": "Límite anual",
+      "field": "Límite anual ({{currency}})",
+      "hint": "Alerta al 80 % del límite alcanzado en {{year}}.",
+      "delete": "Eliminar límite",
+      "deleteConfirm": "¿Eliminar este límite anual?"
+    }
+  },
+  "reminders": {
+    "title": "Recordatorios",
+    "calendarLinked": "Evento de calendario vinculado: sus recordatorios se ajustan en el evento.",
+    "calendarLink": "Abrir calendario",
+    "budgetLabel": "Recordatorio de presupuesto J-X días antes",
+    "budgetPlaceholder": "p. ej. 3 (vacío = ninguno)",
+    "budgetHint": "Se envía una notificación X días antes de cada ocurrencia (0 = el mismo día). Coexiste con los recordatorios del calendario."
+  }
 }

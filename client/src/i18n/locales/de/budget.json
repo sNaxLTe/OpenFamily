@@ -115,5 +115,61 @@
     "deleteRecurring": "Diesen wiederkehrenden Posten löschen?",
     "deleteEntry": "Diesen Posten löschen?"
   },
-  "classic": "Klassisch"
+  "classic": "Klassisch",
+  "view": {
+    "month": "Monat",
+    "year": "Jahr"
+  },
+  "annual": {
+    "recap": {
+      "income": "Einnahmen",
+      "expenses": "Ausgaben",
+      "balance": "Saldo",
+      "savingsRate": "Sparquote",
+      "monthlyAverage": "Ø pro Monat",
+      "bestMonth": "Bester Monat",
+      "worstMonth": "Schlechtester Monat",
+      "vsPrevious": "Vs {{year}}"
+    },
+    "noData": "Keine Daten für {{year}}.",
+    "chartTitle": "Ausgaben und Einnahmen {{year}}",
+    "chartRecurring": "Wiederkehrend",
+    "chartOneOff": "Einmalig",
+    "chartIncome": "Einnahmen",
+    "recurring": {
+      "title": "Wiederkehrend {{year}}",
+      "seriesCount_one": "{{count}} aktive Serie",
+      "seriesCount_other": "{{count}} aktive Serien",
+      "committed": "{{amount}} für das Jahr gebunden",
+      "nextDue": "Nächste Fälligkeit",
+      "nextTen": "Nächste 10 Zahlungen",
+      "schedule": "Plan {{year}}",
+      "filterCategory": "Kategorie",
+      "allCategories": "Alle Kategorien",
+      "filterType": "Typ",
+      "all": "Alle",
+      "expenses": "Ausgaben",
+      "incomes": "Einnahmen",
+      "empty": "Keine Vorkommen."
+    },
+    "limits": {
+      "title": "Jahreslimits",
+      "subtitle": "Jahresausgaben nach Kategorie",
+      "define": "Festlegen",
+      "none": "Kein Jahreslimit festgelegt",
+      "sheet": "Jahreslimit",
+      "field": "Jahreslimit ({{currency}})",
+      "hint": "Warnung bei 80 % des Limits in {{year}}.",
+      "delete": "Limit löschen",
+      "deleteConfirm": "Dieses Jahreslimit löschen?"
+    }
+  },
+  "reminders": {
+    "title": "Erinnerungen",
+    "calendarLinked": "Verknüpftes Kalenderereignis: Dessen Erinnerungen werden dort eingestellt.",
+    "calendarLink": "Kalender öffnen",
+    "budgetLabel": "Budget-Erinnerung J-X Tage vorher",
+    "budgetPlaceholder": "z. B. 3 (leer = keiner)",
+    "budgetHint": "X Tage vor jedem Vorkommen wird eine Benachrichtigung gesendet (0 = am Tag selbst). Koexistiert mit den Kalender-Erinnerungen."
+  }
 }

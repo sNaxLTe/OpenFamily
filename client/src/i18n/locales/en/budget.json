@@ -115,5 +115,61 @@
     "deleteRecurring": "Delete this recurring entry?",
     "deleteEntry": "Delete this entry?"
   },
-  "classic": "Classic"
+  "classic": "Classic",
+  "view": {
+    "month": "Month",
+    "year": "Year"
+  },
+  "annual": {
+    "recap": {
+      "income": "Income",
+      "expenses": "Expenses",
+      "balance": "Balance",
+      "savingsRate": "Savings rate",
+      "monthlyAverage": "Monthly average",
+      "bestMonth": "Best month",
+      "worstMonth": "Worst month",
+      "vsPrevious": "Vs {{year}}"
+    },
+    "noData": "No data for {{year}}.",
+    "chartTitle": "Income and expenses {{year}}",
+    "chartRecurring": "Recurring",
+    "chartOneOff": "One-off",
+    "chartIncome": "Income",
+    "recurring": {
+      "title": "Recurring {{year}}",
+      "seriesCount_one": "{{count}} active series",
+      "seriesCount_other": "{{count}} active series",
+      "committed": "{{amount}} committed for the year",
+      "nextDue": "Next due",
+      "nextTen": "Next 10 payments",
+      "schedule": "{{year}} schedule",
+      "filterCategory": "Category",
+      "allCategories": "All categories",
+      "filterType": "Type",
+      "all": "All",
+      "expenses": "Expenses",
+      "incomes": "Income",
+      "empty": "No occurrence."
+    },
+    "limits": {
+      "title": "Annual limits",
+      "subtitle": "Year spending by category",
+      "define": "Set",
+      "none": "No annual limit set",
+      "sheet": "Annual limit",
+      "field": "Annual limit ({{currency}})",
+      "hint": "Alert at 80% of the limit reached in {{year}}.",
+      "delete": "Delete limit",
+      "deleteConfirm": "Delete this annual limit?"
+    }
+  },
+  "reminders": {
+    "title": "Reminders",
+    "calendarLinked": "Linked calendar event: its reminders are set on the event.",
+    "calendarLink": "Open calendar",
+    "budgetLabel": "Budget reminder J-X days before",
+    "budgetPlaceholder": "e.g. 3 (empty = none)",
+    "budgetHint": "A notification is sent X days before each occurrence (0 = on the day). It coexists with the calendar reminders."
+  }
 }

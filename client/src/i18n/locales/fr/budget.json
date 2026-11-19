@@ -115,5 +115,61 @@
     "deleteRecurring": "Supprimer cette écriture récurrente ?",
     "deleteEntry": "Supprimer cette entrée ?"
   },
-  "classic": "Classique"
+  "classic": "Classique",
+  "view": {
+    "month": "Mois",
+    "year": "Année"
+  },
+  "annual": {
+    "recap": {
+      "income": "Revenus",
+      "expenses": "Dépenses",
+      "balance": "Solde",
+      "savingsRate": "Taux d'épargne",
+      "monthlyAverage": "Moyenne / mois",
+      "bestMonth": "Meilleur mois",
+      "worstMonth": "Moins bon mois",
+      "vsPrevious": "Vs {{year}}"
+    },
+    "noData": "Aucune donnée pour {{year}}.",
+    "chartTitle": "Dépenses et revenus {{year}}",
+    "chartRecurring": "Récurrent",
+    "chartOneOff": "Ponctuel",
+    "chartIncome": "Revenus",
+    "recurring": {
+      "title": "Récurrents {{year}}",
+      "seriesCount_one": "{{count}} série active",
+      "seriesCount_other": "{{count}} séries actives",
+      "committed": "{{amount}} engagés sur l'année",
+      "nextDue": "Prochaine échéance",
+      "nextTen": "10 prochains prélèvements",
+      "schedule": "Échéancier {{year}}",
+      "filterCategory": "Catégorie",
+      "allCategories": "Toutes catégories",
+      "filterType": "Type",
+      "all": "Tous",
+      "expenses": "Dépenses",
+      "incomes": "Revenus",
+      "empty": "Aucune occurrence."
+    },
+    "limits": {
+      "title": "Plafonds annuels",
+      "subtitle": "Dépenses de l'année par catégorie",
+      "define": "Définir",
+      "none": "Aucun plafond annuel défini",
+      "sheet": "Plafond annuel",
+      "field": "Plafond annuel ({{currency}})",
+      "hint": "Alerte à 80 % du plafond atteint sur {{year}}.",
+      "delete": "Supprimer le plafond",
+      "deleteConfirm": "Supprimer ce plafond annuel ?"
+    }
+  },
+  "reminders": {
+    "title": "Rappels",
+    "calendarLinked": "Événement de calendrier lié : ses rappels se règlent sur l'événement.",
+    "calendarLink": "Ouvrir le calendrier",
+    "budgetLabel": "Rappel budget J-X jours avant",
+    "budgetPlaceholder": "ex. 3 (vide = aucun)",
+    "budgetHint": "Une notification est envoyée X jours avant chaque occurrence (0 = le jour J). Ce rappel coexiste avec ceux du calendrier."
+  }
 }

@@ -115,5 +115,61 @@
     "deleteRecurring": "Excluir este lançamento recorrente?",
     "deleteEntry": "Tem certeza que deseja excluir este registro?"
   },
-  "classic": "Clássico"
+  "classic": "Clássico",
+  "view": {
+    "month": "Mês",
+    "year": "Ano"
+  },
+  "annual": {
+    "recap": {
+      "income": "Receitas",
+      "expenses": "Despesas",
+      "balance": "Saldo",
+      "savingsRate": "Taxa de poupança",
+      "monthlyAverage": "Média mensal",
+      "bestMonth": "Melhor mês",
+      "worstMonth": "Pior mês",
+      "vsPrevious": "Vs {{year}}"
+    },
+    "noData": "Sem dados para {{year}}.",
+    "chartTitle": "Despesas e receitas {{year}}",
+    "chartRecurring": "Recorrente",
+    "chartOneOff": "Eventual",
+    "chartIncome": "Receitas",
+    "recurring": {
+      "title": "Recorrentes {{year}}",
+      "seriesCount_one": "{{count}} série ativa",
+      "seriesCount_other": "{{count}} séries ativas",
+      "committed": "{{amount}} comprometidos no ano",
+      "nextDue": "Próximo vencimento",
+      "nextTen": "Próximos 10 pagamentos",
+      "schedule": "Cronograma {{year}}",
+      "filterCategory": "Categoria",
+      "allCategories": "Todas as categorias",
+      "filterType": "Tipo",
+      "all": "Todos",
+      "expenses": "Despesas",
+      "incomes": "Receitas",
+      "empty": "Sem ocorrências."
+    },
+    "limits": {
+      "title": "Limites anuais",
+      "subtitle": "Gasto do ano por categoria",
+      "define": "Definir",
+      "none": "Sem limite anual definido",
+      "sheet": "Limite anual",
+      "field": "Limite anual ({{currency}})",
+      "hint": "Alerta aos 80 % do limite em {{year}}.",
+      "delete": "Excluir limite",
+      "deleteConfirm": "Excluir este limite anual?"
+    }
+  },
+  "reminders": {
+    "title": "Lembretes",
+    "calendarLinked": "Evento de calendário vinculado: os lembretes são ajustados no evento.",
+    "calendarLink": "Abrir calendário",
+    "budgetLabel": "Lembrete de orçamento J-X dias antes",
+    "budgetPlaceholder": "ex. 3 (vazio = nenhum)",
+    "budgetHint": "Uma notificação é enviada X dias antes de cada ocorrência (0 = no próprio dia). Coexiste com os lembretes do calendário."
+  }
 }

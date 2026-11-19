@@ -29,5 +29,20 @@
   "goalReached": "Objectif atteint : {{amount}} au-dessus !",
   "goalMissed": "Il manque {{amount}} pour atteindre l'objectif.",
   "notesLabel": "Notes de réflexion",
-  "notesPlaceholder": "Qu'est-ce qui a bien marché ? Quoi améliorer le mois prochain ?"
+  "notesPlaceholder": "Qu'est-ce qui a bien marché ? Quoi améliorer le mois prochain ?",
+  "annual": {
+    "title": "Bilan {{year}}",
+    "goalsTotal": "Objectifs cumulés",
+    "realized": "Épargné réellement",
+    "reached": "Objectifs atteints ✓",
+    "missed": "Encore {{amount}} à épargner",
+    "pillarsTitle": "Les 4 piliers sur l'année",
+    "monthlyTitle": "Épargne mois par mois",
+    "month": "Mois",
+    "goal": "Objectif",
+    "realizedCol": "Réalisé",
+    "notesTitle": "Notes de fin d'année",
+    "notesPlaceholder": "Bilan de l'année : ce qui a marché, ce qu'on change l'an prochain…",
+    "noData": "Aucune donnée pour {{year}}."
+  }
 }

@@ -29,5 +29,20 @@
   "goalReached": "Meta alcançada: {{amount}} acima do objetivo!",
   "goalMissed": "Faltaram {{amount}} para atingir sua meta.",
   "notesLabel": "Reflexões & Anotações",
-  "notesPlaceholder": "O que foi bem? O que pode melhorar no próximo mês?"
+  "notesPlaceholder": "O que foi bem? O que pode melhorar no próximo mês?",
+  "annual": {
+    "title": "Resumo {{year}}",
+    "goalsTotal": "Metas acumuladas",
+    "realized": "Poupado de fato",
+    "reached": "Metas atingidas ✓",
+    "missed": "Falta poupar {{amount}}",
+    "pillarsTitle": "Os 4 pilares no ano",
+    "monthlyTitle": "Poupança mês a mês",
+    "month": "Mês",
+    "goal": "Meta",
+    "realizedCol": "Poupado",
+    "notesTitle": "Notas de fim de ano",
+    "notesPlaceholder": "Balanço do ano: o que funcionou, o que muda no próximo ano…",
+    "noData": "Sem dados para {{year}}."
+  }
 }

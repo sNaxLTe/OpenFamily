@@ -24,6 +24,9 @@ export default defineConfig(({ mode }) => {
                 strategies: 'injectManifest',
                 srcDir: 'src',
                 filename: 'sw.js',
+                // The fork's annual views pushed the main bundle just past the
+                // 2 MiB default; allow precaching it (3 MiB).
+                injectManifest: { maximumFileSizeToCacheInBytes: 3 * 1024 * 1024 },
                 includeAssets: ['favicon-32x32.png', 'favicon-16x16.png', 'apple-touch-icon.png', 'OpenFamily.png'],
                 manifest: {
                     name: 'OpenFamily',

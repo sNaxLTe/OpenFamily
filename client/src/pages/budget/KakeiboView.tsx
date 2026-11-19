@@ -7,7 +7,7 @@ import { PiggyBank, Wallet, Target, Sparkles, TrendingUp, Pencil, Check, X } fro
 // Kakeibo view of the current month. Read-only for children; parents can edit the
 // household salaries and the savings goal inline. Reuses /api/kakeibo.
 
-type Pillar = 'survival' | 'wants' | 'culture' | 'extra';
+export type Pillar = 'survival' | 'wants' | 'culture' | 'extra';
 
 interface MemberIncome { id: string; name: string; color: string; monthly_income: number; }
 interface CategoryLine { category: string; amount: number; pillar: Pillar; }
@@ -23,7 +23,7 @@ interface KakeiboSummary {
 }
 
 const PILLARS: Pillar[] = ['survival', 'wants', 'culture', 'extra'];
-const PILLAR_META: Record<Pillar, { color: string; soft: string }> = {
+export const PILLAR_META: Record<Pillar, { color: string; soft: string }> = {
     survival: { color: '#3b82f6', soft: 'bg-blue-500/10' },
     wants: { color: '#f59e0b', soft: 'bg-amber-500/10' },
     culture: { color: '#8b5cf6', soft: 'bg-violet-500/10' },

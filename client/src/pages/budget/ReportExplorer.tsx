@@ -9,6 +9,7 @@ import { useCategories } from '../../hooks/useCategories';
 import { cn, formatCurrency } from '../../lib/utils';
 import { dateLocale } from '../../i18n/format';
 import ChartCard from '../../components/app/ChartCard';
+import ChartErrorBoundary from '../../components/app/ChartErrorBoundary';
 import { Card, CardContent, Select } from '../../components/ui';
 
 // ─── Feature 10 UI: the "Explorateur" tab of the Budget module ──────────────
@@ -189,6 +190,16 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
         setConfig((c) => ({ ...c, ...patch }));
     };
 
+    // Changing the split resets the view to the chart and (via the key on the
+    // chart below) remounts it: recharts keeps internal state between renders,
+    // and switching a mounted BarChart between layouts crashes the whole render
+    // tree (blank page). A fresh mount per split mode avoids that entirely.
+    const setSplit = (split: Split) => {
+        setSelectedPreset('');
+        setShowTable(false);
+        setConfig((c) => (c.split === split ? c : { ...c, split }));
+    };
+
     const toggleInList = (list: string[], value: string) =>
         list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 
@@ -215,15 +226,28 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
         setSelectedPreset('');
     };
 
+    // Rows are named with the split the DATA was computed with
+    // (data.params.split), not the split currently selected in the control:
+    // between a config change and the refetch, the old rows are still on
+    // screen, and parsing category/member keys as 'YYYY-MM' months produced an
+    // Invalid Date — date-fns format() then throws RangeError and, without an
+    // error boundary, unmounts the whole page (blank screen). The month branch
+    // below also refuses to format anything that is not a real YYYY-MM key.
+    const viewSplit: Split = data?.params?.split ?? config.split;
+
     // Chart rows: months as YYYY-MM keys, category/member rows as names.
     const chartData = useMemo(() => {
         if (!data) return [];
         return data.rows.map((row) => {
             let name: string;
-            if (config.split === 'month') {
-                const [y, m] = String(row.key).split('-').map(Number);
-                name = format(new Date(y, (m || 1) - 1, 1), 'MMM yy', { locale: dateLocale() });
-            } else if (config.split === 'category') {
+            if (viewSplit === 'month') {
+                const parts = String(row.key ?? '').split('-');
+                const y = Number(parts[0]);
+                const m = Number(parts[1]);
+                name = Number.isFinite(y) && Number.isFinite(m) && m >= 1 && m <= 12
+                    ? format(new Date(y, m - 1, 1), 'MMM yy', { locale: dateLocale() })
+                    : String(row.key ?? row.label ?? '');
+            } else if (viewSplit === 'category') {
                 name = categoryLabel(String(row.key ?? ''));
             } else {
                 name = row.label ?? t('budget:explorer.results.unassigned');
@@ -235,7 +259,7 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
                 oneOff: row.total - row.recurring_total,
             };
         });
-    }, [data, config.split, categoryLabel, t]);
+    }, [data, viewSplit, categoryLabel, t]);
 
     const hasRows = Boolean(data && data.rows.some((r) => r.count > 0));
     const recurringPct = data && data.summary.total !== 0
@@ -320,7 +344,7 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
                             <p className="mb-1 text-micro font-medium text-muted-foreground">{t('budget:explorer.split.label')}</p>
                             <Select
                                 value={config.split}
-                                onValueChange={(v) => set({ split: v as Split })}
+                                onValueChange={(v) => setSplit(v as Split)}
                                 options={[
                                     { value: 'month', label: t('budget:explorer.split.month') },
                                     { value: 'category', label: t('budget:explorer.split.category') },
@@ -492,6 +516,7 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
                     </button>
                 }
             >
+                <ChartErrorBoundary>
                 {loading ? (
                     <p className="py-8 text-center text-sm text-muted-foreground">{t('common:states.loading')}</p>
                 ) : error ? (
@@ -503,7 +528,7 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                                    <th className="py-2 pr-3 font-medium">{t(`budget:explorer.split.${config.split}`)}</th>
+                                    <th className="py-2 pr-3 font-medium">{t(`budget:explorer.split.${viewSplit}`)}</th>
                                     <th className="py-2 pr-3 text-right font-medium">{t('budget:explorer.summary.total')}</th>
                                     <th className="py-2 pr-3 text-right font-medium">{t('budget:explorer.summary.count')}</th>
                                     <th className="py-2 pr-3 text-right font-medium">{t('budget:explorer.summary.average')}</th>
@@ -524,7 +549,9 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
                         </table>
                     </div>
                 ) : config.split === 'month' ? (
-                    <ResponsiveContainer width="100%" height={260}>
+                    // key remounts the chart on split change: recharts cannot
+                    // switch a mounted BarChart between layouts safely.
+                    <ResponsiveContainer key={`chart-${config.split}`} width="100%" height={260}>
                         <BarChart data={chartData}>
                             <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                             <YAxis tick={{ fontSize: 11 }} width={40} />
@@ -535,7 +562,7 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
                         </BarChart>
                     </ResponsiveContainer>
                 ) : (
-                    <ResponsiveContainer width="100%" height={Math.max(240, chartData.length * 34)}>
+                    <ResponsiveContainer key={`chart-${config.split}`} width="100%" height={Math.max(240, chartData.length * 34)}>
                         <BarChart data={chartData} layout="vertical" margin={{ left: 8, right: 16 }}>
                             <XAxis type="number" tick={{ fontSize: 11 }} />
                             <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 11 }} />
@@ -548,6 +575,7 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
                         </BarChart>
                     </ResponsiveContainer>
                 )}
+                </ChartErrorBoundary>
             </ChartCard>
         </div>
     );

@@ -37,7 +37,8 @@
     "loading": "Carregant…",
     "saving": "Desant…",
     "empty": "Encara no hi ha res",
-    "error": "S'ha produït un error"
+    "error": "S'ha produït un error",
+    "chartError": "No s'ha pogut mostrar el gràfic."
   },
   "labels": {
     "name": "Nom",

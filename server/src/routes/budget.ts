@@ -1975,4 +1975,271 @@ router.get('/forecast', async (req: AuthRequest, res) => {
     }
 });
 
+// ─── GET /api/budget/report — ad-hoc report (feature 10, "Explorateur") ───────
+//
+// Query params:
+//   range_preset  = this_year | last_year | last_12_months | custom
+//                   "custom" (or no preset) requires start_date + end_date.
+//   start_date, end_date = YYYY-MM-DD, the custom range (with or without
+//                   range_preset=custom).
+//   as_of         = YYYY-MM-DD, the client's local "today"; resolves the
+//                   presets (default: server today, UTC). last_12_months =
+//                   first day of the month 11 months back .. last day of the
+//                   as_of month.
+//   type          = expenses | income | net   (default expenses). net:
+//                   total = income − expenses per row.
+//   split         = month | category | member (default month). month fills
+//                   empty months (key 'YYYY-MM'); member keys on assigned_to
+//                   (key null, label null = unassigned, where recurring
+//                   occurrences always land).
+//   include_recurring = true | false (default true): virtual occurrences from
+//                   expandRecurringTransactions, same series filter as the
+//                   statistics (active, started, not past recurrence_until).
+//   categories    = comma list (or repeated param), same semantics as the
+//                   category filter of GET /entries.
+//   members       = comma list of family member ids (or repeated param), same
+//                   semantics as assigned_to in GET /entries. It does NOT
+//                   filter recurring occurrences: they have no member.
+//   No payee filter: budget_entries has no payee column.
+//
+// Output: { success, data: { range, params, summary: { total, count, average,
+//   recurring_total }, rows: [{ key, label, total, count, average,
+//   recurring_total }] } } — average = total / count (0 when count is 0),
+// recurring_total = the signed recurring part of total (0 when
+// include_recurring=false). Read-only; every account of the family may read,
+// like the statistics. Zero migration, zero write.
+
+const REPORT_PRESETS = ['this_year', 'last_year', 'last_12_months', 'custom'] as const;
+const REPORT_TYPES = ['expenses', 'income', 'net'] as const;
+const REPORT_SPLITS = ['month', 'category', 'member'] as const;
+
+const parseListParam = (value: unknown): string[] => {
+    if (value === undefined) return [];
+    const raw = Array.isArray(value) ? value : [value];
+    return raw
+        .flatMap((item) => String(item).split(','))
+        .map((item) => item.trim())
+        .filter(Boolean);
+};
+
+const round2 = (value: number): number => Math.round(value * 100) / 100;
+
+router.get('/report', async (req: AuthRequest, res) => {
+    try {
+        const q = req.query;
+
+        // Range: preset or explicit dates.
+        const preset = typeof q.range_preset === 'string' ? q.range_preset : undefined;
+        if (preset !== undefined && !(REPORT_PRESETS as readonly string[]).includes(preset)) {
+            return res.status(400).json({
+                success: false,
+                error: `range_preset must be one of ${REPORT_PRESETS.join(', ')}`,
+            });
+        }
+
+        const requestedAsOf = parseDateOnly(q.as_of);
+        const fallbackNow = new Date();
+        const asOf = requestedAsOf ?? new Date(Date.UTC(
+            fallbackNow.getUTCFullYear(),
+            fallbackNow.getUTCMonth(),
+            fallbackNow.getUTCDate()
+        ));
+        const asOfYear = asOf.getUTCFullYear();
+        const asOfMonth = asOf.getUTCMonth() + 1;
+
+        let rangeStart: string;
+        let rangeEnd: string;
+
+        if (preset === 'this_year') {
+            rangeStart = `${asOfYear}-01-01`;
+            rangeEnd = `${asOfYear}-12-31`;
+        } else if (preset === 'last_year') {
+            rangeStart = `${asOfYear - 1}-01-01`;
+            rangeEnd = `${asOfYear - 1}-12-31`;
+        } else if (preset === 'last_12_months') {
+            const first = shiftMonth(asOfYear, asOfMonth, -11);
+            rangeStart = getMonthRange(first.year, first.month).start;
+            rangeEnd = getMonthRange(asOfYear, asOfMonth).end;
+        } else {
+            const start = parseDateOnly(q.start_date);
+            const end = parseDateOnly(q.end_date);
+            if (!start || !end) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'range_preset (this_year, last_year, last_12_months) or start_date + end_date are required',
+                });
+            }
+            rangeStart = formatDateOnly(start);
+            rangeEnd = formatDateOnly(end);
+        }
+
+        if (rangeStart > rangeEnd) {
+            return res.status(400).json({ success: false, error: 'start_date must not be after end_date' });
+        }
+        if ((parseDateOnly(rangeEnd)!.getTime() - parseDateOnly(rangeStart)!.getTime()) / 86400000 > 5 * 366) {
+            return res.status(400).json({ success: false, error: 'date range too large (5 years max)' });
+        }
+
+        const typeParam = typeof q.type === 'string' ? q.type : undefined;
+        if (typeParam !== undefined && !(REPORT_TYPES as readonly string[]).includes(typeParam)) {
+            return res.status(400).json({ success: false, error: `type must be one of ${REPORT_TYPES.join(', ')}` });
+        }
+        const type = (typeParam ?? 'expenses') as 'expenses' | 'income' | 'net';
+
+        const splitParam = typeof q.split === 'string' ? q.split : undefined;
+        if (splitParam !== undefined && !(REPORT_SPLITS as readonly string[]).includes(splitParam)) {
+            return res.status(400).json({ success: false, error: `split must be one of ${REPORT_SPLITS.join(', ')}` });
+        }
+        const split = (splitParam ?? 'month') as 'month' | 'category' | 'member';
+
+        const includeRecurring = q.include_recurring === undefined
+            ? true
+            : !(q.include_recurring === 'false' || q.include_recurring === '0');
+
+        const categories = parseListParam(q.categories);
+        const members = parseListParam(q.members);
+
+        // One-off entries: exactly the GET /entries filter semantics.
+        let entriesSql = `SELECT be.date, be.category, be.assigned_to, be.amount, be.is_expense
+            FROM budget_entries be
+            WHERE be.user_id = $1
+              AND be.date >= $2::date
+              AND be.date <= $3::date`;
+        const params: any[] = [req.userId, rangeStart, rangeEnd];
+        if (type === 'expenses') entriesSql += ' AND be.is_expense = true';
+        if (type === 'income') entriesSql += ' AND be.is_expense = false';
+        if (categories.length > 0) {
+            params.push(categories);
+            entriesSql += ` AND be.category = ANY($${params.length}::text[])`;
+        }
+        if (members.length > 0) {
+            params.push(members);
+            entriesSql += ` AND be.assigned_to::text = ANY($${params.length}::text[])`;
+        }
+        const entriesResult = await query(entriesSql, params);
+
+        // Virtual recurring occurrences over the range (same series filter as
+        // the statistics routes). The members filter does not apply: an
+        // occurrence has no assigned member.
+        let occurrences: any[] = [];
+        if (includeRecurring) {
+            let seriesSql = `SELECT *
+                FROM recurring_expenses
+                WHERE user_id = $1
+                  AND is_active = true
+                  AND start_date <= $3::date
+                  AND (recurrence_until IS NULL OR recurrence_until >= $2::date)`;
+            const seriesParams: any[] = [req.userId, rangeStart, rangeEnd];
+            if (type === 'expenses') seriesSql += ' AND is_expense = true';
+            if (type === 'income') seriesSql += ' AND is_expense = false';
+            if (categories.length > 0) {
+                seriesParams.push(categories);
+                seriesSql += ` AND category = ANY($${seriesParams.length}::text[])`;
+            }
+            const seriesResult = await query(seriesSql, seriesParams);
+            occurrences = expandRecurringTransactions(
+                seriesResult.rows.map(mapRecurringTransaction),
+                rangeStart,
+                rangeEnd
+            );
+        }
+
+        // Bucketing. Signed amount: expenses and income count positive in their
+        // own type; net = income − expenses.
+        const signed = (amount: number, isExpense: boolean): number =>
+            type === 'net' ? (isExpense ? -amount : amount) : amount;
+
+        const buckets = new Map<string | null, { total: number; count: number; recurring_total: number }>();
+        const bucketFor = (key: string | null) => {
+            const bucket = buckets.get(key);
+            if (bucket) return bucket;
+            const created = { total: 0, count: 0, recurring_total: 0 };
+            buckets.set(key, created);
+            return created;
+        };
+
+        const keyOf = (dateValue: unknown, category: unknown, assignedTo: unknown): string | null => {
+            if (split === 'month') return String(dateValue).slice(0, 7);
+            if (split === 'category') return String(category ?? '');
+            return assignedTo ? String(assignedTo) : null;
+        };
+
+        for (const row of entriesResult.rows as Array<{ date: unknown; category: string; assigned_to: unknown; amount: unknown; is_expense: boolean }>) {
+            const bucket = bucketFor(keyOf(row.date, row.category, row.assigned_to));
+            bucket.total += signed(toNumber(row.amount), Boolean(row.is_expense));
+            bucket.count += 1;
+        }
+        for (const occurrence of occurrences) {
+            const bucket = bucketFor(keyOf(occurrence.occurrence_date, occurrence.category, null));
+            const value = signed(toNumber(occurrence.amount), Boolean(occurrence.is_expense));
+            bucket.total += value;
+            bucket.count += 1;
+            bucket.recurring_total += value;
+        }
+
+        // Labels for the member split.
+        let memberNames = new Map<string, string>();
+        if (split === 'member') {
+            const ids = [...buckets.keys()].filter((key): key is string => key !== null);
+            if (ids.length > 0) {
+                const membersResult = await query(
+                    'SELECT id, name FROM family_members WHERE user_id = $1 AND id::text = ANY($2::text[])',
+                    [req.userId, ids]
+                );
+                memberNames = new Map(membersResult.rows.map((m: any) => [String(m.id), String(m.name)]));
+            }
+        }
+
+        const toRow = (key: string | null, bucket: { total: number; count: number; recurring_total: number }) => ({
+            key,
+            label: split === 'member' ? (key === null ? null : memberNames.get(key) ?? null) : key,
+            total: round2(bucket.total),
+            count: bucket.count,
+            average: bucket.count > 0 ? round2(bucket.total / bucket.count) : 0,
+            recurring_total: round2(bucket.recurring_total),
+        });
+
+        let rows: Array<ReturnType<typeof toRow>>;
+        if (split === 'month') {
+            // Every month of the range, empty ones included (chart-ready).
+            const first = parseDateOnly(rangeStart)!;
+            const months: string[] = [];
+            let cursor = { year: first.getUTCFullYear(), month: first.getUTCMonth() + 1 };
+            while (`${cursor.year}-${String(cursor.month).padStart(2, '0')}` <= rangeEnd.slice(0, 7)) {
+                months.push(`${cursor.year}-${String(cursor.month).padStart(2, '0')}`);
+                cursor = shiftMonth(cursor.year, cursor.month, 1);
+                if (months.length > 62) break; // the range is capped at 5 years anyway
+            }
+            rows = months.map((monthKey) =>
+                toRow(monthKey, buckets.get(monthKey) ?? { total: 0, count: 0, recurring_total: 0 })
+            );
+        } else {
+            rows = [...buckets.entries()]
+                .sort((a, b) => b[1].total - a[1].total)
+                .map(([key, bucket]) => toRow(key, bucket));
+        }
+
+        const summary = {
+            total: round2(rows.reduce((sum, row) => sum + row.total, 0)),
+            count: rows.reduce((sum, row) => sum + row.count, 0),
+            average: 0,
+            recurring_total: round2(rows.reduce((sum, row) => sum + row.recurring_total, 0)),
+        };
+        summary.average = summary.count > 0 ? round2(summary.total / summary.count) : 0;
+
+        res.json({
+            success: true,
+            data: {
+                range: { preset: preset ?? 'custom', start_date: rangeStart, end_date: rangeEnd },
+                params: { type, split, include_recurring: includeRecurring, categories, members },
+                summary,
+                rows,
+            },
+        });
+    } catch (error) {
+        console.error('Get budget report error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
 export default router;

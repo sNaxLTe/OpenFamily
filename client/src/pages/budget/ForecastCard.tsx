@@ -17,11 +17,14 @@ import ChartErrorBoundary from '../../components/app/ChartErrorBoundary';
 // is made while it is closed. Read-only: every account of the family (children
 // included) may open it, like the statistics.
 //
-// Chart: realized bars for the months of the displayed year up to the
-// reference month (same colors/categories as the annual chart), projected
-// bars (recurring + estimated one-off) for the horizon months that fall
-// inside the displayed year, and a dashed cumulative-balance line on the
-// right axis. The summary below always covers the full requested horizon.
+// Chart: the X domain is its OWN sliding window — from the reference month
+// (as_of) through as_of + horizon months inclusive — so a horizon that spills
+// over the civil year extends the axis into the next year(s) (horizon 24 from
+// November covers up to the following October). Bars: the realized anchor
+// month (same colors/categories as the annual chart) and the projected months
+// (recurring + estimated one-off, lighter). Dashed line on the right axis:
+// the projected cumulative balance, anchored on the opening balance at the
+// end of the reference month. The summary below always covers the full horizon.
 
 interface ForecastMonth {
     month: string; // 'YYYY-MM'
@@ -64,18 +67,26 @@ interface Props {
     monthly: MonthlyStat[];
 }
 
-const pad2 = (n: number) => String(n).padStart(2, '0');
+// Free-text while editing: the clamp applies on blur/validation only, so a
+// partial keystroke never jumps the value to the max. Empty or invalid input
+// falls back to the LAST VALID value on blur, never to the max.
+const parseFreeInt = (raw: string): number | null => {
+    if (raw.trim() === '') return null;
+    const n = parseInt(raw, 10);
+    return Number.isInteger(n) ? n : null;
+};
 
 const ForecastCard: React.FC<Props> = ({ year, currency, monthly }) => {
     const { t } = useTranslation(['budget', 'common']);
     const [months, setMonths] = useState(6);
+    const [monthsText, setMonthsText] = useState('6');
     const [variableMonths, setVariableMonths] = useState(6);
+    const [variableText, setVariableText] = useState('6');
     const [data, setData] = useState<ForecastData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
 
     const cur = (v: number) => formatCurrency(v, currency);
-    const monthShort = (m: number) => format(new Date(year, m - 1), 'MMM', { locale: dateLocale() });
     // The client sends its local "today" so the reference month follows the
     // family's clocks, not the server's (same convention as /forecast month mode).
     const asOfParam = format(new Date(), 'yyyy-MM-dd');
@@ -120,48 +131,49 @@ const ForecastCard: React.FC<Props> = ({ year, currency, monthly }) => {
         return () => clearTimeout(handle);
     }, [load]);
 
-    const asOfMonthKey = data?.as_of.slice(0, 7) ?? '';
     const asOfMonthLabel = data
         ? format(new Date(`${data.as_of}T00:00:00`), 'MMMM yyyy', { locale: dateLocale() })
         : '';
 
-    // Horizon months indexed by 'YYYY-MM' (clamped to the displayed year below).
-    const projectedByMonth = useMemo(() => {
-        const map = new Map<string, ForecastMonth>();
-        for (const m of data?.months ?? []) map.set(m.month, m);
-        return map;
-    }, [data]);
-
-    // One row per month of the displayed year: realized bars up to the
-    // reference month, projected bars for the horizon months of this year,
-    // cumulative line anchored on the reference month and over the horizon.
+    // Sliding X window: [as_of month .. as_of + horizon], 'MMM yy' labels so
+    // the year rollover is visible. Anchor row = the reference month with its
+    // realized bars (when the displayed year is the as_of year) and the opening
+    // balance as the line anchor; then one row per projected month.
     const rows = useMemo(() => {
-        const asOfYear = Number(asOfMonthKey.slice(0, 4));
-        return monthly.map((m) => {
-            const key = `${year}-${pad2(m.month)}`;
-            const realized = asOfMonthKey === ''
-                ? false
-                : (year < asOfYear || (year === asOfYear && key <= asOfMonthKey));
-            const proj = projectedByMonth.get(key);
-            const recurring = m.recurringExpenses ?? 0;
-            return {
-                month: monthShort(m.month),
-                income: realized ? m.totalIncome : 0,
-                recurring: realized ? recurring : 0,
-                oneOff: realized ? Math.max(m.totalExpenses - recurring, 0) : 0,
-                pIncome: proj ? proj.projected_income : 0,
-                pRecurring: proj ? proj.recurring_expenses : 0,
-                pVariable: proj ? proj.estimated_variable : 0,
-                // Anchor the line at the end of the reference month.
-                cumulative: proj ? proj.cumulative_balance
-                    : (realized && key === asOfMonthKey && data ? data.opening_balance : null),
-            };
-        });
-    }, [monthly, year, projectedByMonth, asOfMonthKey, data]);
+        if (!data) return [];
+        const [asY, asM] = data.as_of.slice(0, 7).split('-').map(Number);
+        const label = (y: number, m: number) =>
+            format(new Date(y, m - 1, 1), 'MMM yy', { locale: dateLocale() });
 
-    const hasProjected = rows.some((r) => r.pIncome !== 0 || r.pRecurring !== 0 || r.pVariable !== 0 || r.cumulative !== null);
+        const anchorStat = year === asY ? monthly.find((m) => m.month === asM) : undefined;
+        const anchorRecurring = anchorStat?.recurringExpenses ?? 0;
+        const out = [{
+            month: label(asY, asM),
+            income: anchorStat?.totalIncome ?? 0,
+            recurring: anchorStat ? anchorRecurring : 0,
+            oneOff: anchorStat ? Math.max(anchorStat.totalExpenses - anchorRecurring, 0) : 0,
+            pIncome: 0,
+            pRecurring: 0,
+            pVariable: 0,
+            cumulative: data.opening_balance as number | null,
+        }];
+        for (const m of data.months) {
+            const [y, mo] = m.month.split('-').map(Number);
+            out.push({
+                month: label(y, mo),
+                income: 0,
+                recurring: 0,
+                oneOff: 0,
+                pIncome: m.projected_income,
+                pRecurring: m.recurring_expenses,
+                pVariable: m.estimated_variable,
+                cumulative: m.cumulative_balance as number | null,
+            });
+        }
+        return out;
+    }, [data, monthly, year]);
 
-    // Summary over the FULL horizon (not clamped to the displayed year).
+    // Summary over the FULL horizon.
     const summary = useMemo(() => {
         if (!data || data.months.length === 0) return null;
         const last = data.months[data.months.length - 1];
@@ -170,10 +182,25 @@ const ForecastCard: React.FC<Props> = ({ year, currency, monthly }) => {
         return { projected: last.cumulative_balance, committed, delta };
     }, [data]);
 
-    const clampInt = (v: string, min: number, max: number, fallback: number) => {
-        const n = parseInt(v, 10);
-        if (!isFinite(n)) return fallback;
-        return Math.min(max, Math.max(min, n));
+    // While editing, keep the text free and only move the numeric value when
+    // the keystrokes form a valid in-range integer (the fetch follows it).
+    const onIntChange = (
+        raw: string, min: number, max: number,
+        setText: (s: string) => void, setNum: (n: number) => void
+    ) => {
+        setText(raw);
+        const n = parseFreeInt(raw);
+        if (n !== null && n >= min && n <= max) setNum(n);
+    };
+    // On blur, clamp into range; empty/invalid falls back to the last valid value.
+    const onIntBlur = (
+        raw: string, min: number, max: number, current: number,
+        setText: (s: string) => void, setNum: (n: number) => void
+    ) => {
+        const n = parseFreeInt(raw);
+        const v = n === null ? current : Math.min(max, Math.max(min, n));
+        setNum(v);
+        setText(String(v));
     };
 
     const inputCls = 'w-16 rounded-input border border-border bg-surface-1 px-2 py-1 text-xs text-foreground';
@@ -181,7 +208,7 @@ const ForecastCard: React.FC<Props> = ({ year, currency, monthly }) => {
     return (
         <ChartCard
             title={t('budget:annual.forecast.title')}
-            subtitle={t('budget:annual.forecast.subtitle', { year, asOfMonth: asOfMonthLabel || '—' })}
+            subtitle={t('budget:annual.forecast.subtitle', { asOfMonth: asOfMonthLabel || '—' })}
             action={<LineChartIcon className="h-4 w-4 shrink-0 text-primary" />}
         >
             {/* Controls: horizon, estimate window, reference month */}
@@ -192,8 +219,9 @@ const ForecastCard: React.FC<Props> = ({ year, currency, monthly }) => {
                         type="number"
                         min={1}
                         max={24}
-                        value={months}
-                        onChange={(e) => setMonths(clampInt(e.target.value, 1, 24, 6))}
+                        value={monthsText}
+                        onChange={(e) => onIntChange(e.target.value, 1, 24, setMonthsText, setMonths)}
+                        onBlur={(e) => onIntBlur(e.target.value, 1, 24, months, setMonthsText, setMonths)}
                         className={inputCls}
                         aria-label={t('budget:annual.forecast.horizon')}
                     />
@@ -204,8 +232,9 @@ const ForecastCard: React.FC<Props> = ({ year, currency, monthly }) => {
                         type="number"
                         min={0}
                         max={36}
-                        value={variableMonths}
-                        onChange={(e) => setVariableMonths(clampInt(e.target.value, 0, 36, 6))}
+                        value={variableText}
+                        onChange={(e) => onIntChange(e.target.value, 0, 36, setVariableText, setVariableMonths)}
+                        onBlur={(e) => onIntBlur(e.target.value, 0, 36, variableMonths, setVariableText, setVariableMonths)}
                         className={inputCls}
                         aria-label={t('budget:annual.forecast.variableWindow')}
                     />
@@ -245,7 +274,7 @@ const ForecastCard: React.FC<Props> = ({ year, currency, monthly }) => {
                                 formatter={(v: number, name: string) => [cur(toNumber(v)), name]}
                             />
                             <Legend wrapperStyle={{ fontSize: 12 }} />
-                            {/* Realized (same colors/categories as the annual chart) */}
+                            {/* Realized anchor (same colors/categories as the annual chart) */}
                             <Bar yAxisId="left" dataKey="income" name={t('budget:annual.chartIncome')} fill="#10b981" radius={[4, 4, 0, 0]} />
                             <Bar yAxisId="left" dataKey="recurring" name={t('budget:annual.chartRecurring')} stackId="exp" fill="#ef4444" />
                             <Bar yAxisId="left" dataKey="oneOff" name={t('budget:annual.chartOneOff')} stackId="exp" fill="#f59e0b" radius={[4, 4, 0, 0]} />
@@ -268,12 +297,6 @@ const ForecastCard: React.FC<Props> = ({ year, currency, monthly }) => {
                         </ComposedChart>
                     </ResponsiveContainer>
                     </ChartErrorBoundary>
-
-                    {!hasProjected && (
-                        <p className="mt-2 text-center text-xs text-muted-foreground">
-                            {t('budget:annual.forecast.subtitle', { year, asOfMonth: asOfMonthLabel })}
-                        </p>
-                    )}
 
                     {/* Summary over the full horizon */}
                     {summary && (

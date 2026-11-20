@@ -166,7 +166,7 @@
     "forecast": {
       "toggle": "Projecció",
       "title": "Projecció",
-      "subtitle": "{{year}} real, projectat després de {{asOfMonth}}",
+      "subtitle": "Des del mes de referència {{asOfMonth}} fins a l'horitzó de projecció",
       "horizon": "Horitzó (mesos)",
       "variableWindow": "Finestra d'estimació (mesos)",
       "asOf": "Mes de referència: {{month}}",

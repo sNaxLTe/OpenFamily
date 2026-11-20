@@ -166,7 +166,7 @@
     "forecast": {
       "toggle": "Projection",
       "title": "Projection",
-      "subtitle": "{{year}} realized, projected after {{asOfMonth}}",
+      "subtitle": "From the reference month {{asOfMonth}} to the projection horizon",
       "horizon": "Horizon (months)",
       "variableWindow": "Estimate window (months)",
       "asOf": "Reference month: {{month}}",

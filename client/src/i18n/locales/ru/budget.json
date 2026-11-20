@@ -178,7 +178,7 @@
     "forecast": {
       "toggle": "Прогноз",
       "title": "Прогноз",
-      "subtitle": "{{year}} факт, прогноз после {{asOfMonth}}",
+      "subtitle": "От опорного месяца {{asOfMonth}} до горизонта прогноза",
       "horizon": "Горизонт (мес.)",
       "variableWindow": "Окно оценки (мес.)",
       "asOf": "Опорный месяц: {{month}}",

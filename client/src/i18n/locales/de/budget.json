@@ -166,7 +166,7 @@
     "forecast": {
       "toggle": "Prognose",
       "title": "Prognose",
-      "subtitle": "{{year}} Ist, nach {{asOfMonth}} Prognose",
+      "subtitle": "Vom Referenzmonat {{asOfMonth}} bis zum Prognosehorizont",
       "horizon": "Horizont (Monate)",
       "variableWindow": "Schätzfenster (Monate)",
       "asOf": "Referenzmonat: {{month}}",

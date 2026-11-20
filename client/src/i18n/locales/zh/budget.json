@@ -162,7 +162,7 @@
     "forecast": {
       "toggle": "预测",
       "title": "预测",
-      "subtitle": "{{year}} 已实现，{{asOfMonth}} 之后为预测",
+      "subtitle": "自参考月份 {{asOfMonth}} 至预测期末",
       "horizon": "预测期（月）",
       "variableWindow": "估算窗口（月）",
       "asOf": "参考月份：{{month}}",

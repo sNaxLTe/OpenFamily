@@ -166,7 +166,7 @@
     "forecast": {
       "toggle": "Proyección",
       "title": "Proyección",
-      "subtitle": "{{year}} realizado, proyectado después de {{asOfMonth}}",
+      "subtitle": "Del mes de referencia {{asOfMonth}} al horizonte de proyección",
       "horizon": "Horizonte (meses)",
       "variableWindow": "Ventana de estimación (meses)",
       "asOf": "Mes de referencia: {{month}}",

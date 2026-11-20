@@ -4,6 +4,11 @@ import { authMiddleware, AuthRequest, isParentAccount, requireParent } from '../
 import { toNullIfEmpty } from '../lib/normalize';
 import { broadcast } from '../lib/broadcaster';
 import { getFamilyCategories } from './categories';
+import {
+    nextTaskDueDateOnComplete,
+    normalizeTaskAnchorInput,
+    RECURRING_TASK_FREQUENCIES,
+} from '../lib/taskRecurrence';
 
 /**
  * A task's category: empty means none; anything else must be one of the
@@ -72,6 +77,27 @@ const enrichTasksWithMembers = async (tasks: any[], userId: string) => {
 // Get all tasks
 router.get('/', async (req: AuthRequest, res) => {
     try {
+        // Reset paresseux des corvées récurrentes (post-version n°2) : une
+        // tâche récurrente complétée dont l'échéance est passée redevient
+        // « à faire » — rattrapage automatique après reboot/vacances, et
+        // idempotent (une seule écriture, même après 3 semaines). C'est un
+        // UPDATE direct, JAMAIS la route d'édition : les reward_transactions
+        // du cycle écoulé ne sont pas touchées (le reversement ne vit que
+        // dans le PUT manuel). pending_approval est exclu : l'arbitrage
+        // parent reste possible et l'enfant ne perd pas ses points. Les
+        // retards (tâches non cochées) ne sont jamais effacés, et « Une
+        // fois »/NULL reste strictement ponctuel.
+        await query(
+            `UPDATE tasks
+             SET is_completed = false, completed_at = NULL
+             WHERE user_id = $1
+               AND frequency = ANY($2)
+               AND is_completed
+               AND NOT pending_approval
+               AND due_date IS NOT NULL
+               AND due_date < CURRENT_DATE`,
+            [req.userId, [...RECURRING_TASK_FREQUENCIES]]
+        );
         const result = await query(
             'SELECT * FROM tasks WHERE user_id = $1 ORDER BY due_date ASC NULLS LAST, created_at DESC',
             [req.userId]
@@ -87,11 +113,22 @@ router.get('/', async (req: AuthRequest, res) => {
 // Create task
 router.post('/', async (req: AuthRequest, res) => {
     try {
-        const { title, description, due_date, frequency, priority, assigned_to, points, category } = req.body;
+        const { title, description, due_date, frequency, priority, assigned_to, points, category, recurrence_anchor } = req.body;
 
         const cleanedTitle = typeof title === 'string' ? title.trim() : '';
         if (!cleanedTitle) {
             return res.status(400).json({ success: false, error: 'Title is required' });
+        }
+
+        // Ancrage de la récurrence (post-version n°2) : absent = NULL (défaut
+        // calendrier), null/'' = retour au défaut, sinon 'calendar'|'completion'.
+        let anchor: 'calendar' | 'completion' | null = null;
+        if (recurrence_anchor !== undefined) {
+            const parsed = normalizeTaskAnchorInput(recurrence_anchor);
+            if (!parsed.ok) {
+                return res.status(400).json({ success: false, error: 'Invalid recurrence_anchor' });
+            }
+            anchor = parsed.anchor;
         }
 
         const taskCategory = await resolveTaskCategory(category, req.userId!);
@@ -110,8 +147,8 @@ router.post('/', async (req: AuthRequest, res) => {
             : 0;
 
         const result = await query(
-            `INSERT INTO tasks (user_id, title, description, due_date, frequency, priority, assigned_to, points, category)
-       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9) RETURNING *`,
+            `INSERT INTO tasks (user_id, title, description, due_date, frequency, priority, assigned_to, points, category, recurrence_anchor)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10) RETURNING *`,
             [
                 req.userId,
                 cleanedTitle,
@@ -122,6 +159,7 @@ router.post('/', async (req: AuthRequest, res) => {
                 JSON.stringify(assignedTo),
                 taskPoints,
                 taskCategory,
+                anchor,
             ]
         );
 
@@ -142,7 +180,7 @@ router.post('/', async (req: AuthRequest, res) => {
 router.put('/:id', async (req: AuthRequest, res) => {
     try {
         const { id } = req.params;
-        const { title, description, is_completed, due_date, frequency, priority, assigned_to, points, category } = req.body;
+        const { title, description, is_completed, due_date, frequency, priority, assigned_to, points, category, recurrence_anchor } = req.body;
 
         // The previous state drives the reward logic (false→true transition only).
         const existingResult = await query(
@@ -181,6 +219,17 @@ router.put('/:id', async (req: AuthRequest, res) => {
 
         if (frequency !== undefined) {
             pushUpdate('frequency', toNullIfEmpty(frequency));
+        }
+
+        // Ancrage de la récurrence (post-version n°2), même validation que POST.
+        let anchor: 'calendar' | 'completion' | null | undefined;
+        if (recurrence_anchor !== undefined) {
+            const parsed = normalizeTaskAnchorInput(recurrence_anchor);
+            if (!parsed.ok) {
+                return res.status(400).json({ success: false, error: 'Invalid recurrence_anchor' });
+            }
+            anchor = parsed.anchor;
+            pushUpdate('recurrence_anchor', anchor);
         }
 
         if (category !== undefined) {
@@ -245,6 +294,17 @@ router.put('/:id', async (req: AuthRequest, res) => {
                         updates.push('pending_approval = true');
                         rewardsChanged = true; // pending-approval counters change
                     }
+                }
+
+                // Auto-gestion (post-version n°2) : une corvée récurrente
+                // voit son échéance avancer au cycle suivant DANS LA MÊME
+                // écriture que la complétion (une seule UPDATE). Un due_date
+                // explicite dans la requête gagne sur le calcul automatique.
+                if (due_date === undefined) {
+                    const effectiveFrequency = frequency !== undefined ? toNullIfEmpty(frequency) : existing.frequency;
+                    const effectiveAnchor = anchor !== undefined ? anchor : (existing.recurrence_anchor ?? null);
+                    const nextDue = nextTaskDueDateOnComplete(effectiveAnchor, existing.due_date, effectiveFrequency, new Date());
+                    if (nextDue) pushUpdate('due_date', nextDue);
                 }
             } else if (!isCompleted && wasCompleted) {
                 // Un-completing reverses the CURRENT completion only: earn

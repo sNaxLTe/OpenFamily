@@ -91,4 +91,17 @@ export const annualMigrations: readonly Migration[] = [
             'CREATE INDEX IF NOT EXISTS idx_budget_entries_paperless_document ON budget_entries(paperless_document_id)',
         ],
     },
+    {
+        // Auto-gestion des tâches récurrentes (post-version n°2) : ancre de la
+        // récurrence — NULL (défaut, interprété au code) = 'calendar'
+        // (prochaine occurrence du motif à partir de demain, à la complétion)
+        // ; 'completion' = date de complétion + fréquence. Colonne nullable
+        // avec CHECK : strictement additive, les tâches existantes gardent le
+        // comportement calendrier.
+        id: 'annual/0006-tasks-recurrence-anchor',
+        statements: [
+            `ALTER TABLE tasks ADD COLUMN IF NOT EXISTS recurrence_anchor TEXT
+             CHECK (recurrence_anchor IS NULL OR recurrence_anchor IN ('calendar', 'completion'))`,
+        ],
+    },
 ];

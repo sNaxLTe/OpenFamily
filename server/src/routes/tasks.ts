@@ -5,9 +5,11 @@ import { toNullIfEmpty } from '../lib/normalize';
 import { broadcast } from '../lib/broadcaster';
 import { getFamilyCategories } from './categories';
 import {
+    BUILTIN_RECURRING_TASK_FREQUENCIES,
+    customFrequencyFromRow,
     nextTaskDueDateOnComplete,
+    normalizeCustomFrequencyInput,
     normalizeTaskAnchorInput,
-    RECURRING_TASK_FREQUENCIES,
 } from '../lib/taskRecurrence';
 
 /**
@@ -86,17 +88,29 @@ router.get('/', async (req: AuthRequest, res) => {
         // dans le PUT manuel). pending_approval est exclu : l'arbitrage
         // parent reste possible et l'enfant ne perd pas ses points. Les
         // retards (tâches non cochées) ne sont jamais effacés, et « Une
-        // fois »/NULL reste strictement ponctuel.
+        // fois »/NULL reste strictement ponctuel. « Personnalisé » n'est
+        // reset que si son intervalle custom est valide (défense anti-garbage).
         await query(
             `UPDATE tasks
              SET is_completed = false, completed_at = NULL
              WHERE user_id = $1
-               AND frequency = ANY($2)
+               AND (
+                    frequency = ANY($2)
+                    OR (
+                        frequency = 'Personnalisé'
+                        AND recurrence_custom_unit IN ('days', 'months')
+                        AND recurrence_custom_value IS NOT NULL
+                        AND (
+                            (recurrence_custom_unit = 'days' AND recurrence_custom_value BETWEEN 1 AND 365)
+                            OR (recurrence_custom_unit = 'months' AND recurrence_custom_value BETWEEN 1 AND 12)
+                        )
+                    )
+               )
                AND is_completed
                AND NOT pending_approval
                AND due_date IS NOT NULL
                AND due_date < CURRENT_DATE`,
-            [req.userId, [...RECURRING_TASK_FREQUENCIES]]
+            [req.userId, [...BUILTIN_RECURRING_TASK_FREQUENCIES]]
         );
         const result = await query(
             'SELECT * FROM tasks WHERE user_id = $1 ORDER BY due_date ASC NULLS LAST, created_at DESC',
@@ -113,7 +127,10 @@ router.get('/', async (req: AuthRequest, res) => {
 // Create task
 router.post('/', async (req: AuthRequest, res) => {
     try {
-        const { title, description, due_date, frequency, priority, assigned_to, points, category, recurrence_anchor } = req.body;
+        const {
+            title, description, due_date, frequency, priority, assigned_to, points, category,
+            recurrence_anchor, recurrence_custom_value, recurrence_custom_unit,
+        } = req.body;
 
         const cleanedTitle = typeof title === 'string' ? title.trim() : '';
         if (!cleanedTitle) {
@@ -129,6 +146,23 @@ router.post('/', async (req: AuthRequest, res) => {
                 return res.status(400).json({ success: false, error: 'Invalid recurrence_anchor' });
             }
             anchor = parsed.anchor;
+        }
+
+        // Fréquence personnalisée (chantier C) : « Personnalisé » exige un
+        // intervalle valide (jours 1-365 / mois 1-12) ; toute autre fréquence
+        // exige les deux colonnes à NULL.
+        const freq = toNullIfEmpty(frequency);
+        const customParsed = normalizeCustomFrequencyInput(recurrence_custom_value, recurrence_custom_unit);
+        if (!customParsed.ok) {
+            return res.status(400).json({ success: false, error: 'Invalid custom frequency' });
+        }
+        let custom: { value: number; unit: 'days' | 'months' } | null = customParsed.custom;
+        if (freq === 'Personnalisé') {
+            if (!custom) {
+                return res.status(400).json({ success: false, error: 'Custom frequency requires a value and a unit' });
+            }
+        } else if (custom !== null) {
+            return res.status(400).json({ success: false, error: 'Custom frequency is only allowed with frequency "Personnalisé"' });
         }
 
         const taskCategory = await resolveTaskCategory(category, req.userId!);
@@ -147,19 +181,21 @@ router.post('/', async (req: AuthRequest, res) => {
             : 0;
 
         const result = await query(
-            `INSERT INTO tasks (user_id, title, description, due_date, frequency, priority, assigned_to, points, category, recurrence_anchor)
-       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10) RETURNING *`,
+            `INSERT INTO tasks (user_id, title, description, due_date, frequency, priority, assigned_to, points, category, recurrence_anchor, recurrence_custom_value, recurrence_custom_unit)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12) RETURNING *`,
             [
                 req.userId,
                 cleanedTitle,
                 toNullIfEmpty(description),
                 toNullIfEmpty(due_date),
-                toNullIfEmpty(frequency),
+                freq,
                 toNullIfEmpty(priority),
                 JSON.stringify(assignedTo),
                 taskPoints,
                 taskCategory,
                 anchor,
+                custom ? custom.value : null,
+                custom ? custom.unit : null,
             ]
         );
 
@@ -180,7 +216,10 @@ router.post('/', async (req: AuthRequest, res) => {
 router.put('/:id', async (req: AuthRequest, res) => {
     try {
         const { id } = req.params;
-        const { title, description, is_completed, due_date, frequency, priority, assigned_to, points, category, recurrence_anchor } = req.body;
+        const {
+            title, description, is_completed, due_date, frequency, priority, assigned_to, points, category,
+            recurrence_anchor, recurrence_custom_value, recurrence_custom_unit,
+        } = req.body;
 
         // The previous state drives the reward logic (false→true transition only).
         const existingResult = await query(
@@ -219,6 +258,46 @@ router.put('/:id', async (req: AuthRequest, res) => {
 
         if (frequency !== undefined) {
             pushUpdate('frequency', toNullIfEmpty(frequency));
+        }
+
+        // Fréquence effective (body si présent, sinon celle en base), utilisée
+        // pour valider l'intervalle custom et l'avance à la complétion.
+        const effectiveFrequency = frequency !== undefined ? toNullIfEmpty(frequency) : existing.frequency;
+
+        // Fréquence personnalisée (chantier C) : « Personnalisé » exige un
+        // intervalle valide (jours 1-365 / mois 1-12) ; toute autre fréquence
+        // exige les deux colonnes à NULL (sinon 400).
+        const hasCustomInput = recurrence_custom_value !== undefined || recurrence_custom_unit !== undefined;
+        let effectiveCustom = customFrequencyFromRow(existing);
+        if (hasCustomInput) {
+            const parsed = normalizeCustomFrequencyInput(recurrence_custom_value, recurrence_custom_unit);
+            if (!parsed.ok) {
+                return res.status(400).json({ success: false, error: 'Invalid custom frequency' });
+            }
+            if (effectiveFrequency === 'Personnalisé') {
+                if (!parsed.custom) {
+                    return res.status(400).json({ success: false, error: 'Custom frequency requires a value and a unit' });
+                }
+                pushUpdate('recurrence_custom_value', parsed.custom.value);
+                pushUpdate('recurrence_custom_unit', parsed.custom.unit);
+                effectiveCustom = parsed.custom;
+            } else {
+                if (parsed.custom !== null) {
+                    return res.status(400).json({ success: false, error: 'Custom frequency is only allowed with frequency "Personnalisé"' });
+                }
+                pushUpdate('recurrence_custom_value', null);
+                pushUpdate('recurrence_custom_unit', null);
+                effectiveCustom = null;
+            }
+        } else if (frequency !== undefined && existing.frequency === 'Personnalisé' && effectiveFrequency !== 'Personnalisé') {
+            // Passage de « Personnalisé » à une autre fréquence sans toucher
+            // aux colonnes : elles repassent à NULL (aucune fuite d'état).
+            pushUpdate('recurrence_custom_value', null);
+            pushUpdate('recurrence_custom_unit', null);
+            effectiveCustom = null;
+        } else if (effectiveFrequency === 'Personnalisé' && !effectiveCustom) {
+            // « Personnalisé » sans intervalle valide, ni en base ni en input.
+            return res.status(400).json({ success: false, error: 'Custom frequency requires a value and a unit' });
         }
 
         // Ancrage de la récurrence (post-version n°2), même validation que POST.
@@ -296,14 +375,13 @@ router.put('/:id', async (req: AuthRequest, res) => {
                     }
                 }
 
-                // Auto-gestion (post-version n°2) : une corvée récurrente
+                // Auto-gestion (post-version n°2 + C) : une corvée récurrente
                 // voit son échéance avancer au cycle suivant DANS LA MÊME
                 // écriture que la complétion (une seule UPDATE). Un due_date
                 // explicite dans la requête gagne sur le calcul automatique.
                 if (due_date === undefined) {
-                    const effectiveFrequency = frequency !== undefined ? toNullIfEmpty(frequency) : existing.frequency;
                     const effectiveAnchor = anchor !== undefined ? anchor : (existing.recurrence_anchor ?? null);
-                    const nextDue = nextTaskDueDateOnComplete(effectiveAnchor, existing.due_date, effectiveFrequency, new Date());
+                    const nextDue = nextTaskDueDateOnComplete(effectiveAnchor, existing.due_date, effectiveFrequency, new Date(), effectiveCustom);
                     if (nextDue) pushUpdate('due_date', nextDue);
                 }
             } else if (!isCompleted && wasCompleted) {

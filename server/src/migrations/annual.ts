@@ -104,4 +104,21 @@ export const annualMigrations: readonly Migration[] = [
              CHECK (recurrence_anchor IS NULL OR recurrence_anchor IN ('calendar', 'completion'))`,
         ],
     },
+    {
+        // Fréquences étendues des tâches récurrentes (chantier C) : une
+        // fréquence « Personnalisé » porte son intervalle dans deux colonnes
+        // nullable — recurrence_custom_value (entier) + recurrence_custom_unit
+        // ('days' 1-365, 'months' 1-12, bornes validées côté API). Les deux
+        // sont NULL pour toute autre fréquence (validé au POST/PUT, 400 sinon).
+        // Strictement additif : les tâches existantes ont les deux à NULL.
+        id: 'annual/0007-tasks-custom-frequency',
+        statements: [
+            'ALTER TABLE tasks ADD COLUMN IF NOT EXISTS recurrence_custom_value INTEGER',
+            `ALTER TABLE tasks ADD COLUMN IF NOT EXISTS recurrence_custom_unit TEXT
+             CHECK (recurrence_custom_unit IS NULL OR recurrence_custom_unit IN ('days', 'months'))`,
+            // Défense anti-garbage en base : jamais un seul des deux renseigné.
+            `ALTER TABLE tasks ADD CONSTRAINT tasks_custom_frequency_both_or_none
+             CHECK ((recurrence_custom_value IS NULL) = (recurrence_custom_unit IS NULL))`,
+        ],
+    },
 ];

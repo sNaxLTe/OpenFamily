@@ -4,7 +4,13 @@ import { app, query, registerWithPassword, resetState, startSuite, stopSuite } f
 import { coreMigrations } from '../src/migrations/registry';
 import { annualMigrations } from '../src/migrations/annual';
 import { validateRegistry } from '../src/migrations/runner';
-import { advanceTaskDueDate, nextTaskDueDateOnComplete } from '../src/lib/taskRecurrence';
+import {
+    advanceTaskDueDate,
+    customFrequencyFromRow,
+    isValidCustomFrequency,
+    nextTaskDueDateOnComplete,
+    normalizeCustomFrequencyInput,
+} from '../src/lib/taskRecurrence';
 import { formatDateOnly, parseDateOnly } from '../src/lib/budgetRecurrence';
 
 // Post-version n°2, partie B1 : auto-gestion des tâches récurrentes.
@@ -269,5 +275,229 @@ describe('GET /api/tasks lazily resets elapsed recurring cycles', () => {
         const row = list.body.data.find((x: any) => x.id === t.id);
         expect(row.is_completed).toBe(true);
         expect(dayOf(row.due_date)).toBe(d(3));
+    });
+});
+
+// ─── Chantier C : fréquences étendues (Semestriel, Personnalisé) ────────────
+
+describe('migration annual/0007', () => {
+    it('validates in the combined registry, is recorded, and added the nullable custom columns', async () => {
+        expect(() => validateRegistry([...coreMigrations, ...annualMigrations])).not.toThrow();
+        const ids = annualMigrations.map((m) => m.id);
+        expect(ids).toContain('annual/0007-tasks-custom-frequency');
+        const recorded = await query(
+            "SELECT id FROM openfamily_schema_migrations WHERE id = 'annual/0007-tasks-custom-frequency'"
+        );
+        expect(recorded.rows.length).toBe(1);
+        const cols = await query(
+            "SELECT column_name, is_nullable FROM information_schema.columns WHERE table_name = 'tasks' AND column_name IN ('recurrence_custom_value', 'recurrence_custom_unit') ORDER BY column_name"
+        );
+        expect(cols.rows.length).toBe(2);
+        expect(cols.rows.every((c: any) => c.is_nullable === 'YES')).toBe(true);
+    });
+});
+
+describe('unit: Semestriel / Personnalisé', () => {
+    it('semestriel = +6 mois avec clamp de fin de mois (31 août → 28 février)', () => {
+        expect(formatDateOnly(advanceTaskDueDate(parseDateOnly('2026-08-31')!, 'Semestriel'))).toBe('2027-02-28');
+        expect(formatDateOnly(advanceTaskDueDate(parseDateOnly('2028-08-31')!, 'Semestriel'))).toBe('2029-02-28');
+        expect(formatDateOnly(advanceTaskDueDate(parseDateOnly('2026-01-15')!, 'Semestriel'))).toBe('2026-07-15');
+    });
+
+    it('personnalisé jours/mois : un pas = intervalle, clamp pour les mois depuis le 31', () => {
+        expect(formatDateOnly(advanceTaskDueDate(parseDateOnly('2026-05-10')!, 'Personnalisé', { value: 5, unit: 'days' }))).toBe('2026-05-15');
+        // Tous les 2 mois depuis le 31 → 28/29/30/31 selon le mois cible.
+        expect(formatDateOnly(advanceTaskDueDate(parseDateOnly('2025-12-31')!, 'Personnalisé', { value: 2, unit: 'months' }))).toBe('2026-02-28');
+        expect(formatDateOnly(advanceTaskDueDate(parseDateOnly('2028-12-31')!, 'Personnalisé', { value: 2, unit: 'months' }))).toBe('2029-02-28');
+        expect(formatDateOnly(advanceTaskDueDate(parseDateOnly('2026-03-31')!, 'Personnalisé', { value: 2, unit: 'months' }))).toBe('2026-05-31');
+        expect(formatDateOnly(advanceTaskDueDate(parseDateOnly('2026-04-30')!, 'Personnalisé', { value: 2, unit: 'months' }))).toBe('2026-06-30');
+    });
+
+    it('personnalisé sans intervalle valide n\'avance jamais (défense anti-garbage)', () => {
+        expect(formatDateOnly(advanceTaskDueDate(parseDateOnly('2026-05-10')!, 'Personnalisé', null))).toBe('2026-05-10');
+        expect(formatDateOnly(advanceTaskDueDate(parseDateOnly('2026-05-10')!, 'Personnalisé', { value: 9999, unit: 'days' }))).toBe('2026-05-10');
+        expect(nextTaskDueDateOnComplete(null, '2026-05-10', 'Personnalisé', parseDateOnly(d(0))!, null)).toBeNull();
+        expect(nextTaskDueDateOnComplete('completion', '2026-05-10', 'Personnalisé', parseDateOnly(d(0))!, { value: 0, unit: 'days' })).toBeNull();
+    });
+
+    it('validation des inputs custom : bornes jours 1-365 / mois 1-12, unité requise', () => {
+        expect(normalizeCustomFrequencyInput(null, null)).toEqual({ ok: true, custom: null });
+        expect(normalizeCustomFrequencyInput('', '')).toEqual({ ok: true, custom: null });
+        expect(normalizeCustomFrequencyInput(5, 'days')).toEqual({ ok: true, custom: { value: 5, unit: 'days' } });
+        expect(normalizeCustomFrequencyInput('12', 'Months')).toEqual({ ok: true, custom: { value: 12, unit: 'months' } });
+        expect(normalizeCustomFrequencyInput(365, 'days').ok).toBe(true);
+        expect(normalizeCustomFrequencyInput(366, 'days').ok).toBe(false);
+        expect(normalizeCustomFrequencyInput(0, 'days').ok).toBe(false);
+        expect(normalizeCustomFrequencyInput(13, 'months').ok).toBe(false);
+        expect(normalizeCustomFrequencyInput(5, 'weeks').ok).toBe(false);
+        expect(normalizeCustomFrequencyInput(5, null).ok).toBe(false);
+        expect(normalizeCustomFrequencyInput(null, 'days').ok).toBe(false);
+        expect(normalizeCustomFrequencyInput(2.5, 'days').ok).toBe(false);
+        expect(isValidCustomFrequency({ value: 5, unit: 'days' })).toBe(true);
+        expect(isValidCustomFrequency({ value: 5, unit: 'hours' })).toBe(false);
+        expect(customFrequencyFromRow({ recurrence_custom_value: 3, recurrence_custom_unit: 'months' })).toEqual({ value: 3, unit: 'months' });
+        expect(customFrequencyFromRow({ recurrence_custom_value: null, recurrence_custom_unit: null })).toBeNull();
+        expect(customFrequencyFromRow({ recurrence_custom_value: 500, recurrence_custom_unit: 'days' })).toBeNull();
+    });
+
+    it('avance calendrier personnalisée : rattrapage naturel si cochée en retard (tous les 5 jours)', () => {
+        const completed = parseDateOnly(d(0))!;
+        // Due il y a 12 jours, tous les 5 jours → occurrences -12, -7, -2, +3 →
+        // première occurrence >= demain (+1) = +3.
+        expect(nextTaskDueDateOnComplete('calendar', d(-12), 'Personnalisé', completed, { value: 5, unit: 'days' }))
+            .toBe(d(3));
+        // Hebdo cochée 3 semaines en retard → occurrences -21, -14, -7, 0, +7 →
+        // première >= demain (+1) = +7 (mardi suivant).
+        expect(nextTaskDueDateOnComplete('calendar', d(-21), 'Hebdomadaire', completed)).toBe(d(7));
+    });
+
+    it('avance complétion personnalisée : date de complétion + intervalle', () => {
+        expect(nextTaskDueDateOnComplete('completion', d(-12), 'Personnalisé', parseDateOnly(d(0))!, { value: 5, unit: 'days' }))
+            .toBe(d(5));
+        expect(nextTaskDueDateOnComplete('completion', d(-1), 'Personnalisé', parseDateOnly('2025-12-31')!, { value: 2, unit: 'months' }))
+            .toBe('2026-02-28');
+        expect(nextTaskDueDateOnComplete('completion', d(-1), 'Semestriel', parseDateOnly('2026-08-31')!))
+            .toBe('2027-02-28');
+    });
+});
+
+describe('POST /api/tasks — validation Personnalisé', () => {
+    it('exige valeur + unité pour Personnalisé, et les interdit ailleurs', async () => {
+        const bad1 = await post('/api/tasks', { title: 'X', frequency: 'Personnalisé' });
+        expect(bad1.status).toBe(400);
+        const bad2 = await post('/api/tasks', { title: 'X', frequency: 'Personnalisé', recurrence_custom_value: 5 });
+        expect(bad2.status).toBe(400);
+        const bad3 = await post('/api/tasks', { title: 'X', frequency: 'Personnalisé', recurrence_custom_value: 366, recurrence_custom_unit: 'days' });
+        expect(bad3.status).toBe(400);
+        const bad4 = await post('/api/tasks', { title: 'X', frequency: 'Personnalisé', recurrence_custom_value: 13, recurrence_custom_unit: 'months' });
+        expect(bad4.status).toBe(400);
+        const bad5 = await post('/api/tasks', { title: 'X', frequency: 'Personnalisé', recurrence_custom_value: 5, recurrence_custom_unit: 'weeks' });
+        expect(bad5.status).toBe(400);
+        // Colonnes custom renseignées avec une autre fréquence → 400.
+        const bad6 = await post('/api/tasks', { title: 'X', frequency: 'Mensuel', recurrence_custom_value: 5, recurrence_custom_unit: 'days' });
+        expect(bad6.status).toBe(400);
+
+        const ok = await createTask({ frequency: 'Personnalisé', recurrence_custom_value: 5, recurrence_custom_unit: 'days' });
+        expect(ok.frequency).toBe('Personnalisé');
+        expect(ok.recurrence_custom_value).toBe(5);
+        expect(ok.recurrence_custom_unit).toBe('days');
+        const plain = await createTask({ frequency: 'Semestriel' });
+        expect(plain.recurrence_custom_value).toBeNull();
+        expect(plain.recurrence_custom_unit).toBeNull();
+    });
+});
+
+describe('PUT /api/tasks/:id — Personnalisé et Semestriel', () => {
+    it('semestriel : la complétion avance de 6 mois (clamp fin de mois)', async () => {
+        const t = await createTask({ frequency: 'Semestriel', due_date: d(-1) });
+        const res = await put(`/api/tasks/${t.id}`, { is_completed: true });
+        expect(res.status).toBe(200);
+        expect(dayOf(res.body.data.due_date))
+            .toBe(formatDateOnly(advanceTaskDueDate(parseDateOnly(d(-1))!, 'Semestriel')));
+    });
+
+    it('personnalisé tous les 5 jours : avance calendrier (rattrapage) et complétion', async () => {
+        const cal = await createTask({ frequency: 'Personnalisé', recurrence_custom_value: 5, recurrence_custom_unit: 'days', due_date: d(-12) });
+        const r1 = await put(`/api/tasks/${cal.id}`, { is_completed: true });
+        expect(dayOf(r1.body.data.due_date)).toBe(d(3));
+
+        const comp = await createTask({
+            frequency: 'Personnalisé', recurrence_custom_value: 5, recurrence_custom_unit: 'days',
+            recurrence_anchor: 'completion', due_date: d(-12),
+        });
+        const r2 = await put(`/api/tasks/${comp.id}`, { is_completed: true });
+        expect(dayOf(r2.body.data.due_date)).toBe(d(5));
+    });
+
+    it('édition d\'une Personnalisé : nouvelles valeurs rechargées, PUT partiel sans custom ne casse rien', async () => {
+        const t = await createTask({ frequency: 'Personnalisé', recurrence_custom_value: 5, recurrence_custom_unit: 'days' });
+        const r1 = await put(`/api/tasks/${t.id}`, { recurrence_custom_value: 2, recurrence_custom_unit: 'months' });
+        expect(r1.status).toBe(200);
+        expect(r1.body.data.recurrence_custom_value).toBe(2);
+        expect(r1.body.data.recurrence_custom_unit).toBe('months');
+        // PUT qui ne touche ni à la fréquence ni au custom : colonnes conservées.
+        const r2 = await put(`/api/tasks/${t.id}`, { title: 'Renommée' });
+        expect(r2.body.data.recurrence_custom_value).toBe(2);
+        expect(r2.body.data.recurrence_custom_unit).toBe('months');
+        // Valeurs hors bornes → 400.
+        const bad = await put(`/api/tasks/${t.id}`, { recurrence_custom_value: 400, recurrence_custom_unit: 'days' });
+        expect(bad.status).toBe(400);
+    });
+
+    it('passage de Personnalisé à « Une fois » remet les colonnes custom à NULL', async () => {
+        const t = await createTask({ frequency: 'Personnalisé', recurrence_custom_value: 5, recurrence_custom_unit: 'days' });
+        const res = await put(`/api/tasks/${t.id}`, { frequency: 'Une fois' });
+        expect(res.status).toBe(200);
+        expect(res.body.data.frequency).toBe('Une fois');
+        expect(res.body.data.recurrence_custom_value).toBeNull();
+        expect(res.body.data.recurrence_custom_unit).toBeNull();
+        // Et la tâche ponctuelle n'est plus avancée à la complétion.
+        const done = await put(`/api/tasks/${t.id}`, { is_completed: true, due_date: d(-3) });
+        expect(dayOf(done.body.data.due_date)).toBe(d(-3));
+    });
+
+    it('custom renseigné avec une fréquence non-Personnalisé → 400', async () => {
+        const t = await createTask({ frequency: 'Mensuel', due_date: d(5) });
+        const bad = await put(`/api/tasks/${t.id}`, { recurrence_custom_value: 5, recurrence_custom_unit: 'days' });
+        expect(bad.status).toBe(400);
+    });
+});
+
+describe('GET /api/tasks — whitelist de reset étendue (C)', () => {
+    const forceElapsed = async (id: string) => {
+        await query('UPDATE tasks SET due_date = $2 WHERE id = $1', [id, d(-1)]);
+    };
+
+    it('reset une tâche Semestriel et une tâche Personnalisé valide', async () => {
+        const semi = await createTask({ frequency: 'Semestriel', due_date: d(-10) });
+        await put(`/api/tasks/${semi.id}`, { is_completed: true });
+        await forceElapsed(semi.id);
+        const custom = await createTask({
+            frequency: 'Personnalisé', recurrence_custom_value: 5, recurrence_custom_unit: 'days', due_date: d(-10),
+        });
+        await put(`/api/tasks/${custom.id}`, { is_completed: true });
+        await forceElapsed(custom.id);
+
+        const list = await get('/api/tasks');
+        const byId = new Map(list.body.data.map((x: any) => [x.id, x]));
+        expect(byId.get(semi.id).is_completed).toBe(false);
+        expect(byId.get(custom.id).is_completed).toBe(false);
+    });
+
+    it('ne reset JAMAIS une tâche Personnalisé dont les colonnes custom sont invalides/absentes', async () => {
+        // Lignes garbage insérées en direct (l'API refuserait, 400).
+        const garbage1 = await query(
+            `INSERT INTO tasks (user_id, title, frequency, due_date, is_completed)
+             VALUES ($1, 'garbage-null', 'Personnalisé', $2, true) RETURNING id`,
+            [parent.user.id, d(-1)]
+        );
+        const garbage2 = await query(
+            `INSERT INTO tasks (user_id, title, frequency, due_date, is_completed, recurrence_custom_value, recurrence_custom_unit)
+             VALUES ($1, 'garbage-range', 'Personnalisé', $2, true, 9999, 'days') RETURNING id`,
+            [parent.user.id, d(-1)]
+        );
+        const list = await get('/api/tasks');
+        const byId = new Map(list.body.data.map((x: any) => [x.id, x]));
+        expect(byId.get(garbage1.rows[0].id).is_completed).toBe(true);
+        expect(byId.get(garbage2.rows[0].id).is_completed).toBe(true);
+    });
+
+    it('une tâche Personnalisé garbage n\'est jamais avancée non plus (PUT de complétion)', async () => {
+        const g = await query(
+            `INSERT INTO tasks (user_id, title, frequency, due_date, is_completed)
+             VALUES ($1, 'garbage-null', 'Personnalisé', $2, false) RETURNING id`,
+            [parent.user.id, d(-10)]
+        );
+        // L'API refuse de passer en Personnalisé sans custom : on force la
+        // fréquence en direct, puis on tente la complétion via l'API.
+        await query("UPDATE tasks SET frequency = 'Personnalisé' WHERE id = $1", [g.rows[0].id]);
+        const res = await put(`/api/tasks/${g.rows[0].id}`, { is_completed: true });
+        // 400 (fréquence effective Personnalisé sans custom valide) OU avance
+        // refusée : dans les deux cas l'échéance ne bouge pas.
+        if (res.status === 200) {
+            expect(dayOf(res.body.data.due_date)).toBe(d(-10));
+        } else {
+            expect(res.status).toBe(400);
+        }
     });
 });

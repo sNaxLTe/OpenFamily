@@ -17,7 +17,9 @@ import {
 //   (503 when PAPERLESS_URL/PAPERLESS_TOKEN are unset, requireParent on the
 //   data routes, proxied through a MOCKED fetcher — no real network in tests)
 // - POST/PUT /entries accept and return the paperless fields; the stored URL
-//   is derived server-side from PAPERLESS_URL, never taken from the client
+//   is derived server-side from PAPERLESS_PUBLIC_URL (fallback PAPERLESS_URL),
+//   never taken from the client; PAPERLESS_URL stays the internal URL of every
+//   outbound (mocked) call
 // - strictly read-only towards Paperless: every mocked call must be a GET
 
 beforeAll(startSuite);
@@ -30,12 +32,14 @@ beforeEach(async () => {
     parent = await registerWithPassword('parent@example.org');
     delete process.env.PAPERLESS_URL;
     delete process.env.PAPERLESS_TOKEN;
+    delete process.env.PAPERLESS_PUBLIC_URL;
 });
 
 afterEach(() => {
     setPaperlessFetcherForTests(null);
     delete process.env.PAPERLESS_URL;
     delete process.env.PAPERLESS_TOKEN;
+    delete process.env.PAPERLESS_PUBLIC_URL;
 });
 
 const as = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -59,6 +63,7 @@ const makeChild = async (): Promise<{ token: string; user: { id: string } }> => 
 };
 
 const BASE = 'http://paperless.test:8000';
+const PUBLIC = 'https://paperless.example.com';
 const TOKEN = 'secret-token-123';
 
 interface RecordedCall { url: string; method: string; authorization: string | null }
@@ -104,6 +109,13 @@ const mockPaperless = (documents: any[], detailById: Record<number, any>, corres
 const setEnv = () => {
     process.env.PAPERLESS_URL = BASE;
     process.env.PAPERLESS_TOKEN = TOKEN;
+};
+
+/** Internal URL + token + a distinct PUBLIC url for link derivation. */
+const setEnvWithPublic = (publicUrl: string | undefined) => {
+    setEnv();
+    if (publicUrl === undefined) delete process.env.PAPERLESS_PUBLIC_URL;
+    else process.env.PAPERLESS_PUBLIC_URL = publicUrl;
 };
 
 const entryBody = { category: 'Alimentation', amount: 42.5, date: '2026-11-12', is_expense: true, description: 'test' };
@@ -280,6 +292,81 @@ describe('paperless proxy routes (mocked upstream)', () => {
         mockPaperless([], {});
         expect((await get('/api/budget/paperless/documents/999/prefill')).status).toBe(404);
         expect((await get('/api/budget/paperless/documents/abc/prefill')).status).toBe(400);
+    });
+});
+
+describe('PAPERLESS_PUBLIC_URL (dérivation des liens publics)', () => {
+    const docs = [{ id: 7, title: 'Facture EDF octobre', correspondent: 3, created: '2026-10-02', added: '2026-10-03' }];
+    const correspondents = [{ id: 3, name: 'EDF' }];
+    const detail = {
+        7: {
+            id: 7,
+            title: 'Facture EDF octobre',
+            correspondent: 3,
+            created: '2026-10-02',
+            content: 'Date de facture : 28/10/2026\nTotal TTC : 122,95 €',
+        },
+    };
+
+    it('both URLs set: outbound calls hit the INTERNAL url, document links use the PUBLIC url (list, prefill, stored entry)', async () => {
+        setEnvWithPublic(PUBLIC);
+        const calls = mockPaperless(docs, detail, correspondents);
+
+        const list = await get('/api/budget/paperless/documents?q=edf');
+        expect(list.status).toBe(200);
+        expect(list.body.data[0].document_url).toBe(`${PUBLIC}/documents/7`);
+        // Every outbound call went to the internal URL, GET only, with the token.
+        expect(calls.length).toBeGreaterThan(0);
+        for (const c of calls) {
+            expect(c.url.startsWith(`${BASE}/api/`)).toBe(true);
+            expect(c.method).toBe('GET');
+            expect(c.authorization).toBe(`Token ${TOKEN}`);
+        }
+        // Neither the internal URL nor the token leaks into the response body.
+        expect(JSON.stringify(list.body)).not.toContain(BASE);
+        expect(JSON.stringify(list.body)).not.toContain(TOKEN);
+
+        const pre = await get('/api/budget/paperless/documents/7/prefill');
+        expect(pre.status).toBe(200);
+        expect(pre.body.data.document_url).toBe(`${PUBLIC}/documents/7`);
+        expect(JSON.stringify(pre.body)).not.toContain(BASE);
+
+        const created = await post('/api/budget/entries', { ...entryBody, paperless_document_id: 7 });
+        expect(created.status).toBe(200);
+        expect(created.body.data.paperless_url).toBe(`${PUBLIC}/documents/7`);
+        const listed = await get('/api/budget/entries');
+        expect(listed.body.data[0].paperless_url).toBe(`${PUBLIC}/documents/7`);
+    });
+
+    it('PUBLIC absent → strict fallback to PAPERLESS_URL for the links', async () => {
+        setEnvWithPublic(undefined);
+        mockPaperless(docs, detail, correspondents);
+        const list = await get('/api/budget/paperless/documents');
+        expect(list.status).toBe(200);
+        expect(list.body.data[0].document_url).toBe(`${BASE}/documents/7`);
+        const created = await post('/api/budget/entries', { ...entryBody, paperless_document_id: 7 });
+        expect(created.body.data.paperless_url).toBe(`${BASE}/documents/7`);
+    });
+
+    it('PUBLIC empty or whitespace-only → strict fallback to PAPERLESS_URL', async () => {
+        mockPaperless(docs, detail, correspondents);
+        for (const empty of ['', '   ', '\t\n ']) {
+            setEnvWithPublic(empty);
+            const list = await get('/api/budget/paperless/documents');
+            expect(list.status).toBe(200);
+            expect(list.body.data[0].document_url).toBe(`${BASE}/documents/7`);
+        }
+    });
+
+    it('PUBLIC present but not http(s) → bridge disabled (fail closed, nothing leaks)', async () => {
+        setEnvWithPublic('ftp://nope');
+        const status = await get('/api/budget/paperless/status');
+        expect(status.status).toBe(200);
+        expect(status.body.data).toEqual({ configured: false });
+        // /status reveals no URL at all.
+        expect(JSON.stringify(status.body)).not.toContain('ftp://nope');
+        expect(JSON.stringify(status.body)).not.toContain(BASE);
+        expect((await get('/api/budget/paperless/documents')).status).toBe(503);
     });
 });
 

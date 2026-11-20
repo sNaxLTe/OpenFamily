@@ -5,6 +5,14 @@
 // only talks to the /api/budget/paperless/* proxy routes). The token is used
 // in the Authorization header of outbound calls and is NEVER logged.
 //
+// Two URLs, two roles:
+// - PAPERLESS_URL      → internal base URL, used for ALL outbound API calls.
+// - PAPERLESS_PUBLIC_URL (optional) → used ONLY to derive the document web
+//   links (document_url in proxy answers, budget_entries.paperless_url) shown
+//   to the family in the UI. Absent / empty / whitespace → strict fallback to
+//   PAPERLESS_URL. Derivation stays 100 % server-side; /status never reveals
+//   any URL.
+//
 // STRICTLY READ-ONLY towards Paperless: this module only ever issues GET
 // requests (the test suite asserts it on a mocked fetcher). OpenFamily never
 // creates, edits or deletes a Paperless document.
@@ -20,7 +28,10 @@ const PAPERLESS_TIMEOUT_MS = 10_000;
 const MAX_BODY_BYTES = 1_000_000;
 
 export interface PaperlessConfig {
+    /** Internal base URL (PAPERLESS_URL): used for EVERY outbound API call. */
     baseUrl: string;
+    /** Public base URL (PAPERLESS_PUBLIC_URL, fallback baseUrl): used ONLY to derive document web links. */
+    publicBaseUrl: string;
     token: string;
 }
 
@@ -30,7 +41,14 @@ export const paperlessConfig = (): PaperlessConfig | null => {
     const token = (process.env.PAPERLESS_TOKEN ?? '').trim();
     if (!rawUrl || !token) return null;
     if (!/^https?:\/\//i.test(rawUrl)) return null;
-    return { baseUrl: rawUrl, token };
+    // PAPERLESS_PUBLIC_URL only ever feeds link derivation. Absent, empty or
+    // whitespace-only → strict fallback to PAPERLESS_URL. Present but not an
+    // http(s) URL → refuse (a misconfiguration must be loud and must never
+    // end up stored in budget_entries.paperless_url or sent to the client).
+    const rawPublic = (process.env.PAPERLESS_PUBLIC_URL ?? '').trim().replace(/\/+$/, '');
+    const publicBaseUrl = rawPublic || rawUrl;
+    if (!/^https?:\/\//i.test(publicBaseUrl)) return null;
+    return { baseUrl: rawUrl, publicBaseUrl, token };
 };
 
 export const paperlessConfigured = (): boolean => paperlessConfig() !== null;
@@ -119,7 +137,7 @@ export const searchPaperlessDocuments = async (
         correspondent: typeof d.correspondent === 'number' ? (names.get(d.correspondent) ?? null) : null,
         created: typeof d.created === 'string' ? d.created.slice(0, 10) : null,
         added: typeof d.added === 'string' ? d.added.slice(0, 10) : null,
-        document_url: paperlessDocumentUrl(cfg.baseUrl, d.id),
+        document_url: paperlessDocumentUrl(cfg.publicBaseUrl, d.id),
     }));
 };
 
@@ -228,6 +246,6 @@ export const getPaperlessPrefill = async (
         suggested_amount: amount,
         // Proposed description = title, falling back to the correspondent.
         suggested_description: title || correspondent || '',
-        document_url: paperlessDocumentUrl(cfg.baseUrl, id),
+        document_url: paperlessDocumentUrl(cfg.publicBaseUrl, id),
     };
 };

@@ -79,8 +79,9 @@ export const annualMigrations: readonly Migration[] = [
         // Pont Paperless → Budget (fonctionnalité 13): a budget entry can be
         // linked to a Paperless document. paperless_document_id is the id in
         // the Paperless instance (server-side env config), paperless_url is
-        // the document's web page, DERIVED BY THE SERVER from PAPERLESS_URL
-        // (never taken from the client, so no arbitrary URL is stored).
+        // the document's web page, DERIVED BY THE SERVER from
+        // PAPERLESS_PUBLIC_URL (fallback PAPERLESS_URL) — never taken from
+        // the client, so no arbitrary URL is stored.
         // Both nullable: existing entries are untouched. Read-only bridge:
         // nothing here writes to Paperless.
         id: 'annual/0005-paperless-link',

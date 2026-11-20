@@ -359,7 +359,8 @@ router.post('/entries', requireParent, async (req: AuthRequest, res) => {
             return res.status(400).json({ success: false, error: 'paperless_document_id must be a positive integer or null' });
         }
         const paperlessId = paperless.id ?? null;
-        // The URL is derived server-side from PAPERLESS_URL, never from the client.
+        // The URL is derived server-side (PAPERLESS_PUBLIC_URL, fallback
+        // PAPERLESS_URL), never from the client.
         const paperlessUrl = derivePaperlessUrl(paperlessId);
 
         const assignedTo = toNullIfEmpty(assigned_to) as string | null;
@@ -515,9 +516,11 @@ router.delete('/entries/:id', requireParent, async (req: AuthRequest, res) => {
 // ─── Paperless bridge (feature 13) ───────────────────────────────────────────
 // Server-side proxy to a Paperless-ngx instance configured via PAPERLESS_URL /
 // PAPERLESS_TOKEN (env, never sent to the client). STRICTLY READ-ONLY towards
-// Paperless (GET only). When the env is missing, the data routes answer 503
-// with a clear message and the status route reports configured:false so the
-// UI hides the button.
+// Paperless (GET only). PAPERLESS_URL is the internal URL used for every
+// outbound call; PAPERLESS_PUBLIC_URL (optional, fallback PAPERLESS_URL) is
+// used only to derive the document links returned/stored for the UI.
+// When the env is missing, the data routes answer 503 with a clear message
+// and the status route reports configured:false so the UI hides the button.
 
 // Feature 13 validation: undefined = field not sent, null = explicit unlink,
 // a positive integer = link. Anything else is refused with a 400.
@@ -534,12 +537,12 @@ const parsePaperlessDocumentId = (value: unknown): { ok: true; id: number | null
 };
 
 // The stored paperless_url is ALWAYS derived by the server from its own
-// PAPERLESS_URL — a client-sent URL is never stored, so no arbitrary link
-// can be attached to an entry.
+// PAPERLESS_PUBLIC_URL (fallback PAPERLESS_URL) — a client-sent URL is never
+// stored, so no arbitrary link can be attached to an entry.
 const derivePaperlessUrl = (id: number | null): string | null => {
     if (id === null) return null;
     const cfg = paperlessConfig();
-    return cfg ? paperlessDocumentUrl(cfg.baseUrl, id) : null;
+    return cfg ? paperlessDocumentUrl(cfg.publicBaseUrl, id) : null;
 };
 
 // Lightweight liveness for the UI: leaks nothing (no URL, no token).

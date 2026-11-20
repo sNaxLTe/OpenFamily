@@ -1289,10 +1289,105 @@ const getMonthRange = (year: number, month: number) => {
 };
 
 // List recurring transaction OCCURRENCES for a given month/year.
+// ─── Registry of recurring SERIES (tab « Récurrents », post-version n°2) ──────
+// GET /api/budget/recurring called WITHOUT month/year: one entry per series,
+// active OR ended (is_active=false / recurrence_until passed). Each entry adds:
+//   next_occurrence     first occurrence >= as_of, via expandRecurringTransactions
+//                       (null for inactive series — they are "ended" in the UI)
+//   annual_committed    amount × (365 daily / 52 weekly / 12 monthly / 1 yearly) / interval
+//   current_occurrence  the current month's occurrence used for pointing: the
+//                       first one still ahead this month, else the last one of
+//                       the month; carries occurrence_id + is_pointed/pointed_at
+//                       from recurring_expense_logs, so the registry points the
+//                       SAME occurrence as the classic month view.
+const ANNUAL_COMMITTED_FACTORS: Record<string, number> = { daily: 365, weekly: 52, monthly: 12, yearly: 1 };
+
+const listRecurringSeries = async (req: AuthRequest, res: Response) => {
+    const requestedAsOf = parseDateOnly(req.query.as_of);
+    const fallbackNow = new Date();
+    const asOf = requestedAsOf ?? new Date(Date.UTC(
+        fallbackNow.getUTCFullYear(), fallbackNow.getUTCMonth(), fallbackNow.getUTCDate()
+    ));
+    const asOfValue = formatDateOnly(asOf);
+    const currentRange = getMonthRange(asOf.getUTCFullYear(), asOf.getUTCMonth() + 1);
+
+    const seriesResult = await query(
+        `SELECT re.*,
+                (SELECT a.id
+                 FROM appointments a
+                 WHERE a.user_id = re.user_id
+                   AND a.linked_recurring_expense_id = re.id
+                 LIMIT 1) as linked_calendar_event_id
+         FROM recurring_expenses re
+         WHERE re.user_id = $1
+         ORDER BY re.start_date ASC, re.label ASC`,
+        [req.userId]
+    );
+    const series = seriesResult.rows.map(mapRecurringTransaction);
+
+    // Pointing logs for the current month only.
+    const logsResult = await query(
+        `SELECT recurring_expense_id, occurrence_date, is_pointed, pointed_at
+         FROM recurring_expense_logs
+         WHERE user_id = $1
+           AND occurrence_date >= $2::date
+           AND occurrence_date <= $3::date`,
+        [req.userId, currentRange.start, currentRange.end]
+    );
+    const logs = new Map(
+        logsResult.rows.map((log: any) => [
+            `${log.recurring_expense_id}:${String(log.occurrence_date).slice(0, 10)}`,
+            log,
+        ])
+    );
+
+    // Far-future cap for the next-occurrence search: 5 years covers any series.
+    const farEnd = formatDateOnly(new Date(asOf.getTime() + 5 * 366 * 86400000));
+
+    const data = series.map((s) => {
+        const next = s.is_active
+            ? (expandRecurringTransactions([s], asOfValue, farEnd)[0] ?? null)
+            : null;
+        const monthOccurrences = s.is_active
+            ? expandRecurringTransactions([s], currentRange.start, currentRange.end)
+            : [];
+        const current = monthOccurrences.find((o) => String(o.occurrence_date) >= asOfValue)
+            ?? monthOccurrences[monthOccurrences.length - 1]
+            ?? null;
+        const currentLog = current ? logs.get(`${s.id}:${current.occurrence_date}`) as any : null;
+
+        const factor = ANNUAL_COMMITTED_FACTORS[s.recurrence_frequency] ?? 12;
+        return {
+            ...s,
+            series_id: s.id,
+            next_occurrence: next ? String(next.occurrence_date) : null,
+            annual_committed: Math.round((toNumber(s.amount) * factor) / (s.recurrence_interval || 1) * 100) / 100,
+            current_occurrence: current
+                ? {
+                    occurrence_id: `${s.id}:${current.occurrence_date}`,
+                    occurrence_date: String(current.occurrence_date),
+                    is_pointed: Boolean(currentLog?.is_pointed),
+                    pointed_at: currentLog?.pointed_at ?? null,
+                }
+                : null,
+        };
+    });
+
+    res.json({ success: true, data });
+};
+
 router.get('/recurring', async (req: AuthRequest, res) => {
     try {
         const parsedMonth = toOptionalNumber(req.query.month);
         const parsedYear = toOptionalNumber(req.query.year);
+
+        // Registry mode: no month AND no year → one entry per series.
+        // With month/year (both, or either one defaulted), behaviour is
+        // strictly the historical month view below.
+        if (req.query.month === undefined && req.query.year === undefined) {
+            await listRecurringSeries(req, res);
+            return;
+        }
 
         const now = new Date();
         const month = parsedMonth ?? now.getUTCMonth() + 1;

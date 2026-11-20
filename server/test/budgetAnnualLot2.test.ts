@@ -92,6 +92,67 @@ describe('migrations annual/0002 and annual/0003', () => {
     });
 });
 
+describe('GET /api/budget/recurring — registry mode (no month/year, post-version n°2)', () => {
+    it('returns one entry per series (active + ended) with next occurrence and annual committed', async () => {
+        await addRecurring({ label: 'Loyer', amount: 100, category: 'Logement', start_date: '2026-01-05' });
+        await addRecurring({ label: 'Annuel', amount: 500, category: 'Divers', start_date: '2027-03-01', recurrence_frequency: 'yearly' });
+        await addRecurring({ label: 'Hebdo', amount: 10, category: 'Divers', start_date: '2026-06-01', recurrence_frequency: 'weekly', recurrence_interval: 2 });
+        await addRecurring({ label: 'Quotidien', amount: 1, category: 'Divers', start_date: '2026-06-01', recurrence_frequency: 'daily' });
+        await addRecurring({ label: 'Vieux', amount: 50, category: 'Divers', start_date: '2026-01-10', recurrence_until: '2026-05-31' });
+        const off = (await addRecurring({ label: 'Inactif', amount: 30, category: 'Divers', start_date: '2026-01-10' })).body.data;
+        await query('UPDATE recurring_expenses SET is_active = false WHERE id = $1', [off.id]);
+
+        const res = await get('/api/budget/recurring?as_of=2026-06-15');
+        expect(res.status).toBe(200);
+        const rows = res.body.data;
+        expect(rows).toHaveLength(6);
+        const byLabel = Object.fromEntries(rows.map((r: any) => [r.label, r]));
+
+        // Next occurrence = first >= as_of (2026-06-15), recurrence_until respected.
+        expect(byLabel['Loyer'].next_occurrence).toBe('2026-07-05');
+        expect(byLabel['Annuel'].next_occurrence).toBe('2027-03-01');
+        expect(byLabel['Vieux'].next_occurrence).toBeNull(); // recurrence_until 2026-05-31 passed
+        expect(byLabel['Inactif'].next_occurrence).toBeNull(); // is_active = false
+
+        // Annual committed: amount × (365|52|12|1) / interval.
+        expect(byLabel['Loyer'].annual_committed).toBe(1200);   // 100 × 12
+        expect(byLabel['Annuel'].annual_committed).toBe(500);   // 500 × 1
+        expect(byLabel['Hebdo'].annual_committed).toBe(260);    // 10 × 52 / 2
+        expect(byLabel['Quotidien'].annual_committed).toBe(365); // 1 × 365
+
+        // Current-month occurrence for pointing: Loyer has 2026-06-05 in June;
+        // as_of is the 15th → first ahead this month = none → last of month.
+        expect(byLabel['Loyer'].current_occurrence.occurrence_date).toBe('2026-06-05');
+        expect(byLabel['Loyer'].current_occurrence.occurrence_id).toBe(`${byLabel['Loyer'].id}:2026-06-05`);
+        expect(byLabel['Loyer'].current_occurrence.is_pointed).toBe(false);
+        expect(byLabel['Vieux'].current_occurrence).toBeNull();
+        expect(byLabel['Inactif'].current_occurrence).toBeNull();
+    });
+
+    it('current_occurrence is pointable through the SAME endpoint as the month view, which stays unchanged', async () => {
+        const s = (await addRecurring({ label: 'Loyer', amount: 800, category: 'Logement', start_date: '2026-06-12' })).body.data;
+        const reg = await get('/api/budget/recurring?as_of=2026-06-15');
+        const row = reg.body.data[0];
+        expect(row.id).toBe(s.id);
+        expect(row.current_occurrence.occurrence_date).toBe('2026-06-12');
+        expect(row.next_occurrence).toBe('2026-07-12');
+
+        const pr = await post(`/api/budget/recurring/${row.id}/point`, { occurrence_date: '2026-06-12', is_pointed: true });
+        expect(pr.status).toBe(200);
+
+        const reg2 = await get('/api/budget/recurring?as_of=2026-06-15');
+        expect(reg2.body.data[0].current_occurrence.is_pointed).toBe(true);
+
+        // Month view contract strictly unchanged: occurrence rows, no registry fields.
+        const monthView = await get('/api/budget/recurring?month=6&year=2026');
+        expect(monthView.status).toBe(200);
+        expect(monthView.body.data[0].occurrence_date).toBe('2026-06-12');
+        expect(monthView.body.data[0].is_pointed).toBe(true);
+        expect(monthView.body.data[0].next_occurrence).toBeUndefined();
+        expect(monthView.body.data[0].annual_committed).toBeUndefined();
+    });
+});
+
 describe('GET /api/budget/recurring/schedule', () => {
     it('needs a token and valid dates', async () => {
         expect((await request(app).get('/api/budget/recurring/schedule?start_date=2026-06-01&end_date=2026-06-30')).status).toBe(401);

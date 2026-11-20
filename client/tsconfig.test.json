@@ -1,0 +1,18 @@
+{
+    /* Type-checks ONLY the test files excluded from the build tsconfig
+       (tsconfig.json), so `npm run build` (tsc && vite build) never needs the
+       test-only devDependencies (e.g. vitest) that the Docker client image
+       does not install. Run from the workspace root, where the full dev
+       install hoists vitest:
+           npx tsc -p client/tsconfig.test.json --noEmit
+       and the tests themselves run with the root-hoisted vitest. */
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "composite": false
+    },
+    "include": [
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx"
+    ],
+    "exclude": []
+}

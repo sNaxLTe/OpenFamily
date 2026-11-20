@@ -15,7 +15,9 @@
     "Mensuel": "Mensuel",
     "Trimestriel": "Trimestriel",
     "Quadrimestriel": "Tous les 4 mois",
-    "Annuel": "Annuel"
+    "Semestriel": "Semestriel",
+    "Annuel": "Annuel",
+    "Personnalisé": "Personnalisé"
   },
   "anchors": {
     "calendar": "Au calendrier (prochaine occurrence du motif)",
@@ -64,7 +66,13 @@
     "category": "Catégorie (facultatif)",
     "noCategory": "Aucune",
     "recurrenceAnchor": "Ancrage de la récurrence",
-    "recurrenceAnchorHint": "À la complétion, l'échéance avance automatiquement au cycle suivant."
+    "recurrenceAnchorHint": "À la complétion, l'échéance avance automatiquement au cycle suivant.",
+    "customFrequency": {
+      "label": "Fréquence personnalisée",
+      "hint": "Entre 1 et 365 jours, ou 1 et 12 mois.",
+      "days": "jours",
+      "months": "mois"
+    }
   },
   "approval": {
     "pendingBadge": "En attente de validation",
@@ -82,7 +90,8 @@
     "toggleTask": "Impossible de mettre à jour cette tâche.",
     "deleteTask": "Impossible de supprimer cette tâche.",
     "approveTask": "Impossible de valider cette tâche.",
-    "rejectTask": "Impossible de refuser cette tâche."
+    "rejectTask": "Impossible de refuser cette tâche.",
+    "customFrequency": "Indiquez un nombre entre 1 et 365 jours (ou 1 et 12 mois)."
   },
   "categories": {
     "Cuisine": "Cuisine",

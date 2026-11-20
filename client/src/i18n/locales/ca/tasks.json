@@ -15,7 +15,9 @@
     "Mensuel": "Mensual",
     "Trimestriel": "Cada trimestre",
     "Quadrimestriel": "Cada quatre mesos",
-    "Annuel": "Anual"
+    "Semestriel": "Semestral",
+    "Annuel": "Anual",
+    "Personnalisé": "Personalitzat"
   },
   "anchors": {
     "calendar": "Calendari (següent ocurrència del patró)",
@@ -64,7 +66,13 @@
     "category": "Categoria (opcional)",
     "noCategory": "Cap",
     "recurrenceAnchor": "Ancoratge de la recurrència",
-    "recurrenceAnchorHint": "En completar-la, la data límit passa automàticament al següent cicle."
+    "recurrenceAnchorHint": "En completar-la, la data límit passa automàticament al següent cicle.",
+    "customFrequency": {
+      "label": "Freqüència personalitzada",
+      "hint": "Entre 1 i 365 dies, o 1 i 12 mesos.",
+      "days": "dies",
+      "months": "mesos"
+    }
   },
   "approval": {
     "pendingBadge": "Pendent d'aprovació",
@@ -82,7 +90,8 @@
     "toggleTask": "No s'ha pogut actualitzar aquesta tasca.",
     "deleteTask": "No s'ha pogut suprimir aquesta tasca.",
     "approveTask": "No s'ha pogut aprovar aquesta tasca.",
-    "rejectTask": "No s'ha pogut rebutjar aquesta tasca."
+    "rejectTask": "No s'ha pogut rebutjar aquesta tasca.",
+    "customFrequency": "Indiqueu un nombre entre 1 i 365 dies (o 1 i 12 mesos)."
   },
   "categories": {
     "Cuisine": "Cuina",

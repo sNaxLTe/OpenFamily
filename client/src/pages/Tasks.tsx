@@ -18,6 +18,9 @@ interface Task {
     frequency?: string;
     /** Recurrence anchor (post-version n°2): 'calendar' (null, default) or 'completion'. */
     recurrence_anchor?: string | null;
+    /** Custom interval (chantier C), only set when frequency is 'Personnalisé'. */
+    recurrence_custom_value?: number | null;
+    recurrence_custom_unit?: string | null;
     priority?: string;
     /** One of the family's task categories (Settings), or none. */
     category?: string | null;
@@ -102,7 +105,14 @@ const Tasks: React.FC = () => {
         { value: 'Mensuel', label: t('tasks:frequencies.Mensuel') },
         { value: 'Trimestriel', label: t('tasks:frequencies.Trimestriel') },
         { value: 'Quadrimestriel', label: t('tasks:frequencies.Quadrimestriel') },
+        { value: 'Semestriel', label: t('tasks:frequencies.Semestriel') },
         { value: 'Annuel', label: t('tasks:frequencies.Annuel') },
+        { value: 'Personnalisé', label: t('tasks:frequencies.Personnalisé') },
+    ];
+    // Unités de la fréquence personnalisée (chantier C).
+    const CUSTOM_UNITS = [
+        { value: 'days', label: t('tasks:form.customFrequency.days') },
+        { value: 'months', label: t('tasks:form.customFrequency.months') },
     ];
     // Ancres de récurrence (post-version n°2), montrées seulement si la
     // fréquence n'est pas « Une fois ».
@@ -140,6 +150,8 @@ const Tasks: React.FC = () => {
         due_date: '',
         frequency: 'Une fois',
         recurrence_anchor: 'calendar',
+        recurrence_custom_value: '',
+        recurrence_custom_unit: 'days',
         priority: 'Moyenne',
         category: '',
         assigned_to: [] as string[],
@@ -194,6 +206,17 @@ const Tasks: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        // Custom frequency (chantier C): bornes reflétées — 1-365 jours, 1-12 mois.
+        let customValue: number | null = null;
+        if (formData.frequency === 'Personnalisé') {
+            const n = parseInt(formData.recurrence_custom_value, 10);
+            const max = formData.recurrence_custom_unit === 'days' ? 365 : 12;
+            if (!Number.isInteger(n) || n < 1 || n > max) {
+                setError(t('tasks:errors.customFrequency'));
+                return;
+            }
+            customValue = n;
+        }
         try {
             const payload: Record<string, unknown> = {
                 ...formData,
@@ -202,6 +225,10 @@ const Tasks: React.FC = () => {
                 // Anchor only meaningful for a recurring task; sent as null
                 // otherwise so switching back to "Une fois" resets it.
                 recurrence_anchor: formData.frequency !== 'Une fois' ? formData.recurrence_anchor : null,
+                // Custom interval only for "Personnalisé"; null otherwise so
+                // the server stores NULL columns (no state leak).
+                recurrence_custom_value: formData.frequency === 'Personnalisé' ? customValue : null,
+                recurrence_custom_unit: formData.frequency === 'Personnalisé' ? formData.recurrence_custom_unit : null,
             };
             if (editingTask) {
                 await api.put(`/api/tasks/${editingTask.id}`, payload);
@@ -283,6 +310,8 @@ const Tasks: React.FC = () => {
             due_date: task.due_date ? task.due_date.slice(0, 10) : '',
             frequency: task.frequency || 'Une fois',
             recurrence_anchor: task.recurrence_anchor === 'completion' ? 'completion' : 'calendar',
+            recurrence_custom_value: task.recurrence_custom_value != null ? String(task.recurrence_custom_value) : '',
+            recurrence_custom_unit: task.recurrence_custom_unit === 'months' ? 'months' : 'days',
             priority: task.priority || 'Moyenne',
             category: task.category || '',
             assigned_to: task.assigned_to || [],
@@ -299,6 +328,8 @@ const Tasks: React.FC = () => {
             due_date: '',
             frequency: 'Une fois',
             recurrence_anchor: 'calendar',
+            recurrence_custom_value: '',
+            recurrence_custom_unit: 'days',
             priority: 'Moyenne',
             category: '',
             assigned_to: [],
@@ -698,6 +729,33 @@ const Tasks: React.FC = () => {
                                 options={RECURRENCE_ANCHORS}
                             />
                             <p className="mt-1 text-micro text-muted-foreground">{t('tasks:form.recurrenceAnchorHint')}</p>
+                        </div>
+                    )}
+                    {formData.frequency === 'Personnalisé' && (
+                        <div>
+                            <label className="block text-label font-medium text-foreground mb-1.5">
+                                {t('tasks:form.customFrequency.label')}
+                            </label>
+                            <div className="flex gap-2">
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    max={formData.recurrence_custom_unit === 'days' ? 365 : 12}
+                                    step={1}
+                                    value={formData.recurrence_custom_value}
+                                    onChange={(e) => setFormData({ ...formData, recurrence_custom_value: e.target.value })}
+                                    placeholder="5"
+                                    className="flex-1"
+                                />
+                                <div className="w-32 flex-shrink-0">
+                                    <Select
+                                        value={formData.recurrence_custom_unit}
+                                        onValueChange={(value) => setFormData({ ...formData, recurrence_custom_unit: value })}
+                                        options={CUSTOM_UNITS}
+                                    />
+                                </div>
+                            </div>
+                            <p className="mt-1 text-micro text-muted-foreground">{t('tasks:form.customFrequency.hint')}</p>
                         </div>
                     )}
                     <div>

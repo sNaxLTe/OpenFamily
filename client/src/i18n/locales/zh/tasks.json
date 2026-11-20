@@ -15,7 +15,9 @@
     "Mensuel": "每月",
     "Trimestriel": "每季度",
     "Quadrimestriel": "每4个月",
-    "Annuel": "每年"
+    "Semestriel": "每半年",
+    "Annuel": "每年",
+    "Personnalisé": "自定义"
   },
   "anchors": {
     "calendar": "日历（按规律的下一次出现）",
@@ -64,7 +66,13 @@
     "category": "分类（可选）",
     "noCategory": "无",
     "recurrenceAnchor": "循环锚点",
-    "recurrenceAnchorHint": "完成后，到期日会自动顺延到下一个周期。"
+    "recurrenceAnchorHint": "完成后，到期日会自动顺延到下一个周期。",
+    "customFrequency": {
+      "label": "自定义频率",
+      "hint": "1–365 天，或 1–12 个月。",
+      "days": "天",
+      "months": "个月"
+    }
   },
   "approval": {
     "pendingBadge": "等待批准",
@@ -82,7 +90,8 @@
     "toggleTask": "无法更新此任务。",
     "deleteTask": "无法删除此任务。",
     "approveTask": "无法批准此任务。",
-    "rejectTask": "无法拒绝此任务。"
+    "rejectTask": "无法拒绝此任务。",
+    "customFrequency": "请输入 1–365 天（或 1–12 个月）之间的数值。"
   },
   "categories": {
     "Cuisine": "厨房",

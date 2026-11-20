@@ -15,7 +15,9 @@
     "Mensuel": "Monthly",
     "Trimestriel": "Quarterly",
     "Quadrimestriel": "Every 4 months",
-    "Annuel": "Yearly"
+    "Semestriel": "Semi-annual",
+    "Annuel": "Yearly",
+    "Personnalisé": "Custom"
   },
   "anchors": {
     "calendar": "Calendar (next occurrence of the pattern)",
@@ -64,7 +66,13 @@
     "category": "Category (optional)",
     "noCategory": "None",
     "recurrenceAnchor": "Recurrence anchor",
-    "recurrenceAnchorHint": "When completed, the due date automatically moves to the next cycle."
+    "recurrenceAnchorHint": "When completed, the due date automatically moves to the next cycle.",
+    "customFrequency": {
+      "label": "Custom frequency",
+      "hint": "Between 1 and 365 days, or 1 and 12 months.",
+      "days": "days",
+      "months": "months"
+    }
   },
   "approval": {
     "pendingBadge": "Awaiting approval",
@@ -82,7 +90,8 @@
     "toggleTask": "Unable to update this task.",
     "deleteTask": "Unable to delete this task.",
     "approveTask": "Unable to approve this task.",
-    "rejectTask": "Unable to reject this task."
+    "rejectTask": "Unable to reject this task.",
+    "customFrequency": "Enter a number between 1 and 365 days (or 1 and 12 months)."
   },
   "categories": {
     "Cuisine": "Kitchen",

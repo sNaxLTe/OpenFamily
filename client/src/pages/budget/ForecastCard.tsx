@@ -61,6 +61,15 @@ const toNumber = (v: unknown): number => {
     return 0;
 };
 
+// SVG presentation attributes do not resolve CSS var() in Safari, so theme
+// colors used inside charts are resolved to a concrete rgb() at render time
+// (the app re-renders on theme change, so the resolved value stays current).
+const cssVarColor = (name: string, fallback: string): string => {
+    if (typeof document === 'undefined') return fallback;
+    const triplet = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return triplet ? `rgb(${triplet})` : fallback;
+};
+
 interface Props {
     year: number;
     currency: string;
@@ -203,7 +212,12 @@ const ForecastCard: React.FC<Props> = ({ year, currency, monthly }) => {
         setText(String(v));
     };
 
-    const inputCls = 'w-16 rounded-input border border-border bg-surface-1 px-2 py-1 text-xs text-foreground';
+    // min-h-11: 44 px touch target on the number inputs (iPhone-first).
+    const inputCls = 'w-16 min-h-11 rounded-input border border-border bg-surface-1 px-2 py-1 text-xs text-foreground';
+    // Resolved theme colors for the SVG (Safari does not resolve var() in SVG
+    // presentation attributes — the grid used to render invisible there).
+    const borderStroke = cssVarColor('--border', '#e7dccc');
+    const infoStroke = cssVarColor('--info', '#7a5270');
 
     return (
         <ChartCard
@@ -266,14 +280,17 @@ const ForecastCard: React.FC<Props> = ({ year, currency, monthly }) => {
                     <ChartErrorBoundary>
                     <ResponsiveContainer width="100%" height={280}>
                         <ComposedChart data={rows}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                            <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                            <CartesianGrid strokeDasharray="3 3" stroke={borderStroke} />
+                            {/* Sliding window up to horizon+1 labels: minTickGap hides the
+                                ones that would overlap at 390 px, keep first/last visible. */}
+                            <XAxis dataKey="month" tick={{ fontSize: 11 }} interval="preserveStartEnd" minTickGap={24} />
                             <YAxis yAxisId="left" tick={{ fontSize: 11 }} width={40} />
                             <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} width={48} />
                             <Tooltip
                                 formatter={(v: number, name: string) => [cur(toNumber(v)), name]}
                             />
-                            <Legend wrapperStyle={{ fontSize: 12 }} />
+                            {/* Condensed legend: small icons + 11 px labels, wraps on 2 lines max */}
+                            <Legend iconSize={10} wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
                             {/* Realized anchor (same colors/categories as the annual chart) */}
                             <Bar yAxisId="left" dataKey="income" name={t('budget:annual.chartIncome')} fill="#10b981" radius={[4, 4, 0, 0]} />
                             <Bar yAxisId="left" dataKey="recurring" name={t('budget:annual.chartRecurring')} stackId="exp" fill="#ef4444" />
@@ -288,7 +305,7 @@ const ForecastCard: React.FC<Props> = ({ year, currency, monthly }) => {
                                 type="monotone"
                                 dataKey="cumulative"
                                 name={t('budget:annual.forecast.chartCumulative')}
-                                stroke="#6366f1"
+                                stroke={infoStroke}
                                 strokeWidth={2}
                                 strokeDasharray="6 4"
                                 dot={false}

@@ -109,7 +109,10 @@
     "startDateRequired": "Cal indicar la data d'inici.",
     "intervalInvalid": "L'interval de repetició ha de ser d'entre 1 i 365.",
     "repeatUntilInvalid": "La data de finalització no pot ser anterior a la data d'inici.",
-    "editRecurrenceType": "Per canviar entre un moviment puntual i un de recurrent, suprimeix aquest moviment i torna’l a afegir."
+    "editRecurrenceType": "Per canviar entre un moviment puntual i un de recurrent, suprimeix aquest moviment i torna’l a afegir.",
+    "generic": "S'ha produït un error, torna-ho a provar.",
+    "fieldsRequired": "Categoria, import i data són obligatoris.",
+    "paperlessIdInvalid": "ID de document de Paperless no vàlid."
   },
   "confirm": {
     "deleteRecurring": "Vols suprimir aquest moviment recurrent?",
@@ -170,7 +173,7 @@
       "horizon": "Horitzó (mesos)",
       "variableWindow": "Finestra d'estimació (mesos)",
       "asOf": "Mes de referència: {{month}}",
-      "assumptions": "Hipòtesis: els recurrents es projecten fins al seu final (recurrence_until); la part puntual s'estima amb la mitjana dels últims {{variableMonths}} mesos; el saldo inicial és el saldo real a tancament de {{asOfMonth}}.",
+      "assumptions": "Hipòtesis: els recurrents es projecten fins al seu final; la part puntual s'estima amb la mitjana dels últims {{variableMonths}} mesos; el saldo inicial és el saldo real a tancament de {{asOfMonth}}.",
       "chartProjectedIncome": "Ingressos projectats",
       "chartProjectedRecurring": "Recurrent projectat",
       "chartProjectedVariable": "Puntual estimat",
@@ -243,6 +246,12 @@
       "unassigned": "No assignat",
       "recurring": "Recurrent",
       "oneOff": "Puntual"
+    },
+    "cols": {
+      "total": "Sum.",
+      "count": "Nre.",
+      "average": "Mitj.",
+      "recurring": "Rec."
     }
   },
   "paperless": {
@@ -255,5 +264,15 @@
     "prefillHint": "Import, data i descripció són suggeriments: ho pots editar tot abans de desar.",
     "unlink": "Treure el document vinculat",
     "openDocument": "Obre el document a Paperless"
+  },
+  "toast": {
+    "entrySaved": "Moviment guardat",
+    "entryDeleted": "Moviment eliminat",
+    "recurringSaved": "Recurrent guardat",
+    "recurringDeleted": "Recurrent eliminat",
+    "limitSaved": "Límit guardat",
+    "limitDeleted": "Límit eliminat",
+    "kakeiboNoteSaved": "Nota anual guardada",
+    "paperlessLinked": "Document de Paperless vinculat"
   }
 }

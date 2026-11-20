@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
 import { Bookmark, Trash2, BarChart3, Table2 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { friendlyApiError } from '../../lib/friendlyError';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCategories } from '../../hooks/useCategories';
 import { cn, formatCurrency } from '../../lib/utils';
@@ -103,7 +104,8 @@ const Switch: React.FC<{ checked: boolean; onChange: () => void; label: string }
     </button>
 );
 
-const selectCls = 'rounded-input border border-border bg-surface-1 px-2 py-1.5 text-xs text-foreground';
+// min-h-11: 44 px touch target on selects/inputs (iPhone-first).
+const selectCls = 'min-h-11 rounded-input border border-border bg-surface-1 px-2 py-1.5 text-xs text-foreground';
 
 interface ReportExplorerProps {
     currency: string;
@@ -177,7 +179,7 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
             .then((r) => {
                 if (cancelled) return;
                 if (r.success) setData(r.data);
-                else setError(r.error || t('budget:explorer.results.error'));
+                else setError(friendlyApiError(r.error ? new Error(r.error) : null, t, 'budget:explorer.results.error'));
             })
             .catch(() => { if (!cancelled) setError(t('budget:explorer.results.error')); })
             .finally(() => { if (!cancelled) setLoading(false); });
@@ -370,7 +372,7 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
                             type="button"
                             onClick={() => set({ categories: [] })}
                             className={cn(
-                                'rounded-full border px-2.5 py-1 text-xs transition-colors',
+                                'inline-flex min-h-11 items-center rounded-full border px-2.5 py-1 text-xs transition-colors',
                                 config.categories.length === 0
                                     ? 'border-primary bg-primary-soft text-primary'
                                     : 'border-border bg-surface-1 text-muted-foreground hover:text-foreground'
@@ -386,7 +388,7 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
                                     type="button"
                                     onClick={() => set({ categories: toggleInList(config.categories, c) })}
                                     className={cn(
-                                        'rounded-full border px-2.5 py-1 text-xs transition-colors',
+                                        'inline-flex min-h-11 items-center rounded-full border px-2.5 py-1 text-xs transition-colors',
                                         on
                                             ? 'border-primary bg-primary-soft text-primary'
                                             : 'border-border bg-surface-1 text-muted-foreground hover:text-foreground'
@@ -403,7 +405,7 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
                             type="button"
                             onClick={() => set({ members: [] })}
                             className={cn(
-                                'rounded-full border px-2.5 py-1 text-xs transition-colors',
+                                'inline-flex min-h-11 items-center rounded-full border px-2.5 py-1 text-xs transition-colors',
                                 config.members.length === 0
                                     ? 'border-primary bg-primary-soft text-primary'
                                     : 'border-border bg-surface-1 text-muted-foreground hover:text-foreground'
@@ -419,7 +421,7 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
                                     type="button"
                                     onClick={() => set({ members: toggleInList(config.members, m.id) })}
                                     className={cn(
-                                        'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors',
+                                        'flex min-h-11 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors',
                                         on
                                             ? 'border-primary bg-primary-soft text-primary'
                                             : 'border-border bg-surface-1 text-muted-foreground hover:text-foreground'
@@ -448,19 +450,19 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
                                     value={presetName}
                                     onChange={(e) => setPresetName(e.target.value)}
                                     placeholder={t('budget:explorer.presets.name')}
-                                    className="w-40 rounded-input border border-border bg-surface-1 px-2 py-1.5 text-xs text-foreground"
+                                    className="w-40 min-h-11 rounded-input border border-border bg-surface-1 px-2 py-1.5 text-xs text-foreground"
                                 />
                                 <button
                                     type="button"
                                     onClick={saveCurrent}
-                                    className="rounded-input bg-primary px-2.5 py-1.5 text-xs font-medium text-white"
+                                    className="min-h-11 rounded-input bg-primary px-2.5 py-1.5 text-xs font-medium text-white"
                                 >
                                     {t('common:actions.save')}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => { setNaming(false); setPresetName(''); }}
-                                    className="rounded-input px-2 py-1.5 text-xs text-muted-foreground hover:bg-surface-2"
+                                    className="min-h-11 rounded-input px-2 py-1.5 text-xs text-muted-foreground hover:bg-surface-2"
                                 >
                                     {t('common:actions.cancel')}
                                 </button>
@@ -469,7 +471,7 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
                             <button
                                 type="button"
                                 onClick={() => setNaming(true)}
-                                className="flex items-center gap-1 rounded-input border border-border bg-surface-1 px-2.5 py-1.5 text-xs text-foreground hover:bg-surface-2"
+                                className="flex min-h-11 items-center gap-1 rounded-input border border-border bg-surface-1 px-2.5 py-1.5 text-xs text-foreground hover:bg-surface-2"
                             >
                                 <Bookmark className="h-3.5 w-3.5" />
                                 {t('budget:explorer.presets.save')}
@@ -480,7 +482,7 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
                                 type="button"
                                 onClick={deletePreset}
                                 aria-label={t('budget:explorer.presets.delete')}
-                                className="rounded-input p-1.5 text-destructive hover:bg-destructive/10"
+                                className="min-h-11 min-w-11 rounded-input p-1.5 text-destructive hover:bg-destructive/10"
                             >
                                 <Trash2 className="h-4 w-4" />
                             </button>
@@ -529,10 +531,12 @@ const ReportExplorer: React.FC<ReportExplorerProps> = ({ currency, categoryLabel
                             <thead>
                                 <tr className="border-b border-border text-left text-xs text-muted-foreground">
                                     <th className="py-2 pr-3 font-medium">{t(`budget:explorer.split.${viewSplit}`)}</th>
-                                    <th className="py-2 pr-3 text-right font-medium">{t('budget:explorer.summary.total')}</th>
-                                    <th className="py-2 pr-3 text-right font-medium">{t('budget:explorer.summary.count')}</th>
-                                    <th className="py-2 pr-3 text-right font-medium">{t('budget:explorer.summary.average')}</th>
-                                    <th className="py-2 text-right font-medium">{t('budget:explorer.results.recurring')}</th>
+                                    {/* Short column headers (explorer.cols.*) so the 5 columns
+                                        fit on one line at 390 px — decision 20/11. */}
+                                    <th className="py-2 pr-3 text-right font-medium">{t('budget:explorer.cols.total')}</th>
+                                    <th className="py-2 pr-3 text-right font-medium">{t('budget:explorer.cols.count')}</th>
+                                    <th className="py-2 pr-3 text-right font-medium">{t('budget:explorer.cols.average')}</th>
+                                    <th className="py-2 text-right font-medium">{t('budget:explorer.cols.recurring')}</th>
                                 </tr>
                             </thead>
                             <tbody>

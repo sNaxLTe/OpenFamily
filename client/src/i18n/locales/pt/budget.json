@@ -109,7 +109,10 @@
     "startDateRequired": "Data inicial obrigatória.",
     "intervalInvalid": "O intervalo deve estar entre 1 e 365.",
     "repeatUntilInvalid": "A data final não pode ser anterior à data inicial.",
-    "editRecurrenceType": "Para alternar entre lançamento único e recorrente, exclua este lançamento e adicione-o novamente."
+    "editRecurrenceType": "Para alternar entre lançamento único e recorrente, exclua este lançamento e adicione-o novamente.",
+    "generic": "Ocorreu um erro, tente novamente.",
+    "fieldsRequired": "Categoria, valor e data são obrigatórios.",
+    "paperlessIdInvalid": "ID de documento do Paperless inválido."
   },
   "confirm": {
     "deleteRecurring": "Excluir este lançamento recorrente?",
@@ -170,7 +173,7 @@
       "horizon": "Horizonte (meses)",
       "variableWindow": "Janela de estimativa (meses)",
       "asOf": "Mês de referência: {{month}}",
-      "assumptions": "Pressupostos: os recorrentes são projetados até ao seu fim (recurrence_until); a parte avulsa é estimada pela média dos últimos {{variableMonths}} meses; o saldo inicial é o saldo realizado no fim de {{asOfMonth}}.",
+      "assumptions": "Pressupostos: os recorrentes são projetados até ao seu fim; a parte avulsa é estimada pela média dos últimos {{variableMonths}} meses; o saldo inicial é o saldo realizado no fim de {{asOfMonth}}.",
       "chartProjectedIncome": "Rendimentos projetados",
       "chartProjectedRecurring": "Recorrente projetado",
       "chartProjectedVariable": "Avulso estimado",
@@ -243,6 +246,12 @@
       "unassigned": "Não atribuído",
       "recurring": "Recorrente",
       "oneOff": "Eventual"
+    },
+    "cols": {
+      "total": "Soma",
+      "count": "Nº",
+      "average": "Média",
+      "recurring": "Rec."
     }
   },
   "paperless": {
@@ -255,5 +264,15 @@
     "prefillHint": "Montante, data e descrição são sugestões — podes editar tudo antes de guardar.",
     "unlink": "Remover o documento ligado",
     "openDocument": "Abrir o documento no Paperless"
+  },
+  "toast": {
+    "entrySaved": "Lançamento salvo",
+    "entryDeleted": "Lançamento eliminado",
+    "recurringSaved": "Recorrente salvo",
+    "recurringDeleted": "Recorrente eliminado",
+    "limitSaved": "Limite salvo",
+    "limitDeleted": "Limite eliminado",
+    "kakeiboNoteSaved": "Nota anual salva",
+    "paperlessLinked": "Documento do Paperless vinculado"
   }
 }

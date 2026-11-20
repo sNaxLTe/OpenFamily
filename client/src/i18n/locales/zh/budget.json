@@ -105,7 +105,10 @@
     "startDateRequired": "必须填写开始日期。",
     "intervalInvalid": "重复间隔必须在 1 到 365 之间。",
     "repeatUntilInvalid": "结束日期不能早于开始日期。",
-    "editRecurrenceType": "如需在一次性和定期记录之间切换，请删除此记录后重新添加。"
+    "editRecurrenceType": "如需在一次性和定期记录之间切换，请删除此记录后重新添加。",
+    "generic": "出错了，请重试。",
+    "fieldsRequired": "类别、金额和日期为必填项。",
+    "paperlessIdInvalid": "Paperless 文档 ID 无效。"
   },
   "confirm": {
     "deleteRecurring": "删除这条定期记录？",
@@ -166,7 +169,7 @@
       "horizon": "预测期（月）",
       "variableWindow": "估算窗口（月）",
       "asOf": "参考月份：{{month}}",
-      "assumptions": "假设：周期项按原计划预测至结束（recurrence_until）；一次性支出按最近 {{variableMonths}} 个月的平均值估算；初始余额为 {{asOfMonth}} 月底的实际余额。",
+      "assumptions": "假设：周期项按原计划预测至结束；一次性支出按最近 {{variableMonths}} 个月的平均值估算；初始余额为 {{asOfMonth}} 月底的实际余额。",
       "chartProjectedIncome": "预计收入",
       "chartProjectedRecurring": "预计周期支出",
       "chartProjectedVariable": "预计一次性支出",
@@ -239,6 +242,12 @@
       "unassigned": "未分配",
       "recurring": "经常性",
       "oneOff": "一次性"
+    },
+    "cols": {
+      "total": "合计",
+      "count": "笔数",
+      "average": "均值",
+      "recurring": "周期"
     }
   },
   "paperless": {
@@ -251,5 +260,15 @@
     "prefillHint": "金额、日期和描述为建议值——保存前可随时修改。",
     "unlink": "移除关联文档",
     "openDocument": "在 Paperless 中打开文档"
+  },
+  "toast": {
+    "entrySaved": "已保存条目",
+    "entryDeleted": "已删除条目",
+    "recurringSaved": "已保存定期项",
+    "recurringDeleted": "已删除定期项",
+    "limitSaved": "已保存限额",
+    "limitDeleted": "已删除限额",
+    "kakeiboNoteSaved": "年度备注已保存",
+    "paperlessLinked": "已关联 Paperless 文档"
   }
 }

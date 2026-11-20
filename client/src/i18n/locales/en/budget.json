@@ -109,7 +109,10 @@
     "startDateRequired": "Start date required.",
     "intervalInvalid": "Repeat interval must be between 1 and 365.",
     "repeatUntilInvalid": "Repeat-until date cannot be before the start date.",
-    "editRecurrenceType": "To switch between one-time and recurring, delete this entry and add it again."
+    "editRecurrenceType": "To switch between one-time and recurring, delete this entry and add it again.",
+    "generic": "Something went wrong, please try again.",
+    "fieldsRequired": "Category, amount and date are required.",
+    "paperlessIdInvalid": "Invalid Paperless document id."
   },
   "confirm": {
     "deleteRecurring": "Delete this recurring entry?",
@@ -170,7 +173,7 @@
       "horizon": "Horizon (months)",
       "variableWindow": "Estimate window (months)",
       "asOf": "Reference month: {{month}}",
-      "assumptions": "Assumptions: recurring items are projected up to their end (recurrence_until); the one-off part is estimated from the average of the last {{variableMonths}} months; the starting balance is the realized balance at the end of {{asOfMonth}}.",
+      "assumptions": "Assumptions: recurring items are projected up to their end; the one-off part is estimated from the average of the last {{variableMonths}} months; the starting balance is the realized balance at the end of {{asOfMonth}}.",
       "chartProjectedIncome": "Projected income",
       "chartProjectedRecurring": "Projected recurring",
       "chartProjectedVariable": "Estimated one-off",
@@ -243,6 +246,12 @@
       "unassigned": "Unassigned",
       "recurring": "Recurring",
       "oneOff": "One-off"
+    },
+    "cols": {
+      "total": "Sum",
+      "count": "Count",
+      "average": "Avg",
+      "recurring": "Rec."
     }
   },
   "paperless": {
@@ -255,5 +264,15 @@
     "prefillHint": "Amount, date and description are suggested — you can edit everything before saving.",
     "unlink": "Remove the linked document",
     "openDocument": "Open the document in Paperless"
+  },
+  "toast": {
+    "entrySaved": "Entry saved",
+    "entryDeleted": "Entry deleted",
+    "recurringSaved": "Recurring item saved",
+    "recurringDeleted": "Recurring item deleted",
+    "limitSaved": "Limit saved",
+    "limitDeleted": "Limit deleted",
+    "kakeiboNoteSaved": "Annual note saved",
+    "paperlessLinked": "Paperless document linked"
   }
 }

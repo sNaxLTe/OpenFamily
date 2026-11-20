@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FileText, Search } from 'lucide-react';
 import { api } from '../../lib/api';
+import { friendlyApiError } from '../../lib/friendlyError';
 import { intlLocale } from '../../i18n/format';
 
 // Feature 13: Paperless → Budget picker. Shown inside the transaction sheet
@@ -57,7 +58,7 @@ const PaperlessPicker: React.FC<Props> = ({ onSelect }) => {
                 `/api/budget/paperless/documents?${params.toString()}`
             );
             if (res.success) setDocs(res.data);
-            else setError(res.error || t('budget:paperless.error'));
+            else setError(friendlyApiError(res.error ? new Error(res.error) : null, t, 'budget:paperless.error'));
         } catch {
             setError(t('budget:paperless.error'));
         } finally {
@@ -76,7 +77,7 @@ const PaperlessPicker: React.FC<Props> = ({ onSelect }) => {
                 `/api/budget/paperless/documents/${id}/prefill`
             );
             if (res.success) onSelect(res.data);
-            else setError(res.error || t('budget:paperless.error'));
+            else setError(friendlyApiError(res.error ? new Error(res.error) : null, t, 'budget:paperless.error'));
         } catch {
             setError(t('budget:paperless.error'));
         } finally {

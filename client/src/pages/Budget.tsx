@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useWebSocketUpdates } from '../hooks/useWebSocketUpdates';
 import { api } from '../lib/api';
+import { friendlyApiError } from '../lib/friendlyError';
+import { useToast } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/utils';
 import {
@@ -119,6 +121,7 @@ const toNumber = (v: unknown): number => {
 const Budget: React.FC = () => {
     const { t } = useTranslation(['budget', 'kakeibo', 'common']);
     const categoryLabel = (v: string) => t(`budget:categories.${v}`, { defaultValue: v });
+    const { showToast } = useToast();
     const { user } = useAuth();
     const navigate = useNavigate();
     const currency = user?.currency || 'EUR';
@@ -477,19 +480,37 @@ const Budget: React.FC = () => {
 
             setSheetTransaction(false);
             void loadAll();
+            showToast({
+                title: isRecurring ? t('budget:toast.recurringSaved') : t('budget:toast.entrySaved'),
+                description: !isRecurring && transactionForm.paperless_document_id
+                    ? t('budget:toast.paperlessLinked')
+                    : undefined,
+            });
         } catch (err) {
-            setFormError(err instanceof Error ? err.message : t('budget:errors.save'));
+            setFormError(friendlyApiError(err, t, 'budget:errors.save'));
         }
     };
 
     const handleDeleteRecurring = async (id: string) => {
         if (!confirm(t('budget:confirm.deleteRecurring'))) return;
-        try { await api.delete(`/api/budget/recurring/${id}`); void loadAll(); } catch { /* ignore */ }
+        try {
+            await api.delete(`/api/budget/recurring/${id}`);
+            void loadAll();
+            showToast({ title: t('budget:toast.recurringDeleted') });
+        } catch (err) {
+            showToast({ title: friendlyApiError(err, t, 'budget:errors.generic') });
+        }
     };
 
     const handleDeleteEntry = async (id: string) => {
         if (!confirm(t('budget:confirm.deleteEntry'))) return;
-        try { await api.delete(`/api/budget/entries/${id}`); void loadAll(); } catch { /* ignore */ }
+        try {
+            await api.delete(`/api/budget/entries/${id}`);
+            void loadAll();
+            showToast({ title: t('budget:toast.entryDeleted') });
+        } catch (err) {
+            showToast({ title: friendlyApiError(err, t, 'budget:errors.generic') });
+        }
     };
 
     const openLimitSheet = (category?: string) => {
@@ -516,8 +537,9 @@ const Budget: React.FC = () => {
             });
             setSheetLimit(false);
             void loadAll();
+            showToast({ title: t('budget:toast.limitSaved') });
         } catch (err) {
-            setFormError(err instanceof Error ? err.message : t('budget:errors.save'));
+            setFormError(friendlyApiError(err, t, 'budget:errors.save'));
         }
     };
 
@@ -1410,7 +1432,9 @@ const EntryRow: React.FC<{
                     rel="noopener noreferrer"
                     title={t('budget:paperless.openDocument')}
                     aria-label={t('budget:paperless.openDocument')}
-                    className="flex-shrink-0 rounded-full bg-primary/10 p-1.5 text-primary transition-colors hover:bg-primary/20"
+                    // Tap zone widened to ~46 px by a pseudo-element so the
+                    // badge itself does not grow visually (44 px target).
+                    className="relative flex-shrink-0 rounded-full bg-primary/10 p-1.5 text-primary transition-colors after:absolute after:-inset-2.5 after:content-[''] hover:bg-primary/20"
                 >
                     <FileText className="w-3.5 h-3.5" />
                 </a>

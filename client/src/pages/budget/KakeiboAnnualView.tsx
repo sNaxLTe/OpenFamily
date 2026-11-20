@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { Check, PiggyBank, Target, TrendingUp } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useToast } from '../../components/ui';
 import { formatCurrency } from '../../lib/utils';
 import { dateLocale } from '../../i18n/format';
 import { useWebSocketUpdates } from '../../hooks/useWebSocketUpdates';
@@ -37,6 +38,7 @@ interface Props {
 
 const KakeiboAnnualView: React.FC<Props> = ({ year, canEdit, currency, categoryLabel }) => {
     const { t } = useTranslation(['kakeibo', 'common']);
+    const { showToast } = useToast();
     const [data, setData] = useState<KakeiboAnnual | null>(null);
     const [loading, setLoading] = useState(true);
     const [notesDraft, setNotesDraft] = useState('');
@@ -69,6 +71,7 @@ const KakeiboAnnualView: React.FC<Props> = ({ year, canEdit, currency, categoryL
         try {
             await api.put('/api/kakeibo/annual/notes', { year, notes: notesDraft });
             await load();
+            showToast({ title: t('budget:toast.kakeiboNoteSaved') });
         } finally {
             setSavingNotes(false);
         }

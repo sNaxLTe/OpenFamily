@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCategories } from '../../hooks/useCategories';
@@ -9,17 +9,39 @@ import { useCategories } from '../../hooks/useCategories';
 export const Sheet: React.FC<{ open: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({
     open, onClose, title, children
 }) => {
+    const { t } = useTranslation('common');
+    const titleRef = useRef<HTMLHeadingElement>(null);
+
+    // Accessibility: Escape closes the sheet, and focus lands on the title
+    // when it opens (screen readers announce the dialog through its label).
+    useEffect(() => {
+        if (!open) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', onKey);
+        titleRef.current?.focus();
+        return () => window.removeEventListener('keydown', onKey);
+    }, [open, onClose]);
+
     if (!open) return null;
     return (
         <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
             <div
+                role="dialog"
+                aria-modal="true"
+                aria-label={title}
                 className="relative bg-background rounded-t-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between p-4 border-b border-border">
-                    <h2 className="text-lg font-semibold">{title}</h2>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-surface-2 transition-colors">
+                    <h2 ref={titleRef} tabIndex={-1} className="text-lg font-semibold outline-none">{title}</h2>
+                    <button
+                        onClick={onClose}
+                        aria-label={t('common:actions.close')}
+                        className="p-3 rounded-full hover:bg-surface-2 transition-colors"
+                    >
                         <X className="w-5 h-5" />
                     </button>
                 </div>

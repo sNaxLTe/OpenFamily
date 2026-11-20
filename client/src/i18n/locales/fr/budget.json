@@ -109,7 +109,10 @@
     "startDateRequired": "Date de début requise.",
     "intervalInvalid": "L’intervalle doit être compris entre 1 et 365.",
     "repeatUntilInvalid": "La date de fin ne peut pas précéder la date de début.",
-    "editRecurrenceType": "Pour passer d’une écriture ponctuelle à récurrente (ou inversement), supprimez-la puis ajoutez-la de nouveau."
+    "editRecurrenceType": "Pour passer d’une écriture ponctuelle à récurrente (ou inversement), supprimez-la puis ajoutez-la de nouveau.",
+    "generic": "Une erreur est survenue, veuillez réessayer.",
+    "fieldsRequired": "Catégorie, montant et date sont requis.",
+    "paperlessIdInvalid": "Identifiant de document Paperless invalide."
   },
   "confirm": {
     "deleteRecurring": "Supprimer cette écriture récurrente ?",
@@ -170,7 +173,7 @@
       "horizon": "Horizon (mois)",
       "variableWindow": "Fenêtre d'estimation (mois)",
       "asOf": "Mois de référence : {{month}}",
-      "assumptions": "Hypothèses : les récurrents sont projetés jusqu'à leur fin (recurrence_until) ; la part ponctuelle est estimée par la moyenne des {{variableMonths}} derniers mois ; le solde de départ est le solde réalisé à fin {{asOfMonth}}.",
+      "assumptions": "Hypothèses : les récurrents sont projetés jusqu'à leur fin ; la part ponctuelle est estimée par la moyenne des {{variableMonths}} derniers mois ; le solde de départ est le solde réalisé à fin {{asOfMonth}}.",
       "chartProjectedIncome": "Revenus projetés",
       "chartProjectedRecurring": "Récurrent projeté",
       "chartProjectedVariable": "Ponctuel estimé",
@@ -243,6 +246,12 @@
       "unassigned": "Non assigné",
       "recurring": "Récurrent",
       "oneOff": "Ponctuel"
+    },
+    "cols": {
+      "total": "Sum",
+      "count": "Nbr",
+      "average": "Moy",
+      "recurring": "Récur"
     }
   },
   "paperless": {
@@ -255,5 +264,15 @@
     "prefillHint": "Le montant, la date et la description sont proposés — vous pouvez tout modifier avant de valider.",
     "unlink": "Retirer le document lié",
     "openDocument": "Ouvrir le document dans Paperless"
+  },
+  "toast": {
+    "entrySaved": "Écriture enregistrée",
+    "entryDeleted": "Écriture supprimée",
+    "recurringSaved": "Récurrent enregistré",
+    "recurringDeleted": "Récurrent supprimé",
+    "limitSaved": "Limite enregistrée",
+    "limitDeleted": "Limite supprimée",
+    "kakeiboNoteSaved": "Note annuelle enregistrée",
+    "paperlessLinked": "Document Paperless lié"
   }
 }

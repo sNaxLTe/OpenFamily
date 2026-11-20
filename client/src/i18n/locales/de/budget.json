@@ -109,7 +109,10 @@
     "startDateRequired": "Startdatum erforderlich.",
     "intervalInvalid": "Das Wiederholungsintervall muss zwischen 1 und 365 liegen.",
     "repeatUntilInvalid": "Das Enddatum der Wiederholung darf nicht vor dem Startdatum liegen.",
-    "editRecurrenceType": "Um zwischen einmalig und wiederkehrend zu wechseln, lösche diesen Posten und füge ihn neu hinzu."
+    "editRecurrenceType": "Um zwischen einmalig und wiederkehrend zu wechseln, lösche diesen Posten und füge ihn neu hinzu.",
+    "generic": "Etwas ist schiefgelaufen, bitte versuche es erneut.",
+    "fieldsRequired": "Kategorie, Betrag und Datum sind erforderlich.",
+    "paperlessIdInvalid": "Ungültige Paperless-Dokument-ID."
   },
   "confirm": {
     "deleteRecurring": "Diesen wiederkehrenden Posten löschen?",
@@ -170,7 +173,7 @@
       "horizon": "Horizont (Monate)",
       "variableWindow": "Schätzfenster (Monate)",
       "asOf": "Referenzmonat: {{month}}",
-      "assumptions": "Annahmen: Wiederkehrende Posten werden bis zu ihrem Ende (recurrence_until) prognostiziert; der Einmalanteil wird über den Durchschnitt der letzten {{variableMonths}} Monate geschätzt; das Startsaldo ist das Ist-Saldo am Ende von {{asOfMonth}}.",
+      "assumptions": "Annahmen: Wiederkehrende Posten werden bis zu ihrem Ende prognostiziert; der Einmalanteil wird über den Durchschnitt der letzten {{variableMonths}} Monate geschätzt; das Startsaldo ist das Ist-Saldo am Ende von {{asOfMonth}}.",
       "chartProjectedIncome": "Prognostizierte Einnahmen",
       "chartProjectedRecurring": "Prognostiziert wiederkehrend",
       "chartProjectedVariable": "Geschätzt einmalig",
@@ -243,6 +246,12 @@
       "unassigned": "Nicht zugewiesen",
       "recurring": "Wiederkehrend",
       "oneOff": "Einmalig"
+    },
+    "cols": {
+      "total": "Sum.",
+      "count": "Anz.",
+      "average": "MW",
+      "recurring": "Wdh."
     }
   },
   "paperless": {
@@ -255,5 +264,15 @@
     "prefillHint": "Betrag, Datum und Beschreibung sind Vorschläge — alles bleibt vor dem Speichern bearbeitbar.",
     "unlink": "Verknüpftes Dokument entfernen",
     "openDocument": "Dokument in Paperless öffnen"
+  },
+  "toast": {
+    "entrySaved": "Eintrag gespeichert",
+    "entryDeleted": "Eintrag gelöscht",
+    "recurringSaved": "Wiederkehrender Eintrag gespeichert",
+    "recurringDeleted": "Wiederkehrender Eintrag gelöscht",
+    "limitSaved": "Limit gespeichert",
+    "limitDeleted": "Limit gelöscht",
+    "kakeiboNoteSaved": "Jahresnotiz gespeichert",
+    "paperlessLinked": "Paperless-Dokument verknüpft"
   }
 }

@@ -9,10 +9,12 @@ import {
     TrendingDown, TrendingUp, Wallet,
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { friendlyApiError } from '../../lib/friendlyError';
 import { formatCurrency } from '../../lib/utils';
 import { dateLocale, intlLocale } from '../../i18n/format';
 import { useWebSocketUpdates } from '../../hooks/useWebSocketUpdates';
 import ChartCard from '../../components/app/ChartCard';
+import { useToast } from '../../components/ui';
 import { CategorySelect, Field, Sheet } from './budgetParts';
 import ForecastCard from './ForecastCard';
 
@@ -87,6 +89,7 @@ interface Props {
 
 const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLabel }) => {
     const { t } = useTranslation(['budget', 'common']);
+    const { showToast } = useToast();
     const [annual, setAnnual] = useState<AnnualStats | null>(null);
     const [monthly, setMonthly] = useState<MonthlyStat[]>([]);
     const [schedule, setSchedule] = useState<ScheduleOccurrence[]>([]);
@@ -228,8 +231,9 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
             });
             setSheetLimit(false);
             void load();
+            showToast({ title: t('budget:toast.limitSaved') });
         } catch (err) {
-            setFormError(err instanceof Error ? err.message : t('budget:errors.save'));
+            setFormError(friendlyApiError(err, t));
         }
     };
 
@@ -238,7 +242,10 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
         try {
             await api.delete(`/api/budget/limits/annual/${id}`);
             void load();
-        } catch { /* ignore */ }
+            showToast({ title: t('budget:toast.limitDeleted') });
+        } catch (err) {
+            showToast({ title: friendlyApiError(err, t, 'budget:errors.generic') });
+        }
     };
 
     if (loading) {
@@ -300,7 +307,7 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
                     <button
                         onClick={() => setShowForecast((v) => !v)}
                         aria-pressed={showForecast}
-                        className={`flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                        className={`flex min-h-11 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
                             showForecast
                                 ? 'border-primary bg-primary/10 text-primary'
                                 : 'border-border text-muted-foreground hover:text-foreground'
@@ -397,7 +404,7 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
                             <select
                                 value={filterCategory}
                                 onChange={(e) => setFilterCategory(e.target.value)}
-                                className="rounded-input border border-border bg-surface-1 px-2 py-1 text-xs text-foreground"
+                                className="min-h-11 rounded-input border border-border bg-surface-1 px-2 py-1 text-xs text-foreground"
                                 aria-label={t('budget:annual.recurring.filterCategory')}
                             >
                                 <option value="">{t('budget:annual.recurring.allCategories')}</option>
@@ -408,7 +415,7 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
                             <select
                                 value={filterType}
                                 onChange={(e) => setFilterType(e.target.value as typeof filterType)}
-                                className="rounded-input border border-border bg-surface-1 px-2 py-1 text-xs text-foreground"
+                                className="min-h-11 rounded-input border border-border bg-surface-1 px-2 py-1 text-xs text-foreground"
                                 aria-label={t('budget:annual.recurring.filterType')}
                             >
                                 <option value="all">{t('budget:annual.recurring.all')}</option>

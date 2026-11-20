@@ -17,6 +17,10 @@
     "Quadrimestriel": "Cada 4 meses",
     "Annuel": "Anual"
   },
+  "anchors": {
+    "calendar": "Calendario (próxima ocurrencia del patrón)",
+    "completion": "Al completarla (fecha + frecuencia)"
+  },
   "stats": {
     "total": "Total",
     "completed": "Completadas",
@@ -58,7 +62,9 @@
     "points": "Puntos por ganar (opcional)",
     "pointsHint": "Los miembros asignados ganan estos puntos cuando se completa la tarea.",
     "category": "Categoría (opcional)",
-    "noCategory": "Ninguna"
+    "noCategory": "Ninguna",
+    "recurrenceAnchor": "Anclaje de la recurrencia",
+    "recurrenceAnchorHint": "Al completarla, la fecha límite pasa automáticamente al siguiente ciclo."
   },
   "approval": {
     "pendingBadge": "Esperando aprobación",

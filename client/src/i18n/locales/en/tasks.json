@@ -17,6 +17,10 @@
     "Quadrimestriel": "Every 4 months",
     "Annuel": "Yearly"
   },
+  "anchors": {
+    "calendar": "Calendar (next occurrence of the pattern)",
+    "completion": "On completion (date + frequency)"
+  },
   "stats": {
     "total": "Total",
     "completed": "Completed",
@@ -58,7 +62,9 @@
     "points": "Points to earn (optional)",
     "pointsHint": "Assigned members earn these points when the task is completed.",
     "category": "Category (optional)",
-    "noCategory": "None"
+    "noCategory": "None",
+    "recurrenceAnchor": "Recurrence anchor",
+    "recurrenceAnchorHint": "When completed, the due date automatically moves to the next cycle."
   },
   "approval": {
     "pendingBadge": "Awaiting approval",

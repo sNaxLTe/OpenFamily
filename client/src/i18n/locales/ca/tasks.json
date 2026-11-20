@@ -17,6 +17,10 @@
     "Quadrimestriel": "Cada quatre mesos",
     "Annuel": "Anual"
   },
+  "anchors": {
+    "calendar": "Calendari (següent ocurrència del patró)",
+    "completion": "En completar (data + freqüència)"
+  },
   "stats": {
     "total": "Total",
     "completed": "Completades",
@@ -58,7 +62,9 @@
     "points": "Punts que es poden guanyar (opcional)",
     "pointsHint": "Els membres assignats guanyaran aquests punts quan completin la tasca.",
     "category": "Categoria (opcional)",
-    "noCategory": "Cap"
+    "noCategory": "Cap",
+    "recurrenceAnchor": "Ancoratge de la recurrència",
+    "recurrenceAnchorHint": "En completar-la, la data límit passa automàticament al següent cicle."
   },
   "approval": {
     "pendingBadge": "Pendent d'aprovació",

@@ -17,6 +17,10 @@
     "Quadrimestriel": "Alle 4 Monate",
     "Annuel": "Jährlich"
   },
+  "anchors": {
+    "calendar": "Kalender (nächste Wiederholung des Musters)",
+    "completion": "Bei Erledigung (Datum + Rhythmus)"
+  },
   "stats": {
     "total": "Gesamt",
     "completed": "Erledigt",
@@ -58,7 +62,9 @@
     "points": "Zu verdienende Punkte (optional)",
     "pointsHint": "Zugewiesene Mitglieder erhalten diese Punkte, wenn die Aufgabe erledigt ist.",
     "category": "Kategorie (optional)",
-    "noCategory": "Keine"
+    "noCategory": "Keine",
+    "recurrenceAnchor": "Wiederholungsanker",
+    "recurrenceAnchorHint": "Beim Abhaken rückt das Fälligkeitsdatum automatisch in den nächsten Zyklus."
   },
   "approval": {
     "pendingBadge": "Wartet auf Bestätigung",

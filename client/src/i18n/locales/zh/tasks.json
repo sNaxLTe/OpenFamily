@@ -17,6 +17,10 @@
     "Quadrimestriel": "每4个月",
     "Annuel": "每年"
   },
+  "anchors": {
+    "calendar": "日历（按规律的下一次出现）",
+    "completion": "按完成时间（日期 + 频率）"
+  },
   "stats": {
     "total": "总计",
     "completed": "已完成",
@@ -58,7 +62,9 @@
     "points": "可获得积分（可选）",
     "pointsHint": "任务完成后，被指派的成员将获得这些积分。",
     "category": "分类（可选）",
-    "noCategory": "无"
+    "noCategory": "无",
+    "recurrenceAnchor": "循环锚点",
+    "recurrenceAnchorHint": "完成后，到期日会自动顺延到下一个周期。"
   },
   "approval": {
     "pendingBadge": "等待批准",

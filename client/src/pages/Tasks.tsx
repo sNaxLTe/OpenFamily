@@ -16,6 +16,8 @@ interface Task {
     is_completed: boolean;
     due_date?: string;
     frequency?: string;
+    /** Recurrence anchor (post-version n°2): 'calendar' (null, default) or 'completion'. */
+    recurrence_anchor?: string | null;
     priority?: string;
     /** One of the family's task categories (Settings), or none. */
     category?: string | null;
@@ -102,6 +104,12 @@ const Tasks: React.FC = () => {
         { value: 'Quadrimestriel', label: t('tasks:frequencies.Quadrimestriel') },
         { value: 'Annuel', label: t('tasks:frequencies.Annuel') },
     ];
+    // Ancres de récurrence (post-version n°2), montrées seulement si la
+    // fréquence n'est pas « Une fois ».
+    const RECURRENCE_ANCHORS = [
+        { value: 'calendar', label: t('tasks:anchors.calendar') },
+        { value: 'completion', label: t('tasks:anchors.completion') },
+    ];
     const TASK_CATEGORIES = categories.task.map((name) => ({
         value: name,
         label: t(`tasks:categories.${name}`, { defaultValue: name }),
@@ -131,6 +139,7 @@ const Tasks: React.FC = () => {
         description: '',
         due_date: '',
         frequency: 'Une fois',
+        recurrence_anchor: 'calendar',
         priority: 'Moyenne',
         category: '',
         assigned_to: [] as string[],
@@ -190,6 +199,9 @@ const Tasks: React.FC = () => {
                 ...formData,
                 // Children never send points; the server ignores it anyway.
                 points: isParent ? parseInt(formData.points, 10) || 0 : undefined,
+                // Anchor only meaningful for a recurring task; sent as null
+                // otherwise so switching back to "Une fois" resets it.
+                recurrence_anchor: formData.frequency !== 'Une fois' ? formData.recurrence_anchor : null,
             };
             if (editingTask) {
                 await api.put(`/api/tasks/${editingTask.id}`, payload);
@@ -270,6 +282,7 @@ const Tasks: React.FC = () => {
             // are always the local date — no Date round-trip (and no UTC shift).
             due_date: task.due_date ? task.due_date.slice(0, 10) : '',
             frequency: task.frequency || 'Une fois',
+            recurrence_anchor: task.recurrence_anchor === 'completion' ? 'completion' : 'calendar',
             priority: task.priority || 'Moyenne',
             category: task.category || '',
             assigned_to: task.assigned_to || [],
@@ -285,6 +298,7 @@ const Tasks: React.FC = () => {
             description: '',
             due_date: '',
             frequency: 'Une fois',
+            recurrence_anchor: 'calendar',
             priority: 'Moyenne',
             category: '',
             assigned_to: [],
@@ -673,6 +687,19 @@ const Tasks: React.FC = () => {
                             />
                         </div>
                     </div>
+                    {formData.frequency !== 'Une fois' && (
+                        <div>
+                            <label className="block text-label font-medium text-foreground mb-1.5">
+                                {t('tasks:form.recurrenceAnchor')}
+                            </label>
+                            <Select
+                                value={formData.recurrence_anchor}
+                                onValueChange={(value) => setFormData({ ...formData, recurrence_anchor: value })}
+                                options={RECURRENCE_ANCHORS}
+                            />
+                            <p className="mt-1 text-micro text-muted-foreground">{t('tasks:form.recurrenceAnchorHint')}</p>
+                        </div>
+                    )}
                     <div>
                         <label className="block text-label font-medium text-foreground mb-1.5">
                             {t('tasks:form.category')}

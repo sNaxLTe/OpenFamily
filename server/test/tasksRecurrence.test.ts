@@ -501,3 +501,90 @@ describe('GET /api/tasks — whitelist de reset étendue (C)', () => {
         }
     });
 });
+
+// ─── Lot D : reset au démarrage du cycle (jour-J, due_date <= aujourd'hui) ───
+// Les offsets JS d() sont en UTC mais la session de test force la base en
+// Pacific/Kiritimati : pour les échéances relatives à "aujourd'hui" côté
+// base, utiliser dbd() (CURRENT_DATE de la base) — la frontière testée est
+// ainsi déterministe quel que soit le fuseau.
+const dbd = async (offsetDays: number): Promise<string> => {
+    const r = await query('SELECT (CURRENT_DATE + $1::int)::text AS d', [offsetDays]);
+    return r.rows[0].d as string;
+};
+
+describe('lot D — reset au démarrage du cycle (jour-J)', () => {
+    const setDue = async (id: string, due: string) => {
+        await query('UPDATE tasks SET due_date = $2 WHERE id = $1', [id, due]);
+    };
+    const rowOf = (list: any, id: string) => list.body.data.find((x: any) => x.id === id);
+
+    it('échéance = aujourd\'hui (base) → repasse « à faire » aujourd\'hui, pas de retard artificiel', async () => {
+        const t = await createTask({ frequency: 'Hebdomadaire', due_date: d(-10) });
+        await put(`/api/tasks/${t.id}`, { is_completed: true });
+        const today = await dbd(0);
+        await setDue(t.id, today); // le cycle démarre aujourd'hui
+        const list = await get('/api/tasks');
+        const row = rowOf(list, t.id);
+        expect(row.is_completed).toBe(false);
+        expect(row.completed_at).toBeNull();
+        expect(dayOf(row.due_date)).toBe(today);
+    });
+
+    it('quotidienne cochée hier → échéance avancée à demain ; encore cochée tant que demain n\'est pas atteint, « à faire » au jour-J', async () => {
+        const t = await createTask({ frequency: 'Quotidien', due_date: d(-1) });
+        const done = await put(`/api/tasks/${t.id}`, { is_completed: true });
+        expect(dayOf(done.body.data.due_date)).toBe(d(1)); // avance : première occurrence >= demain (JS/UTC)
+        // Échéance à demain (base) → non atteinte → reste cochée.
+        await setDue(t.id, await dbd(1));
+        let list = await get('/api/tasks');
+        expect(rowOf(list, t.id).is_completed).toBe(true);
+        // Jour-J (échéance = aujourd'hui base) → « à faire » immédiatement.
+        const today = await dbd(0);
+        await setDue(t.id, today);
+        list = await get('/api/tasks');
+        const row = rowOf(list, t.id);
+        expect(row.is_completed).toBe(false);
+        expect(dayOf(row.due_date)).toBe(today);
+    });
+
+    it('hebdo cochée → « à faire » le jour-J du cycle suivant (pas un jour après)', async () => {
+        const t = await createTask({ frequency: 'Hebdomadaire', due_date: d(-7) });
+        const done = await put(`/api/tasks/${t.id}`, { is_completed: true });
+        expect(dayOf(done.body.data.due_date)).toBe(d(7)); // avance à la semaine prochaine
+        await setDue(t.id, await dbd(0)); // jour-J du nouveau cycle
+        const list = await get('/api/tasks');
+        expect(rowOf(list, t.id).is_completed).toBe(false);
+    });
+
+    it('complétée en avance : reste cochée tant que l\'échéance n\'est pas atteinte, reset au jour-J', async () => {
+        const t = await createTask({ frequency: 'Hebdomadaire', due_date: d(3) });
+        await put(`/api/tasks/${t.id}`, { is_completed: true });
+        let list = await get('/api/tasks');
+        expect(rowOf(list, t.id).is_completed).toBe(true); // échéance future
+        await setDue(t.id, await dbd(1)); // demain (base) : pas encore atteint
+        list = await get('/api/tasks');
+        expect(rowOf(list, t.id).is_completed).toBe(true);
+        await setDue(t.id, await dbd(0)); // aujourd'hui (base) = jour-J
+        list = await get('/api/tasks');
+        expect(rowOf(list, t.id).is_completed).toBe(false);
+    });
+
+    it('idempotence au jour-J : deux GET successifs → un seul reset, état stable', async () => {
+        const t = await createTask({ frequency: 'Mensuel', due_date: d(-40) });
+        await put(`/api/tasks/${t.id}`, { is_completed: true });
+        await setDue(t.id, await dbd(0));
+        const first = await get('/api/tasks');
+        const second = await get('/api/tasks');
+        expect(rowOf(first, t.id).is_completed).toBe(false);
+        expect(rowOf(second, t.id).is_completed).toBe(false);
+        expect(rowOf(second, t.id).completed_at).toBeNull();
+    });
+
+    it('les cas en retard des tests existants restent valides (hier <= aujourd\'hui base)', async () => {
+        const t = await createTask({ frequency: 'Hebdomadaire', due_date: d(-10) });
+        await put(`/api/tasks/${t.id}`, { is_completed: true });
+        await setDue(t.id, await dbd(-1)); // hier
+        const list = await get('/api/tasks');
+        expect(rowOf(list, t.id).is_completed).toBe(false);
+    });
+});

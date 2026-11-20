@@ -79,17 +79,20 @@ const enrichTasksWithMembers = async (tasks: any[], userId: string) => {
 // Get all tasks
 router.get('/', async (req: AuthRequest, res) => {
     try {
-        // Reset paresseux des corvées récurrentes (post-version n°2) : une
-        // tâche récurrente complétée dont l'échéance est passée redevient
-        // « à faire » — rattrapage automatique après reboot/vacances, et
-        // idempotent (une seule écriture, même après 3 semaines). C'est un
-        // UPDATE direct, JAMAIS la route d'édition : les reward_transactions
-        // du cycle écoulé ne sont pas touchées (le reversement ne vit que
-        // dans le PUT manuel). pending_approval est exclu : l'arbitrage
-        // parent reste possible et l'enfant ne perd pas ses points. Les
-        // retards (tâches non cochées) ne sont jamais effacés, et « Une
-        // fois »/NULL reste strictement ponctuel. « Personnalisé » n'est
-        // reset que si son intervalle custom est valide (défense anti-garbage).
+        // Reset paresseux des corvées récurrentes (post-version n°2, corrigé
+        // en lot D) : une tâche récurrente complétée dont l'échéance est
+        // ATTEINTE (due_date <= aujourd'hui, et non "passée") redevient
+        // « à faire » dès le démarrage du cycle — sinon elle apparaîtrait un
+        // jour « en retard » artificiel. Rattrapage automatique après
+        // reboot/vacances, et idempotent (une seule écriture, même après 3
+        // semaines). C'est un UPDATE direct, JAMAIS la route d'édition : les
+        // reward_transactions du cycle écoulé ne sont pas touchées (le
+        // reversement ne vit que dans le PUT manuel). pending_approval est
+        // exclu : l'arbitrage parent reste possible et l'enfant ne perd pas
+        // ses points. Les retards (tâches non cochées) ne sont jamais
+        // effacés, et « Une fois »/NULL reste strictement ponctuel.
+        // « Personnalisé » n'est reset que si son intervalle custom est
+        // valide (défense anti-garbage).
         await query(
             `UPDATE tasks
              SET is_completed = false, completed_at = NULL
@@ -109,7 +112,7 @@ router.get('/', async (req: AuthRequest, res) => {
                AND is_completed
                AND NOT pending_approval
                AND due_date IS NOT NULL
-               AND due_date < CURRENT_DATE`,
+               AND due_date <= CURRENT_DATE`,
             [req.userId, [...BUILTIN_RECURRING_TASK_FREQUENCIES]]
         );
         const result = await query(

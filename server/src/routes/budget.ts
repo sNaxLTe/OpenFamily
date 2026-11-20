@@ -11,6 +11,13 @@ import {
     formatDateOnly,
     expandRecurringTransactions,
 } from '../lib/budgetRecurrence';
+import {
+    paperlessConfig,
+    paperlessConfigured,
+    paperlessDocumentUrl,
+    searchPaperlessDocuments,
+    getPaperlessPrefill,
+} from '../services/integrations/paperless';
 
 const router = Router();
 router.use(authMiddleware);
@@ -338,6 +345,7 @@ router.post('/entries', requireParent, async (req: AuthRequest, res) => {
             is_expense,
             assigned_to,
             add_to_calendar,
+            paperless_document_id,
         } = req.body;
         const parsedAmount = toOptionalNumber(amount);
 
@@ -345,15 +353,24 @@ router.post('/entries', requireParent, async (req: AuthRequest, res) => {
             return res.status(400).json({ success: false, error: 'category, amount and date are required' });
         }
 
+        // Feature 13: optional Paperless link (positive integer or null).
+        const paperless = parsePaperlessDocumentId(paperless_document_id);
+        if (!paperless.ok) {
+            return res.status(400).json({ success: false, error: 'paperless_document_id must be a positive integer or null' });
+        }
+        const paperlessId = paperless.id ?? null;
+        // The URL is derived server-side from PAPERLESS_URL, never from the client.
+        const paperlessUrl = derivePaperlessUrl(paperlessId);
+
         const assignedTo = toNullIfEmpty(assigned_to) as string | null;
         if (assignedTo && !(await ensureMemberBelongsToUser(assignedTo, req.userId!))) {
             return res.status(400).json({ success: false, error: 'Member not found' });
         }
 
         const result = await query(
-            `INSERT INTO budget_entries (user_id, category, amount, description, date, is_expense, assigned_to)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-            [req.userId, category, parsedAmount, toNullIfEmpty(description), date, Boolean(is_expense), assignedTo]
+            `INSERT INTO budget_entries (user_id, category, amount, description, date, is_expense, assigned_to, paperless_document_id, paperless_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+            [req.userId, category, parsedAmount, toNullIfEmpty(description), date, Boolean(is_expense), assignedTo, paperlessId, paperlessUrl]
         );
 
         await syncBudgetEntryCalendar(
@@ -389,12 +406,23 @@ router.put('/entries/:id', requireParent, async (req: AuthRequest, res) => {
             is_expense,
             assigned_to,
             add_to_calendar,
+            paperless_document_id,
         } = req.body;
         const parsedAmount = amount !== undefined ? toOptionalNumber(amount) : undefined;
 
         if (amount !== undefined && parsedAmount === null) {
             return res.status(400).json({ success: false, error: 'Invalid amount format' });
         }
+
+        // Feature 13: the Paperless link is only touched when the field is
+        // present in the body — null unlinks, a positive integer links.
+        const hasPaperless = paperless_document_id !== undefined;
+        const paperless = parsePaperlessDocumentId(paperless_document_id);
+        if (!paperless.ok) {
+            return res.status(400).json({ success: false, error: 'paperless_document_id must be a positive integer or null' });
+        }
+        const paperlessId = paperless.id ?? null;
+        const paperlessUrl = derivePaperlessUrl(paperlessId);
 
         // Handle assigned_to: allow explicit null to unassign
         const assignedToValue = assigned_to === '' || assigned_to === null ? null : assigned_to;
@@ -410,8 +438,10 @@ router.put('/entries/:id', requireParent, async (req: AuthRequest, res) => {
            description = COALESCE($3, description),
            date = COALESCE($4, date),
            is_expense = COALESCE($5, is_expense),
-           assigned_to = $6
-       WHERE id = $7 AND user_id = $8 RETURNING *`,
+           assigned_to = $6,
+           paperless_document_id = CASE WHEN $7 THEN $8::integer ELSE paperless_document_id END,
+           paperless_url = CASE WHEN $7 THEN $9::text ELSE paperless_url END
+       WHERE id = $10 AND user_id = $11 RETURNING *`,
             [
                 toNullIfEmpty(category),
                 parsedAmount,
@@ -419,6 +449,9 @@ router.put('/entries/:id', requireParent, async (req: AuthRequest, res) => {
                 toNullIfEmpty(date),
                 is_expense !== undefined ? Boolean(is_expense) : undefined,
                 assignedToValue !== undefined ? assignedToValue : null,
+                hasPaperless,
+                hasPaperless ? paperlessId : null,
+                hasPaperless ? paperlessUrl : null,
                 id,
                 req.userId,
             ]
@@ -476,6 +509,87 @@ router.delete('/entries/:id', requireParent, async (req: AuthRequest, res) => {
     } catch (error) {
         console.error('Delete budget entry error:', error);
         res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
+// ─── Paperless bridge (feature 13) ───────────────────────────────────────────
+// Server-side proxy to a Paperless-ngx instance configured via PAPERLESS_URL /
+// PAPERLESS_TOKEN (env, never sent to the client). STRICTLY READ-ONLY towards
+// Paperless (GET only). When the env is missing, the data routes answer 503
+// with a clear message and the status route reports configured:false so the
+// UI hides the button.
+
+// Feature 13 validation: undefined = field not sent, null = explicit unlink,
+// a positive integer = link. Anything else is refused with a 400.
+const parsePaperlessDocumentId = (value: unknown): { ok: true; id: number | null } | { ok: false } => {
+    if (value === undefined) return { ok: true, id: undefined as unknown as null };
+    if (value === null || value === '') return { ok: true, id: null };
+    const n = typeof value === 'number'
+        ? value
+        : typeof value === 'string' && /^\d+$/.test(value.trim())
+            ? Number(value.trim())
+            : NaN;
+    if (!Number.isInteger(n) || n <= 0 || n > Number.MAX_SAFE_INTEGER) return { ok: false };
+    return { ok: true, id: n };
+};
+
+// The stored paperless_url is ALWAYS derived by the server from its own
+// PAPERLESS_URL — a client-sent URL is never stored, so no arbitrary link
+// can be attached to an entry.
+const derivePaperlessUrl = (id: number | null): string | null => {
+    if (id === null) return null;
+    const cfg = paperlessConfig();
+    return cfg ? paperlessDocumentUrl(cfg.baseUrl, id) : null;
+};
+
+// Lightweight liveness for the UI: leaks nothing (no URL, no token).
+router.get('/paperless/status', async (req: AuthRequest, res) => {
+    res.json({ success: true, data: { configured: paperlessConfigured() } });
+});
+
+// Search / recent documents. Parents only (the link is written by parents).
+router.get('/paperless/documents', requireParent, async (req: AuthRequest, res) => {
+    const cfg = paperlessConfig();
+    if (!cfg) {
+        return res.status(503).json({
+            success: false,
+            error: 'Paperless is not configured on this server (set PAPERLESS_URL and PAPERLESS_TOKEN)',
+        });
+    }
+    try {
+        const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 200) : '';
+        const limitRaw = toOptionalNumber(req.query.limit);
+        const limit = limitRaw === null ? 20 : Math.min(50, Math.max(1, Math.trunc(limitRaw)));
+        const documents = await searchPaperlessDocuments(cfg, q, limit);
+        res.json({ success: true, data: documents });
+    } catch (error) {
+        console.error('Paperless documents error:', error instanceof Error ? error.message : error);
+        res.status(502).json({ success: false, error: 'Paperless is unreachable or answered an error' });
+    }
+});
+
+// OCR-based prefill for one document. Parents only.
+router.get('/paperless/documents/:id/prefill', requireParent, async (req: AuthRequest, res) => {
+    const cfg = paperlessConfig();
+    if (!cfg) {
+        return res.status(503).json({
+            success: false,
+            error: 'Paperless is not configured on this server (set PAPERLESS_URL and PAPERLESS_TOKEN)',
+        });
+    }
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ success: false, error: 'Invalid document id' });
+    }
+    try {
+        const prefill = await getPaperlessPrefill(cfg, id);
+        if (!prefill) {
+            return res.status(404).json({ success: false, error: 'Document not found in Paperless' });
+        }
+        res.json({ success: true, data: prefill });
+    } catch (error) {
+        console.error('Paperless prefill error:', error instanceof Error ? error.message : error);
+        res.status(502).json({ success: false, error: 'Paperless is unreachable or answered an error' });
     }
 });
 

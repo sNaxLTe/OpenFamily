@@ -256,5 +256,16 @@
       "recurring": "Повторяющиеся",
       "oneOff": "Разовые"
     }
+  },
+  "paperless": {
+    "fromPaperless": "Из Paperless",
+    "sheetTitle": "Выберите документ Paperless",
+    "searchPlaceholder": "Найти документ…",
+    "search": "Найти",
+    "empty": "Документы не найдены.",
+    "error": "Paperless сейчас не отвечает.",
+    "prefillHint": "Сумма, дата и описание предложены — всё можно изменить перед сохранением.",
+    "unlink": "Убрать привязанный документ",
+    "openDocument": "Открыть документ в Paperless"
   }
 }

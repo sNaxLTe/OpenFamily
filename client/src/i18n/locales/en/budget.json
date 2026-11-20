@@ -244,5 +244,16 @@
       "recurring": "Recurring",
       "oneOff": "One-off"
     }
+  },
+  "paperless": {
+    "fromPaperless": "From Paperless",
+    "sheetTitle": "Pick a Paperless document",
+    "searchPlaceholder": "Search a document…",
+    "search": "Search",
+    "empty": "No document found.",
+    "error": "Paperless is not responding right now.",
+    "prefillHint": "Amount, date and description are suggested — you can edit everything before saving.",
+    "unlink": "Remove the linked document",
+    "openDocument": "Open the document in Paperless"
   }
 }

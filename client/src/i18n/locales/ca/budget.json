@@ -244,5 +244,16 @@
       "recurring": "Recurrent",
       "oneOff": "Puntual"
     }
+  },
+  "paperless": {
+    "fromPaperless": "Des de Paperless",
+    "sheetTitle": "Tria un document de Paperless",
+    "searchPlaceholder": "Cerca un document…",
+    "search": "Cerca",
+    "empty": "No s'ha trobat cap document.",
+    "error": "Paperless no respon ara mateix.",
+    "prefillHint": "Import, data i descripció són suggeriments: ho pots editar tot abans de desar.",
+    "unlink": "Treure el document vinculat",
+    "openDocument": "Obre el document a Paperless"
   }
 }

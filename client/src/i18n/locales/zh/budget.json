@@ -240,5 +240,16 @@
       "recurring": "经常性",
       "oneOff": "一次性"
     }
+  },
+  "paperless": {
+    "fromPaperless": "来自 Paperless",
+    "sheetTitle": "选择 Paperless 文档",
+    "searchPlaceholder": "搜索文档…",
+    "search": "搜索",
+    "empty": "未找到文档。",
+    "error": "Paperless 当前无响应。",
+    "prefillHint": "金额、日期和描述为建议值——保存前可随时修改。",
+    "unlink": "移除关联文档",
+    "openDocument": "在 Paperless 中打开文档"
   }
 }

@@ -244,5 +244,16 @@
       "recurring": "Récurrent",
       "oneOff": "Ponctuel"
     }
+  },
+  "paperless": {
+    "fromPaperless": "Depuis Paperless",
+    "sheetTitle": "Choisir un document Paperless",
+    "searchPlaceholder": "Rechercher un document…",
+    "search": "Rechercher",
+    "empty": "Aucun document trouvé.",
+    "error": "Paperless ne répond pas pour le moment.",
+    "prefillHint": "Le montant, la date et la description sont proposés — vous pouvez tout modifier avant de valider.",
+    "unlink": "Retirer le document lié",
+    "openDocument": "Ouvrir le document dans Paperless"
   }
 }

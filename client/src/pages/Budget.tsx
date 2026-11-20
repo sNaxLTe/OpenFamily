@@ -6,12 +6,13 @@ import { formatCurrency } from '../lib/utils';
 import {
     Plus, ChevronLeft, ChevronRight, Check, RefreshCw,
     Trash2, Edit2, TrendingUp, TrendingDown, Wallet, Eye,
-    Calendar, AlertTriangle, Lock
+    Calendar, AlertTriangle, Lock, FileText, X
 } from 'lucide-react';
 import KakeiboView from './budget/KakeiboView';
 import KakeiboAnnualView from './budget/KakeiboAnnualView';
 import AnnualBudgetView from './budget/AnnualBudgetView';
 import ReportExplorer from './budget/ReportExplorer';
+import PaperlessPicker, { PaperlessPrefill } from './budget/PaperlessPicker';
 import { Sheet, Field, CategorySelect } from './budget/budgetParts';
 import {
     PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -54,6 +55,9 @@ interface BudgetEntry {
     date: string;
     is_expense: boolean;
     linked_calendar_event_id?: string | null;
+    // Feature 13: optional link to a Paperless document (URL derived server-side).
+    paperless_document_id?: number | null;
+    paperless_url?: string | null;
 }
 
 interface Forecast {
@@ -179,7 +183,13 @@ const Budget: React.FC = () => {
         recurrence_frequency: 'none' as 'none' | RecurringTransaction['recurrence_frequency'],
         recurrence_interval: '1',
         recurrence_until: '',
+        // Feature 13: Paperless document linked to this one-time entry (null = none).
+        paperless_document_id: null as number | null,
     });
+    // Feature 13 UI state: is Paperless configured server-side, and the picker sheet.
+    const [paperlessAvailable, setPaperlessAvailable] = useState(false);
+    const [sheetPaperless, setSheetPaperless] = useState(false);
+    const [paperlessTitle, setPaperlessTitle] = useState('');
     const [limitForm, setLimitForm] = useState({ category: 'Alimentation', monthly_limit: '' });
     const [formError, setFormError] = useState('');
     const [transactionAddToCalendar, setTransactionAddToCalendar] = useState(false);
@@ -238,6 +248,18 @@ const Budget: React.FC = () => {
         }
     }, [currentMonth, currentYear, startOfMonth, endOfMonth]);
 
+    // Feature 13: ask the server once whether Paperless is configured (the
+    // endpoint leaks no URL/token); the "Depuis Paperless" button stays hidden
+    // otherwise. Only parents get the button, so only they need the status.
+    useEffect(() => {
+        if (!canEdit) return;
+        let cancelled = false;
+        api.get<{ success: boolean; data: { configured: boolean } }>('/api/budget/paperless/status')
+            .then((r) => { if (!cancelled && r.success) setPaperlessAvailable(Boolean(r.data.configured)); })
+            .catch(() => {});
+        return () => { cancelled = true; };
+    }, [canEdit]);
+
     useEffect(() => { void loadAll(); }, [loadAll]);
     useWebSocketUpdates('budget', () => { void loadAll(); });
 
@@ -285,6 +307,7 @@ const Budget: React.FC = () => {
         setEditingEntry(null);
         setTransactionAddToCalendar(false);
         setReminderDays('');
+        setPaperlessTitle('');
         setTransactionForm({
             description: '',
             amount: '',
@@ -294,6 +317,7 @@ const Budget: React.FC = () => {
             recurrence_frequency: 'none',
             recurrence_interval: '1',
             recurrence_until: '',
+            paperless_document_id: null,
         });
         setFormError('');
         setSheetTransaction(true);
@@ -313,6 +337,7 @@ const Budget: React.FC = () => {
             recurrence_frequency: r.recurrence_frequency,
             recurrence_interval: r.recurrence_interval.toString(),
             recurrence_until: r.recurrence_until ?? '',
+            paperless_document_id: null,
         });
         setFormError('');
         setSheetTransaction(true);
@@ -322,6 +347,7 @@ const Budget: React.FC = () => {
         setEditingRecurring(null);
         setEditingEntry(entry);
         setTransactionAddToCalendar(Boolean(entry.linked_calendar_event_id));
+        setPaperlessTitle(entry.paperless_document_id ? `#${entry.paperless_document_id}` : '');
         setTransactionForm({
             description: entry.description || '',
             amount: entry.amount.toString(),
@@ -331,9 +357,25 @@ const Budget: React.FC = () => {
             recurrence_frequency: 'none',
             recurrence_interval: '1',
             recurrence_until: '',
+            paperless_document_id: entry.paperless_document_id ?? null,
         });
         setFormError('');
         setSheetTransaction(true);
+    };
+
+    // Feature 13: a Paperless document was picked — prefill amount / date /
+    // description (ALL stay editable; category and expense/income direction
+    // are NEVER deduced, the user keeps choosing them).
+    const handlePaperlessSelect = (prefill: PaperlessPrefill) => {
+        setSheetPaperless(false);
+        setPaperlessTitle(prefill.title || `#${prefill.document_id}`);
+        setTransactionForm((f) => ({
+            ...f,
+            amount: prefill.suggested_amount != null ? prefill.suggested_amount.toString() : f.amount,
+            date: prefill.suggested_date ?? f.date,
+            description: f.description || prefill.suggested_description,
+            paperless_document_id: prefill.document_id,
+        }));
     };
 
     const handleSaveTransaction = async (e: React.FormEvent) => {
@@ -422,6 +464,8 @@ const Budget: React.FC = () => {
                     date: transactionForm.date,
                     is_expense: transactionForm.is_expense,
                     add_to_calendar: transactionAddToCalendar,
+                    // Feature 13: the server derives paperless_url itself.
+                    paperless_document_id: transactionForm.paperless_document_id,
                 };
 
                 if (editingEntry) {
@@ -1062,6 +1106,41 @@ const Budget: React.FC = () => {
                         placeholder={t('budget:fields.descriptionPlaceholder')}
                     />
 
+                    {/* Feature 13: prefill from a Paperless document (one-time entries
+                        only; hidden when the server has no Paperless configured) */}
+                    {!editingRecurring && paperlessAvailable && (
+                        <div className="flex flex-wrap items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setSheetPaperless(true)}
+                                className="flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-medium text-primary active:scale-95 transition-transform"
+                            >
+                                <FileText className="h-4 w-4" />
+                                {t('budget:paperless.fromPaperless')}
+                            </button>
+                            {transactionForm.paperless_document_id !== null && (
+                                <span className="flex items-center gap-1 rounded-full bg-surface-2 px-2 py-1 text-xs text-foreground">
+                                    <FileText className="h-3 w-3 shrink-0 text-primary" />
+                                    <span className="max-w-[10rem] truncate">
+                                        {paperlessTitle || `#${transactionForm.paperless_document_id}`}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        aria-label={t('budget:paperless.unlink')}
+                                        title={t('budget:paperless.unlink')}
+                                        onClick={() => {
+                                            setTransactionForm((f) => ({ ...f, paperless_document_id: null }));
+                                            setPaperlessTitle('');
+                                        }}
+                                        className="rounded-full p-0.5 hover:bg-danger/10"
+                                    >
+                                        <X className="h-3 w-3 text-muted-foreground" />
+                                    </button>
+                                </span>
+                            )}
+                        </div>
+                    )}
+
                     <Field
                         label={t('budget:fields.amount', { currency })}
                         type="number"
@@ -1228,6 +1307,15 @@ const Budget: React.FC = () => {
                 </form>
             </Sheet>
 
+            {/* Sheet : sélection d'un document Paperless (feature 13) */}
+            <Sheet
+                open={sheetPaperless}
+                onClose={() => setSheetPaperless(false)}
+                title={t('budget:paperless.sheetTitle')}
+            >
+                <PaperlessPicker onSelect={handlePaperlessSelect} />
+            </Sheet>
+
             {/* Sheet : plafond de catégorie */}
             <Sheet
                 open={sheetLimit}
@@ -1313,6 +1401,20 @@ const EntryRow: React.FC<{
             <span className={`text-base font-bold flex-shrink-0 ${entry.is_expense ? 'text-danger' : 'text-success'}`}>
                 {entry.is_expense ? '-' : '+'}{formatCurrency(entry.amount, currency)}
             </span>
+            {/* Feature 13: 📄 badge on Paperless-linked entries — opens the
+                document (URL stored server-side) in a new tab */}
+            {entry.paperless_url && (
+                <a
+                    href={entry.paperless_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={t('budget:paperless.openDocument')}
+                    aria-label={t('budget:paperless.openDocument')}
+                    className="flex-shrink-0 rounded-full bg-primary/10 p-1.5 text-primary transition-colors hover:bg-primary/20"
+                >
+                    <FileText className="w-3.5 h-3.5" />
+                </a>
+            )}
             {canEdit && (
                 <div className="flex items-center gap-1 flex-shrink-0">
                     <button

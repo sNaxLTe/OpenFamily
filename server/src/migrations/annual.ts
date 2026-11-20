@@ -75,4 +75,19 @@ export const annualMigrations: readonly Migration[] = [
             'CREATE INDEX IF NOT EXISTS idx_kakeibo_annual_notes_user ON kakeibo_annual_notes(user_id)',
         ],
     },
+    {
+        // Pont Paperless → Budget (fonctionnalité 13): a budget entry can be
+        // linked to a Paperless document. paperless_document_id is the id in
+        // the Paperless instance (server-side env config), paperless_url is
+        // the document's web page, DERIVED BY THE SERVER from PAPERLESS_URL
+        // (never taken from the client, so no arbitrary URL is stored).
+        // Both nullable: existing entries are untouched. Read-only bridge:
+        // nothing here writes to Paperless.
+        id: 'annual/0005-paperless-link',
+        statements: [
+            'ALTER TABLE budget_entries ADD COLUMN IF NOT EXISTS paperless_document_id INTEGER',
+            'ALTER TABLE budget_entries ADD COLUMN IF NOT EXISTS paperless_url TEXT',
+            'CREATE INDEX IF NOT EXISTS idx_budget_entries_paperless_document ON budget_entries(paperless_document_id)',
+        ],
+    },
 ];

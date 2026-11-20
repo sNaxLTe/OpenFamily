@@ -244,5 +244,16 @@
       "recurring": "Wiederkehrend",
       "oneOff": "Einmalig"
     }
+  },
+  "paperless": {
+    "fromPaperless": "Aus Paperless",
+    "sheetTitle": "Paperless-Dokument wählen",
+    "searchPlaceholder": "Dokument suchen…",
+    "search": "Suchen",
+    "empty": "Kein Dokument gefunden.",
+    "error": "Paperless antwortet derzeit nicht.",
+    "prefillHint": "Betrag, Datum und Beschreibung sind Vorschläge — alles bleibt vor dem Speichern bearbeitbar.",
+    "unlink": "Verknüpftes Dokument entfernen",
+    "openDocument": "Dokument in Paperless öffnen"
   }
 }

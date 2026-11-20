@@ -244,5 +244,16 @@
       "recurring": "Recorrente",
       "oneOff": "Eventual"
     }
+  },
+  "paperless": {
+    "fromPaperless": "Do Paperless",
+    "sheetTitle": "Escolher um documento Paperless",
+    "searchPlaceholder": "Procurar um documento…",
+    "search": "Procurar",
+    "empty": "Nenhum documento encontrado.",
+    "error": "O Paperless não está a responder de momento.",
+    "prefillHint": "Montante, data e descrição são sugestões — podes editar tudo antes de guardar.",
+    "unlink": "Remover o documento ligado",
+    "openDocument": "Abrir o documento no Paperless"
   }
 }

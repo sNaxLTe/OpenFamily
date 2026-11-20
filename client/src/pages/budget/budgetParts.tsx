@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCategories } from '../../hooks/useCategories';
+import { useHistoryAwareOverlay } from '../../lib/useHistoryAwareOverlay';
 
 // Form building blocks shared by the Budget page and its annual view, so both
 // render exactly the same sheets, fields and category pickers.
@@ -11,6 +12,11 @@ export const Sheet: React.FC<{ open: boolean; onClose: () => void; title: string
 }) => {
     const { t } = useTranslation('common');
     const titleRef = useRef<HTMLHeadingElement>(null);
+
+    // History-aware: browser back / iOS swipe-back closes the sheet instead
+    // of leaving the app (standalone PWA). Covers every sheet of the Budget
+    // module, since they all render through this component.
+    useHistoryAwareOverlay(open, onClose);
 
     // Accessibility: Escape closes the sheet, and focus lands on the title
     // when it opens (screen readers announce the dialog through its label).

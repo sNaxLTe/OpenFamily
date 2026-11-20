@@ -4,7 +4,8 @@ import { app, query, registerWithPassword, resetState, startSuite, stopSuite } f
 import { coreMigrations } from '../src/migrations/registry';
 import { annualMigrations } from '../src/migrations/annual';
 import { validateRegistry } from '../src/migrations/runner';
-import { checkBudgetReminders } from '../src/lib/budgetReminderScheduler';
+import { checkBudgetReminders, pruneBudgetReminderLog } from '../src/lib/budgetReminderScheduler';
+import { addDays, dayInZone, instantInZone } from '../src/lib/timeZone';
 
 // Lot 2 of the annual-budget fork:
 // - GET /api/budget/recurring/schedule?start_date&end_date (feature 2)
@@ -308,5 +309,67 @@ describe('budget reminder job (feature 3, mécanisme B)', () => {
         await checkBudgetReminders(new Date('2026-06-10T12:00:00Z'));
         expect(await reminderCount()).toBe(0);
         expect((await query('SELECT COUNT(*)::int AS n FROM annual_reminder_log')).rows[0].n).toBe(0);
+    });
+
+    it('stays idempotent with reminder_days=365: prune is by occurrence date, not by row age (regression)', async () => {
+        await setParis();
+        // J = today on the family's clocks. Yearly series whose only occurrence
+        // inside the expansion window [J, J+365] is at J+300; its reminder day
+        // (J+300-365 = J-65) is already past, so the first pass sends it once.
+        const zone = 'Europe/Paris';
+        const now0 = new Date();
+        const j = dayInZone(now0, zone);
+        const occ = addDays(j, 300);
+        const series = (await addRecurring({
+            label: 'Cotisation annuelle', amount: 90, category: 'Assurance',
+            start_date: occ, recurrence_frequency: 'yearly',
+        })).body.data;
+        await put(`/api/budget/recurring/${series.id}/reminder`, { reminder_days: 365 });
+
+        await checkBudgetReminders(now0);
+        expect(await reminderCount()).toBe(1);
+        expect((await query('SELECT occurrence_date, reminder_days FROM annual_reminder_log')).rows)
+            .toEqual([{ occurrence_date: occ, reminder_days: 365 }]);
+
+        // 61 days pass since the reminder was sent (row age only).
+        await query("UPDATE annual_reminder_log SET sent_at = now() - interval '61 days'");
+
+        // The OLD purge (sent_at < now() - 60 days) would wipe the idempotence
+        // row here — proven explicitly: no line survives it past 60 days...
+        const oldPurge = await query("DELETE FROM annual_reminder_log WHERE sent_at < now() - interval '60 days'");
+        expect(oldPurge.rowCount).toBe(1);
+        expect((await query('SELECT COUNT(*)::int AS n FROM annual_reminder_log')).rows[0].n).toBe(0);
+        // ...restore the row (still 61 days old), as the production state would be.
+        await query(
+            `INSERT INTO annual_reminder_log (recurring_expense_id, occurrence_date, reminder_days)
+             VALUES ($1, $2::date, 365) ON CONFLICT DO NOTHING`,
+            [series.id, occ]
+        );
+        await query("UPDATE annual_reminder_log SET sent_at = now() - interval '61 days'");
+
+        // The NEW purge is by occurrence: an occurrence still ahead (occ = J+300)
+        // keeps its row whatever the row age. On the old code this call deletes
+        // the row and the test fails right here.
+        await pruneBudgetReminderLog();
+        expect((await query('SELECT COUNT(*)::int AS n FROM annual_reminder_log')).rows[0].n).toBe(1);
+
+        // J+61: the occurrence is still ahead and still inside [J+61, J+61+365]
+        // → replays send nothing new: exactly one notification, ever.
+        const now61 = instantInZone(`${addDays(j, 61)}T12:00:00`, zone);
+        await checkBudgetReminders(now61);
+        await checkBudgetReminders(new Date(now61.getTime() + 6 * 60 * 60 * 1000));
+        expect(await reminderCount()).toBe(1);
+        expect((await query('SELECT COUNT(*)::int AS n FROM annual_reminder_log')).rows[0].n).toBe(1);
+
+        // The new purge still cleans up: rows whose occurrence has passed
+        // (vs the DB's CURRENT_DATE) are removed, future ones are never touched.
+        await query(
+            `INSERT INTO annual_reminder_log (recurring_expense_id, occurrence_date, reminder_days)
+             VALUES ($1, CURRENT_DATE - interval '2 days', 365) ON CONFLICT DO NOTHING`,
+            [series.id]
+        );
+        await pruneBudgetReminderLog();
+        expect((await query('SELECT occurrence_date FROM annual_reminder_log')).rows)
+            .toEqual([{ occurrence_date: occ }]);
     });
 });

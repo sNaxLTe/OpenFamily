@@ -164,9 +164,17 @@ export async function checkBudgetReminders(now: Date = new Date()): Promise<void
     }
 }
 
-async function pruneBudgetReminderLog(): Promise<void> {
+export async function pruneBudgetReminderLog(): Promise<void> {
     try {
-        await query("DELETE FROM annual_reminder_log WHERE sent_at < now() - interval '60 days'");
+        // Prune by OCCURRENCE, never by row age (sent_at): the expansion window
+        // starts at today, so an occurrence can only be re-requested while it is
+        // still ahead. Purging on sent_at would delete the idempotence row of any
+        // occurrence whose reminder_days > 60 while the occurrence is still in
+        // the window → the reminder would be re-sent every 15 min until then.
+        // The 1-day margin covers families whose "today" is a day off the
+        // server's CURRENT_DATE (extreme zones). An occurrence in the past can
+        // never enter the window again, so its rows are pure history.
+        await query("DELETE FROM annual_reminder_log WHERE occurrence_date < CURRENT_DATE - interval '1 day'");
     } catch (err) {
         logger.error('budget.reminder_prune_error', {
             error: err instanceof Error ? err.message : String(err),

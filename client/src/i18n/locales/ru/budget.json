@@ -124,7 +124,8 @@
     "editRecurrenceType": "Чтобы сделать запись разовой или повторяющейся, удалите её и добавьте заново.",
     "generic": "Произошла ошибка, попробуйте ещё раз.",
     "fieldsRequired": "Укажите категорию, сумму и дату.",
-    "paperlessIdInvalid": "Недопустимый ID документа Paperless."
+    "paperlessIdInvalid": "Недопустимый ID документа Paperless.",
+    "reminderInvalid": "Напоминание должно быть числом дней от 0 до 365."
   },
   "confirm": {
     "deleteRecurring": "Удалить это регулярное списание?",

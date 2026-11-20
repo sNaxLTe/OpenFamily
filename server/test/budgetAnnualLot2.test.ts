@@ -311,6 +311,34 @@ describe('budget reminder job (feature 3, mécanisme B)', () => {
         expect((await query('SELECT COUNT(*)::int AS n FROM annual_reminder_log')).rows[0].n).toBe(0);
     });
 
+    it('accepts reminder_days at creation (POST /recurring), validated like the PUT', async () => {
+        const created = await addRecurring({
+            label: 'Assurance', amount: 120, category: 'Assurance',
+            start_date: '2026-06-14', recurrence_frequency: 'monthly',
+            reminder_days: 10,
+        });
+        expect(created.status).toBe(200);
+        expect(created.body.data.reminder_days).toBe(10);
+
+        // Absent → no reminder (null), as before.
+        const plain = await addRecurring({
+            label: 'Courses', amount: 50, category: 'Alimentation',
+            start_date: '2026-06-10', recurrence_frequency: 'weekly',
+        });
+        expect(plain.status).toBe(200);
+        expect(plain.body.data.reminder_days).toBeNull();
+
+        // Out of range / not an integer → 400, nothing created.
+        for (const bad of [-1, 366, 1.5, 'abc']) {
+            const res = await addRecurring({
+                label: 'X', amount: 1, category: 'Divers',
+                start_date: '2026-06-10', reminder_days: bad,
+            });
+            expect(res.status).toBe(400);
+        }
+        expect((await query('SELECT COUNT(*)::int AS n FROM recurring_expenses')).rows[0].n).toBe(2);
+    });
+
     it('stays idempotent with reminder_days=365: prune is by occurrence date, not by row age (regression)', async () => {
         await setParis();
         // J = today on the family's clocks. Yearly series whose only occurrence

@@ -112,7 +112,8 @@
     "editRecurrenceType": "Pour passer d’une écriture ponctuelle à récurrente (ou inversement), supprimez-la puis ajoutez-la de nouveau.",
     "generic": "Une erreur est survenue, veuillez réessayer.",
     "fieldsRequired": "Catégorie, montant et date sont requis.",
-    "paperlessIdInvalid": "Identifiant de document Paperless invalide."
+    "paperlessIdInvalid": "Identifiant de document Paperless invalide.",
+    "reminderInvalid": "Le rappel doit être un nombre de jours entre 0 et 365."
   },
   "confirm": {
     "deleteRecurring": "Supprimer cette écriture récurrente ?",

@@ -180,8 +180,8 @@ router.get('/', async (req: AuthRequest, res) => {
 router.get('/annual', async (req: AuthRequest, res) => {
     try {
         const year = Number(req.query.year);
-        if (!Number.isInteger(year)) {
-            return res.status(400).json({ success: false, error: 'year is required' });
+        if (!Number.isInteger(year) || year < 1 || year > 9999) {
+            return res.status(400).json({ success: false, error: 'year must be an integer between 1 and 9999' });
         }
 
         // Household salaries (fixed, carried every month).
@@ -302,8 +302,8 @@ router.put('/annual/notes', requireParent, async (req: AuthRequest, res) => {
     try {
         const { year, notes } = req.body as { year?: unknown; notes?: unknown };
         const y = Number(year);
-        if (!Number.isInteger(y)) {
-            return res.status(400).json({ success: false, error: 'year is required' });
+        if (!Number.isInteger(y) || y < 1 || y > 9999) {
+            return res.status(400).json({ success: false, error: 'year must be an integer between 1 and 9999' });
         }
         if (notes === undefined) {
             return res.status(400).json({ success: false, error: 'notes is required (string, or null to clear)' });

@@ -116,6 +116,15 @@ const toNumber = (v: unknown): number => {
     return 0;
 };
 
+// localStorage can throw (quota exceeded, blocked in private mode…): a failed
+// preference write must never break the page.
+const safeGetItem = (key: string): string | null => {
+    try { return localStorage.getItem(key); } catch { return null; }
+};
+const safeSetItem = (key: string, value: string): void => {
+    try { localStorage.setItem(key, value); } catch { /* non-fatal */ }
+};
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const Budget: React.FC = () => {
@@ -131,12 +140,12 @@ const Budget: React.FC = () => {
     // Persisted per browser so the choice sticks.
     type BudgetMode = 'classic' | 'analytics' | 'kakeibo' | 'explorer';
     const [mode, setMode] = useState<BudgetMode>(() => {
-        const saved = localStorage.getItem('openfamily.budgetMode');
+        const saved = safeGetItem('openfamily.budgetMode');
         return saved === 'analytics' || saved === 'kakeibo' || saved === 'explorer' ? saved : 'classic';
     });
     const switchMode = (next: BudgetMode) => {
         setMode(next);
-        localStorage.setItem('openfamily.budgetMode', next);
+        safeSetItem('openfamily.budgetMode', next);
     };
 
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
@@ -146,16 +155,16 @@ const Budget: React.FC = () => {
     // sticks per browser; the default stays "month".
     type ViewMode = 'month' | 'year';
     const [view, setView] = useState<ViewMode>(() =>
-        localStorage.getItem('openfamily.budgetView') === 'year' ? 'year' : 'month'
+        safeGetItem('openfamily.budgetView') === 'year' ? 'year' : 'month'
     );
     const switchView = (next: ViewMode) => {
         setView(next);
-        localStorage.setItem('openfamily.budgetView', next);
+        safeSetItem('openfamily.budgetView', next);
         // The analytics tab is month-oriented; the annual view replaces it.
         if (next === 'year') {
             setMode((m) => {
                 const nextMode = m === 'analytics' ? 'classic' : m;
-                if (nextMode !== m) localStorage.setItem('openfamily.budgetMode', nextMode);
+                if (nextMode !== m) safeSetItem('openfamily.budgetMode', nextMode);
                 return nextMode;
             });
         }
@@ -413,6 +422,19 @@ const Budget: React.FC = () => {
             return;
         }
 
+        // Feature 3, mechanism B: the J-X reminder can be set at creation too
+        // — same rule as the server: integer 0-365, empty = none.
+        const rawReminder = reminderDays.trim();
+        const parsedReminder = rawReminder === '' ? null : parseInt(rawReminder, 10);
+        if (
+            isRecurring &&
+            parsedReminder !== null &&
+            (!Number.isInteger(parsedReminder) || parsedReminder < 0 || parsedReminder > 365)
+        ) {
+            setFormError(t('budget:errors.reminderInvalid'));
+            return;
+        }
+
         // Existing one-time and recurring rows stay in their current storage model.
         // New entries can choose either model from the same form.
         if (editingEntry && isRecurring) {
@@ -436,6 +458,8 @@ const Budget: React.FC = () => {
                     recurrence_until: transactionForm.recurrence_until || null,
                     is_expense: transactionForm.is_expense,
                     add_to_calendar: transactionAddToCalendar,
+                    // Accepted at creation since the polish lot (server validates too).
+                    reminder_days: parsedReminder,
                 };
 
                 if (editingRecurring) {
@@ -444,8 +468,6 @@ const Budget: React.FC = () => {
                     // Feature 3, mechanism B: the budget reminder "J-X days"
                     // lives on its own endpoint and coexists with the calendar
                     // link (mechanism A). Empty field = reminder cleared.
-                    const rawReminder = reminderDays.trim();
-                    const parsedReminder = rawReminder === '' ? null : parseInt(rawReminder, 10);
                     const previousReminder = editingRecurring.reminder_days ?? null;
                     if (
                         parsedReminder !== previousReminder &&
@@ -1280,10 +1302,10 @@ const Budget: React.FC = () => {
                     {/* Rappels de la série récurrente (feature 3) : les deux
                         mécanismes coexistent — A = rappels de l'événement de
                         calendrier lié (case ci-dessus), B = rappel budget J-X. */}
-                    {editingRecurring && (
+                    {transactionForm.recurrence_frequency !== 'none' && (
                         <div className="space-y-3 rounded-xl border border-border bg-surface-2/40 p-3">
                             <p className="text-sm font-medium">{t('budget:reminders.title')}</p>
-                            {editingRecurring.linked_calendar_event_id && (
+                            {editingRecurring?.linked_calendar_event_id && (
                                 <p className="text-xs text-muted-foreground">
                                     {t('budget:reminders.calendarLinked')}{' '}
                                     <button

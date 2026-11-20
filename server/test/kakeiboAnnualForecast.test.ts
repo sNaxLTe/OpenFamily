@@ -4,6 +4,7 @@ import { app, query, registerWithPassword, resetState, startSuite, stopSuite } f
 import { coreMigrations } from '../src/migrations/registry';
 import { annualMigrations } from '../src/migrations/annual';
 import { validateRegistry } from '../src/migrations/runner';
+import { expandRecurringTransactions } from '../src/lib/budgetRecurrence';
 
 // Lot 3 of the annual-budget fork:
 // - GET /api/kakeibo/annual?year= + PUT /api/kakeibo/annual/notes (feature 5),
@@ -108,6 +109,17 @@ describe('GET /api/kakeibo/annual', () => {
         const res = await get('/api/kakeibo/annual?year=2026', child.token);
         expect(res.status).toBe(200);
         expect(res.body.data.realizedTotal).toBe(11 * 2200 + 1600);
+    });
+
+    it('rejects years outside 1-9999 with a clean 400 on GET /annual and PUT /annual/notes', async () => {
+        for (const bad of ['0', '-1', '10000']) {
+            const res = await get(`/api/kakeibo/annual?year=${bad}`);
+            expect(res.status).toBe(400);
+            expect(res.body.error).toMatch(/between 1 and 9999/);
+            expect((await put('/api/kakeibo/annual/notes', { year: Number(bad), notes: 'x' })).status).toBe(400);
+        }
+        expect((await get('/api/kakeibo/annual?year=9999')).status).toBe(200);
+        expect((await put('/api/kakeibo/annual/notes', { year: 9999, notes: 'ok' })).status).toBe(200);
     });
 });
 
@@ -229,5 +241,84 @@ describe('GET /api/budget/forecast', () => {
         const child = await makeChild();
         expect((await get('/api/budget/forecast?months=2&as_of=2026-06-15', child.token)).status).toBe(200);
         expect((await get('/api/budget/forecast?month=6&year=2026', child.token)).status).toBe(200);
+    });
+
+    it('months=N batches the recurring series in ONE query — output strictly identical to per-month expansion', async () => {
+        // Mixed fixture: series starting before / during the horizon, one
+        // ending mid-horizon, weekly and yearly frequencies, expense + income.
+        await addEntry({ category: 'Divers', amount: 100, date: '2026-05-05', is_expense: true });
+        await addEntry({ category: 'Divers', amount: 300, date: '2026-06-05', is_expense: true });
+        await addRecurring({ label: 'Loyer', amount: 100, category: 'Logement', start_date: '2026-01-05' });
+        await addRecurring({ label: 'Salaire', amount: 3000, category: 'Salaire', start_date: '2026-01-05', is_expense: false });
+        await addRecurring({ label: 'Cadeau', amount: 40, category: 'Divers', start_date: '2026-07-15', recurrence_frequency: 'weekly', is_expense: false });
+        await addRecurring({ label: 'Taxe', amount: 50, category: 'Impots', start_date: '2026-07-10', recurrence_until: '2026-08-31' });
+        await addRecurring({ label: 'Anniv', amount: 200, category: 'Divers', start_date: '2026-09-01', recurrence_frequency: 'yearly' });
+
+        const months = 6;
+        const res = await get(`/api/budget/forecast?months=${months}&variable_months=2&as_of=2026-06-15`);
+        expect(res.status).toBe(200);
+        const data = res.body.data;
+        expect(data.months).toHaveLength(months);
+
+        // Independent expectation, computed with the single source of truth
+        // (expandRecurringTransactions) per month window — the same expansion
+        // the batched route runs in memory.
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const shift = (y: number, m: number, off: number) => {
+            const t = y * 12 + (m - 1) + off;
+            return { y: Math.floor(t / 12), m: (t % 12) + 1 };
+        };
+        const rangeOf = (y: number, m: number) => ({
+            start: `${y}-${pad(m)}-01`,
+            end: `${y}-${pad(m)}-${pad(new Date(Date.UTC(y, m, 0)).getUTCDate())}`,
+        });
+        const seriesRows = (await query(
+            'SELECT * FROM recurring_expenses WHERE user_id = $1 AND is_active = true',
+            [parent.user.id]
+        )).rows;
+
+        // opening: entries through 2026-06-30 (−400) + recurring occurrences
+        // through 2026-06-30 (Loyer 6×100, Salaire 6×3000).
+        const histOcc = expandRecurringTransactions(seriesRows, '2026-01-01', '2026-06-30');
+        const opening = -400
+            + histOcc.reduce((s, o) => s + (o.is_expense ? -Number(o.amount) : Number(o.amount)), 0);
+        expect(data.opening_balance).toBe(opening);
+        expect(opening).toBe(17000);
+
+        // variable estimate: (100 + 300) / 2 = 200 per month, no income entries.
+        let cumulative = opening;
+        const expected = [];
+        for (let i = 1; i <= months; i++) {
+            const { y, m } = shift(2026, 6, i);
+            const range = rangeOf(y, m);
+            const occ = expandRecurringTransactions(seriesRows, range.start, range.end);
+            const recExp = occ.reduce((s, o) => s + (o.is_expense ? Number(o.amount) : 0), 0);
+            const recInc = occ.reduce((s, o) => s + (o.is_expense ? 0 : Number(o.amount)), 0);
+            const projectedExpenses = recExp + 200;
+            const projectedIncome = recInc;
+            const monthlyBalance = projectedIncome - projectedExpenses;
+            cumulative += monthlyBalance;
+            expected.push({
+                month: `${y}-${pad(m)}`,
+                recurring_expenses: recExp,
+                recurring_income: recInc,
+                estimated_variable: 200,
+                estimated_variable_income: 0,
+                projected_expenses: projectedExpenses,
+                projected_income: projectedIncome,
+                monthly_balance: monthlyBalance,
+                cumulative_balance: cumulative,
+            });
+        }
+        // Strict output equivalence, month by month, field by field.
+        expect(data.months).toEqual(expected);
+        // Sanity on the tricky series: Taxe (until 2026-08-31) in Jul/Aug only,
+        // Cadeau (weekly from 2026-07-15) 5 occurrences in September,
+        // Anniv (yearly 2026-09-01) in September only.
+        expect(data.months[0].month).toBe('2026-07');
+        expect(data.months[0].recurring_expenses).toBe(150); // loyer 100 + taxe 50
+        expect(data.months[2].month).toBe('2026-09');
+        expect(data.months[2].recurring_expenses).toBe(300); // loyer 100 + anniv 200 ; taxe ended
+        expect(data.months[2].recurring_income).toBe(3200); // salaire 3000 + cadeau 5×40
     });
 });

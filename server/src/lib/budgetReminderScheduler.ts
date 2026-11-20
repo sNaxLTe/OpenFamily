@@ -100,61 +100,70 @@ export async function checkBudgetReminders(now: Date = new Date()): Promise<void
         }
 
         for (const [userId, familySeries] of byFamily) {
-            const zone = await familyTimeZone(userId);
-            const today = dayInZone(now, zone);
+            // One family in error (unreadable zone, failed claim…) must not
+            // block the others: each family is processed in its own try/catch.
+            try {
+                const zone = await familyTimeZone(userId);
+                const today = dayInZone(now, zone);
 
-            for (const item of familySeries) {
-                const days = Number(item.reminder_days);
-                // Only occurrences from today up to today+days can have their
-                // reminder day reached while the occurrence is still ahead.
-                const occurrences = expandRecurringTransactions(
-                    [item],
-                    today,
-                    addDays(today, days)
-                );
-
-                for (const occurrence of occurrences) {
-                    const occurrenceDate: string = occurrence.occurrence_date;
-                    const reminderDay = addDays(occurrenceDate, -days);
-                    const due = instantInZone(
-                        `${reminderDay}T${pad(BUDGET_REMINDER_HOUR)}:00:00`,
-                        zone
+                for (const item of familySeries) {
+                    const days = Number(item.reminder_days);
+                    // Only occurrences from today up to today+days can have their
+                    // reminder day reached while the occurrence is still ahead.
+                    const occurrences = expandRecurringTransactions(
+                        [item],
+                        today,
+                        addDays(today, days)
                     );
-                    // Not yet 09:00 on the reminder day — the next pass will take it.
-                    if (now.getTime() < due.getTime()) continue;
 
-                    // Claimed before sending: one reminder per occurrence and
-                    // offset, ever, even across restarts and overlapping passes.
-                    const claimed = await query(
-                        `INSERT INTO annual_reminder_log (recurring_expense_id, occurrence_date, reminder_days)
-                         VALUES ($1, $2::date, $3)
-                         ON CONFLICT DO NOTHING
-                         RETURNING 1`,
-                        [item.id, occurrenceDate, days]
-                    );
-                    if (claimed.rows.length === 0) continue;
+                    for (const occurrence of occurrences) {
+                        const occurrenceDate: string = occurrence.occurrence_date;
+                        const reminderDay = addDays(occurrenceDate, -days);
+                        const due = instantInZone(
+                            `${reminderDay}T${pad(BUDGET_REMINDER_HOUR)}:00:00`,
+                            zone
+                        );
+                        // Not yet 09:00 on the reminder day — the next pass will take it.
+                        if (now.getTime() < due.getTime()) continue;
 
-                    const amount = String(Number(occurrence.amount ?? item.amount));
-                    const accounts = await query(
-                        'SELECT id FROM users WHERE id = $1 OR family_owner_id = $1',
-                        [userId]
-                    );
-                    for (const account of accounts.rows as Array<{ id: string }>) {
-                        await createLocalizedNotification({
-                            userId: account.id,
-                            type: 'budget_reminder',
-                            relatedId: item.id,
-                            url: '/budget',
-                            texts: textsFor(String(item.label), amount, days),
+                        // Claimed before sending: one reminder per occurrence and
+                        // offset, ever, even across restarts and overlapping passes.
+                        const claimed = await query(
+                            `INSERT INTO annual_reminder_log (recurring_expense_id, occurrence_date, reminder_days)
+                             VALUES ($1, $2::date, $3)
+                             ON CONFLICT DO NOTHING
+                             RETURNING 1`,
+                            [item.id, occurrenceDate, days]
+                        );
+                        if (claimed.rows.length === 0) continue;
+
+                        const amount = String(Number(occurrence.amount ?? item.amount));
+                        const accounts = await query(
+                            'SELECT id FROM users WHERE id = $1 OR family_owner_id = $1',
+                            [userId]
+                        );
+                        for (const account of accounts.rows as Array<{ id: string }>) {
+                            await createLocalizedNotification({
+                                userId: account.id,
+                                type: 'budget_reminder',
+                                relatedId: item.id,
+                                url: '/budget',
+                                texts: textsFor(String(item.label), amount, days),
+                            });
+                        }
+                        logger.info('budget.reminder_sent', {
+                            recurringExpenseId: item.id,
+                            occurrenceDate,
+                            reminderDays: days,
+                            accounts: accounts.rows.length,
                         });
                     }
-                    logger.info('budget.reminder_sent', {
-                        recurringExpenseId: item.id,
-                        occurrenceDate,
-                        reminderDays: days,
-                        accounts: accounts.rows.length,
-                    });
                 }
+            } catch (err) {
+                logger.error('budget.reminder_family_error', {
+                    userId,
+                    error: err instanceof Error ? err.message : String(err),
+                });
             }
         }
     } catch (err) {

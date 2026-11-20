@@ -112,7 +112,8 @@
     "editRecurrenceType": "Per canviar entre un moviment puntual i un de recurrent, suprimeix aquest moviment i torna’l a afegir.",
     "generic": "S'ha produït un error, torna-ho a provar.",
     "fieldsRequired": "Categoria, import i data són obligatoris.",
-    "paperlessIdInvalid": "ID de document de Paperless no vàlid."
+    "paperlessIdInvalid": "ID de document de Paperless no vàlid.",
+    "reminderInvalid": "El recordatori ha de ser un nombre de dies entre 0 i 365."
   },
   "confirm": {
     "deleteRecurring": "Vols suprimir aquest moviment recurrent?",

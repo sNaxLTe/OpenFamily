@@ -108,7 +108,8 @@
     "editRecurrenceType": "如需在一次性和定期记录之间切换，请删除此记录后重新添加。",
     "generic": "出错了，请重试。",
     "fieldsRequired": "类别、金额和日期为必填项。",
-    "paperlessIdInvalid": "Paperless 文档 ID 无效。"
+    "paperlessIdInvalid": "Paperless 文档 ID 无效。",
+    "reminderInvalid": "提醒必须是 0 到 365 之间的天数。"
   },
   "confirm": {
     "deleteRecurring": "删除这条定期记录？",

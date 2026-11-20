@@ -352,6 +352,10 @@ router.post('/entries', requireParent, async (req: AuthRequest, res) => {
         if (!category || parsedAmount === null || !date) {
             return res.status(400).json({ success: false, error: 'category, amount and date are required' });
         }
+        // Same rule as the client: an entry amount is strictly positive.
+        if (parsedAmount <= 0) {
+            return res.status(400).json({ success: false, error: 'amount must be a positive number' });
+        }
 
         // Feature 13: optional Paperless link (positive integer or null).
         const paperless = parsePaperlessDocumentId(paperless_document_id);
@@ -950,6 +954,9 @@ router.get('/statistics/annual', async (req: AuthRequest, res) => {
         if (parsedYear === null || !Number.isInteger(parsedYear)) {
             return res.status(400).json({ success: false, error: 'year is required' });
         }
+        if (parsedYear < 1 || parsedYear > 9999) {
+            return res.status(400).json({ success: false, error: 'year must be an integer between 1 and 9999' });
+        }
 
         const monthly = await getMonthlySeries(req.userId!, parsedYear);
 
@@ -965,9 +972,15 @@ router.get('/statistics/annual', async (req: AuthRequest, res) => {
             ? monthly.reduce((a, b) => (b.balance < a.balance ? b : a))
             : null;
 
-        const previousMonthly = await getMonthlySeries(req.userId!, parsedYear - 1);
-        const previousYearIncome = previousMonthly.reduce((sum, m) => sum + m.totalIncome, 0);
-        const previousYearExpenses = previousMonthly.reduce((sum, m) => sum + m.totalExpenses, 0);
+        // Year 1 has no previous year (and year 0 would crash the date casts):
+        // report zeros instead.
+        let previousYearIncome = 0;
+        let previousYearExpenses = 0;
+        if (parsedYear > 1) {
+            const previousMonthly = await getMonthlySeries(req.userId!, parsedYear - 1);
+            previousYearIncome = previousMonthly.reduce((sum, m) => sum + m.totalIncome, 0);
+            previousYearExpenses = previousMonthly.reduce((sum, m) => sum + m.totalExpenses, 0);
+        }
 
         res.json({
             success: true,
@@ -1424,6 +1437,7 @@ router.post('/recurring', requireParent, async (req: AuthRequest, res) => {
             recurrence_until,
             is_expense,
             add_to_calendar,
+            reminder_days,
         } = req.body;
 
         const parsedAmount = toOptionalNumber(amount);
@@ -1437,6 +1451,21 @@ router.post('/recurring', requireParent, async (req: AuthRequest, res) => {
                 success: false,
                 error: 'label, amount and valid start_date are required',
             });
+        }
+
+        // Feature 3 (mechanism B): the budget reminder can be set at creation,
+        // same rule as PUT /recurring/:id/reminder — integer 0-365, or
+        // null/absent for no reminder.
+        let reminderDays: number | null = null;
+        if (reminder_days !== undefined && reminder_days !== null) {
+            const parsed = typeof reminder_days === 'number' ? reminder_days : Number(reminder_days);
+            if (!Number.isInteger(parsed) || parsed < 0 || parsed > 365) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'reminder_days must be an integer between 0 and 365, or null',
+                });
+            }
+            reminderDays = parsed;
         }
 
         const startDateValue = formatDateOnly(startDate);
@@ -1460,9 +1489,10 @@ router.post('/recurring', requireParent, async (req: AuthRequest, res) => {
                 recurrence_frequency,
                 recurrence_interval,
                 recurrence_until,
-                is_expense
+                is_expense,
+                reminder_days
              )
-             VALUES ($1, $2, $3, $4, $5, $6::date, $7, $8, $9::date, $10)
+             VALUES ($1, $2, $3, $4, $5, $6::date, $7, $8, $9::date, $10, $11)
              RETURNING *`,
             [
                 req.userId,
@@ -1475,6 +1505,7 @@ router.post('/recurring', requireParent, async (req: AuthRequest, res) => {
                 interval,
                 untilValue,
                 is_expense === undefined ? true : Boolean(is_expense),
+                reminderDays,
             ]
         );
 
@@ -1840,26 +1871,32 @@ const handleForecastProjection = async (req: AuthRequest, res: Response) => {
         estimatedVariableIncome = toNumber(variableRows.rows[0]?.income) / variableMonths;
     }
 
-    // Horizon: the N months after the current one.
+    // Horizon: the N months after the current one. The recurring series are
+    // fetched ONCE for the whole horizon (this used to be one query per month
+    // — an N+1): expandRecurringTransactions already respects start_date and
+    // recurrence_until per month window, so the per-month occurrence sets are
+    // strictly identical to the per-month queries.
+    const horizonLast = shiftMonth(currentYear, currentMonth, months);
+    const horizonEnd = getMonthRange(horizonLast.year, horizonLast.month).end;
+    const horizonSeries = (await query(
+        `SELECT *
+         FROM recurring_expenses
+         WHERE user_id = $1
+           AND is_active = true
+           AND start_date <= $2::date`,
+        [req.userId, horizonEnd]
+    )).rows.map(mapRecurringTransaction);
+
     const horizon: Array<Record<string, unknown>> = [];
     let cumulative = opening;
     for (let i = 1; i <= months; i++) {
         const { year, month } = shiftMonth(currentYear, currentMonth, i);
         const range = getMonthRange(year, month);
-        const seriesResult = await query(
-            `SELECT *
-             FROM recurring_expenses
-             WHERE user_id = $1
-               AND is_active = true
-               AND start_date <= $3::date
-               AND (recurrence_until IS NULL OR recurrence_until >= $2::date)`,
-            [req.userId, range.start, range.end]
-        );
 
         let recurringExpenses = 0;
         let recurringIncome = 0;
         for (const occurrence of expandRecurringTransactions(
-            seriesResult.rows.map(mapRecurringTransaction),
+            horizonSeries,
             range.start,
             range.end
         )) {

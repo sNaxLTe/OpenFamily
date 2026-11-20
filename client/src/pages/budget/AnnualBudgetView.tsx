@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import {
@@ -111,6 +111,11 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
     const yearStart = `${year}-01-01`;
     const yearEnd = `${year}-12-31`;
 
+    // Guard against setState after unmount: the view unmounts as soon as the
+    // user flips back to the month view while a load is in flight.
+    const aliveRef = useRef(true);
+    useEffect(() => () => { aliveRef.current = false; }, []);
+
     const load = useCallback(async () => {
         try {
             const [annualRes, monthlyRes, scheduleRes, entriesRes, limitsRes] = await Promise.all([
@@ -124,6 +129,7 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
                 ),
                 api.get<{ success: boolean; data: AnnualLimit[] }>(`/api/budget/limits/annual?year=${year}`),
             ]);
+            if (!aliveRef.current) return;
             if (annualRes.success) setAnnual(annualRes.data);
             if (monthlyRes.success) setMonthly(monthlyRes.data);
             if (scheduleRes.success) {
@@ -138,11 +144,11 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
         } catch (err) {
             console.error('Annual budget load error', err);
         } finally {
-            setLoading(false);
+            if (aliveRef.current) setLoading(false);
         }
     }, [year, yearStart, yearEnd]);
 
-    useEffect(() => { setLoading(true); void load(); }, [load]);
+    useEffect(() => { aliveRef.current = true; setLoading(true); void load(); }, [load]);
     useWebSocketUpdates('budget', () => { void load(); });
 
     const cur = (v: number) => formatCurrency(v, currency);
@@ -258,6 +264,9 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
 
     const hasData = annual !== null && (annual.totalIncome !== 0 || annual.totalExpenses !== 0);
     const prevDelta = annual ? annual.balance - annual.previousYear.balance : 0;
+    // Spec: the "vs N-1" card is hidden when the previous year has no data at all.
+    const hasPreviousYear = annual !== null &&
+        (annual.previousYear.totalIncome !== 0 || annual.previousYear.totalExpenses !== 0);
 
     const recapItems: Array<{ label: string; value: string; icon: React.ReactNode; tone: string }> = annual ? [
         { label: t('budget:annual.recap.income'), value: cur(annual.totalIncome), icon: <TrendingUp className="w-4 h-4 text-success" />, tone: 'text-foreground' },
@@ -267,12 +276,12 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
         { label: t('budget:annual.recap.monthlyAverage'), value: cur(annual.monthlyAverage), icon: <Wallet className="w-4 h-4 text-muted-foreground" />, tone: 'text-foreground' },
         { label: t('budget:annual.recap.bestMonth'), value: annual.bestMonth ? `${monthName(annual.bestMonth.month)} · ${cur(annual.bestMonth.balance)}` : '—', icon: <TrendingUp className="w-4 h-4 text-success" />, tone: 'text-success' },
         { label: t('budget:annual.recap.worstMonth'), value: annual.worstMonth ? `${monthName(annual.worstMonth.month)} · ${cur(annual.worstMonth.balance)}` : '—', icon: <TrendingDown className="w-4 h-4 text-danger" />, tone: 'text-danger' },
-        {
+        ...(hasPreviousYear ? [{
             label: t('budget:annual.recap.vsPrevious', { year: year - 1 }),
             value: `${prevDelta >= 0 ? '+' : ''}${cur(prevDelta)}`,
             icon: prevDelta >= 0 ? <TrendingUp className="w-4 h-4 text-success" /> : <TrendingDown className="w-4 h-4 text-danger" />,
             tone: prevDelta >= 0 ? 'text-success' : 'text-danger',
-        },
+        }] : []),
     ] : [];
 
     return (

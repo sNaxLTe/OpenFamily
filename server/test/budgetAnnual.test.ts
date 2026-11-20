@@ -61,6 +61,17 @@ describe('GET /api/budget/statistics/annual', () => {
         expect(notAYear.status).toBe(400);
     });
 
+    it('rejects years outside 1-9999 with a clean 400 (never a 500)', async () => {
+        for (const bad of ['0', '-3', '10000', '99999']) {
+            const res = await request(app).get(`/api/budget/statistics/annual?year=${bad}`).set(asParent(parent.token));
+            expect(res.status).toBe(400);
+            expect(res.body.error).toMatch(/between 1 and 9999/);
+        }
+        // Boundary years are accepted.
+        expect((await request(app).get('/api/budget/statistics/annual?year=1').set(asParent(parent.token))).status).toBe(200);
+        expect((await request(app).get('/api/budget/statistics/annual?year=9999').set(asParent(parent.token))).status).toBe(200);
+    });
+
     it('returns zeros and null best/worst months for a year without data', async () => {
         const body = await annual(2026);
         expect(body.success).toBe(true);
@@ -122,5 +133,17 @@ describe('GET /api/budget/statistics/annual', () => {
         expect(body.data.bestMonth).toEqual({ month: 1, balance: 2200 });
         expect(body.data.worstMonth).toEqual({ month: 3, balance: -1300 });
         expect(body.data.previousYear).toEqual({ totalIncome: 2900, totalExpenses: 100, balance: 2800 });
+    });
+});
+
+describe('POST /api/budget/entries amount validation', () => {
+    it('rejects zero and negative amounts with a 400 (same rule as the client)', async () => {
+        for (const amount of [0, -5, -0.01]) {
+            const res = await addEntry({ category: 'Divers', amount, date: '2026-06-10', is_expense: true });
+            expect(res.status).toBe(400);
+            expect(res.body.error).toMatch(/positive/);
+        }
+        const ok = await addEntry({ category: 'Divers', amount: 0.01, date: '2026-06-10', is_expense: true });
+        expect(ok.status).toBe(200);
     });
 });

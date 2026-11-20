@@ -112,7 +112,8 @@
     "editRecurrenceType": "Um zwischen einmalig und wiederkehrend zu wechseln, lösche diesen Posten und füge ihn neu hinzu.",
     "generic": "Etwas ist schiefgelaufen, bitte versuche es erneut.",
     "fieldsRequired": "Kategorie, Betrag und Datum sind erforderlich.",
-    "paperlessIdInvalid": "Ungültige Paperless-Dokument-ID."
+    "paperlessIdInvalid": "Ungültige Paperless-Dokument-ID.",
+    "reminderInvalid": "Die Erinnerung muss eine Tageszahl zwischen 0 und 365 sein."
   },
   "confirm": {
     "deleteRecurring": "Diesen wiederkehrenden Posten löschen?",

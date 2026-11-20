@@ -112,7 +112,8 @@
     "editRecurrenceType": "To switch between one-time and recurring, delete this entry and add it again.",
     "generic": "Something went wrong, please try again.",
     "fieldsRequired": "Category, amount and date are required.",
-    "paperlessIdInvalid": "Invalid Paperless document id."
+    "paperlessIdInvalid": "Invalid Paperless document id.",
+    "reminderInvalid": "The reminder must be a number of days between 0 and 365."
   },
   "confirm": {
     "deleteRecurring": "Delete this recurring entry?",

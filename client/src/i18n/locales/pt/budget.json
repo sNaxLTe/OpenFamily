@@ -112,7 +112,8 @@
     "editRecurrenceType": "Para alternar entre lançamento único e recorrente, exclua este lançamento e adicione-o novamente.",
     "generic": "Ocorreu um erro, tente novamente.",
     "fieldsRequired": "Categoria, valor e data são obrigatórios.",
-    "paperlessIdInvalid": "ID de documento do Paperless inválido."
+    "paperlessIdInvalid": "ID de documento do Paperless inválido.",
+    "reminderInvalid": "O lembrete deve ser um número de dias entre 0 e 365."
   },
   "confirm": {
     "deleteRecurring": "Excluir este lançamento recorrente?",

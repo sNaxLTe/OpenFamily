@@ -71,6 +71,18 @@
       "monthly_other": "Monate",
       "yearly_one": "Jahr",
       "yearly_other": "Jahre"
+    },
+    "registry": {
+      "activeCount": "Aktive Serien: {{number}}",
+      "committed": "Jährlich gebunden: {{amount}}",
+      "searchPlaceholder": "Serie suchen…",
+      "allCategories": "Alle Kategorien",
+      "showEnded": "Beendete anzeigen",
+      "nextOn": "nächste: {{date}}",
+      "endedOn": "beendet am {{date}}",
+      "emptyTitle": "Noch keine wiederkehrenden Einträge",
+      "emptyText": "Erstelle eine Serie über die Schaltfläche +, um sie hier zu finden – unabhängig vom Monat.",
+      "noMatch": "Keine Serie entspricht diesen Filtern."
     }
   },
   "empty": {
@@ -120,6 +132,7 @@
     "deleteEntry": "Diesen Posten löschen?"
   },
   "classic": "Klassisch",
+  "recurringTab": "Wiederkehrend",
   "view": {
     "month": "Monat",
     "year": "Jahr"

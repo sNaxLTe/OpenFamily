@@ -71,6 +71,18 @@
       "monthly_other": "mois",
       "yearly_one": "an",
       "yearly_other": "ans"
+    },
+    "registry": {
+      "activeCount": "Séries actives : {{number}}",
+      "committed": "Engagé annuel : {{amount}}",
+      "searchPlaceholder": "Rechercher une série…",
+      "allCategories": "Toutes les catégories",
+      "showEnded": "Voir les terminées",
+      "nextOn": "prochaine : {{date}}",
+      "endedOn": "terminée le {{date}}",
+      "emptyTitle": "Aucune écriture récurrente",
+      "emptyText": "Créez une série récurrente avec le bouton + pour la retrouver ici, quel que soit le mois.",
+      "noMatch": "Aucune série ne correspond à ces filtres."
     }
   },
   "empty": {
@@ -120,6 +132,7 @@
     "deleteEntry": "Supprimer cette entrée ?"
   },
   "classic": "Classique",
+  "recurringTab": "Récurrents",
   "view": {
     "month": "Mois",
     "year": "Année"

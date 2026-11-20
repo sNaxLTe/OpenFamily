@@ -71,6 +71,18 @@
       "monthly_other": "meses",
       "yearly_one": "ano",
       "yearly_other": "anos"
+    },
+    "registry": {
+      "activeCount": "Séries ativas: {{number}}",
+      "committed": "Compromisso anual: {{amount}}",
+      "searchPlaceholder": "Procurar uma série…",
+      "allCategories": "Todas as categorias",
+      "showEnded": "Ver terminadas",
+      "nextOn": "próxima: {{date}}",
+      "endedOn": "terminada em {{date}}",
+      "emptyTitle": "Ainda não há lançamentos recorrentes",
+      "emptyText": "Crie uma série recorrente com o botão + para a encontrar aqui, em qualquer mês.",
+      "noMatch": "Nenhuma série corresponde a estes filtros."
     }
   },
   "empty": {
@@ -120,6 +132,7 @@
     "deleteEntry": "Tem certeza que deseja excluir este registro?"
   },
   "classic": "Clássico",
+  "recurringTab": "Recorrentes",
   "view": {
     "month": "Mês",
     "year": "Ano"

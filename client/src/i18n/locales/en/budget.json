@@ -71,6 +71,18 @@
       "monthly_other": "months",
       "yearly_one": "year",
       "yearly_other": "years"
+    },
+    "registry": {
+      "activeCount": "Active series: {{number}}",
+      "committed": "Annual committed: {{amount}}",
+      "searchPlaceholder": "Search a series…",
+      "allCategories": "All categories",
+      "showEnded": "Show ended",
+      "nextOn": "next: {{date}}",
+      "endedOn": "ended on {{date}}",
+      "emptyTitle": "No recurring entries yet",
+      "emptyText": "Create a recurring series with the + button to find it here, whatever the month.",
+      "noMatch": "No series matches these filters."
     }
   },
   "empty": {
@@ -120,6 +132,7 @@
     "deleteEntry": "Delete this entry?"
   },
   "classic": "Classic",
+  "recurringTab": "Recurring",
   "view": {
     "month": "Month",
     "year": "Year"

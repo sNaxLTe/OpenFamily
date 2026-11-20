@@ -71,6 +71,18 @@
       "monthly_other": "meses",
       "yearly_one": "año",
       "yearly_other": "años"
+    },
+    "registry": {
+      "activeCount": "Series activas: {{number}}",
+      "committed": "Compromiso anual: {{amount}}",
+      "searchPlaceholder": "Buscar una serie…",
+      "allCategories": "Todas las categorías",
+      "showEnded": "Ver finalizadas",
+      "nextOn": "próxima: {{date}}",
+      "endedOn": "finalizada el {{date}}",
+      "emptyTitle": "Aún no hay movimientos recurrentes",
+      "emptyText": "Crea una serie recurrente con el botón + para encontrarla aquí, sea cual sea el mes.",
+      "noMatch": "Ninguna serie coincide con estos filtros."
     }
   },
   "empty": {
@@ -120,6 +132,7 @@
     "deleteEntry": "¿Eliminar este movimiento?"
   },
   "classic": "Clásico",
+  "recurringTab": "Recurrentes",
   "view": {
     "month": "Mes",
     "year": "Año"

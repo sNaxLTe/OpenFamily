@@ -71,6 +71,18 @@
       "monthly_other": "mesos",
       "yearly_one": "any",
       "yearly_other": "anys"
+    },
+    "registry": {
+      "activeCount": "Sèries actives: {{number}}",
+      "committed": "Compromís anual: {{amount}}",
+      "searchPlaceholder": "Cerca una sèrie…",
+      "allCategories": "Totes les categories",
+      "showEnded": "Mostra les finalitzades",
+      "nextOn": "següent: {{date}}",
+      "endedOn": "finalitzada el {{date}}",
+      "emptyTitle": "Cap moviment recurrent",
+      "emptyText": "Crea una sèrie recurrent amb el botó + per trobar-la aquí, sigui quin sigui el mes.",
+      "noMatch": "Cap sèrie coincideix amb aquests filtres."
     }
   },
   "empty": {
@@ -120,6 +132,7 @@
     "deleteEntry": "Vols suprimir aquest moviment?"
   },
   "classic": "Clàssic",
+  "recurringTab": "Recurrents",
   "view": {
     "month": "Mes",
     "year": "Any"

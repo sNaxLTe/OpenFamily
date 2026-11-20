@@ -83,6 +83,18 @@
       "yearly_few": "года",
       "yearly_many": "лет",
       "yearly_other": "года"
+    },
+    "registry": {
+      "activeCount": "Активные серии: {{number}}",
+      "committed": "Годовой объём: {{amount}}",
+      "searchPlaceholder": "Поиск серии…",
+      "allCategories": "Все категории",
+      "showEnded": "Показать завершённые",
+      "nextOn": "след.: {{date}}",
+      "endedOn": "завершена {{date}}",
+      "emptyTitle": "Пока нет повторяющихся операций",
+      "emptyText": "Создайте серию кнопкой +, чтобы находить её здесь в любом месяце.",
+      "noMatch": "Ни одна серия не подходит под эти фильтры."
     }
   },
   "empty": {
@@ -132,6 +144,7 @@
     "deleteEntry": "Удалить эту запись?"
   },
   "classic": "Классический",
+  "recurringTab": "Повторяющиеся",
   "view": {
     "month": "Месяц",
     "year": "Год"

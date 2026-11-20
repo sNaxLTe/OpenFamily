@@ -6,16 +6,16 @@ import { useToast } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/utils';
 import {
-    Plus, ChevronLeft, ChevronRight, Check, RefreshCw,
+    Plus, ChevronLeft, ChevronRight, RefreshCw,
     Trash2, Edit2, TrendingUp, TrendingDown, Wallet, Eye,
-    Calendar, AlertTriangle, Lock, FileText, X
+    AlertTriangle, Lock, FileText, X
 } from 'lucide-react';
 import KakeiboView from './budget/KakeiboView';
 import KakeiboAnnualView from './budget/KakeiboAnnualView';
 import AnnualBudgetView from './budget/AnnualBudgetView';
 import ReportExplorer from './budget/ReportExplorer';
 import PaperlessPicker, { PaperlessPrefill } from './budget/PaperlessPicker';
-import { Sheet, Field, CategorySelect } from './budget/budgetParts';
+import { Sheet, Field, CategorySelect, RecurringCard, type RecurringTransaction } from './budget/budgetParts';
 import {
     PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
     ResponsiveContainer, Legend,
@@ -24,30 +24,9 @@ import ChartCard from '../components/app/ChartCard';
 import { format, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { dateLocale, intlLocale } from '../i18n/format';
+import { dateLocale } from '../i18n/format';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface RecurringTransaction {
-    id: string;
-    series_id?: string;
-    occurrence_id?: string;
-    occurrence_date?: string;
-    label: string;
-    amount: number;
-    category: string;
-    debit_day: number;
-    start_date: string;
-    recurrence_frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
-    recurrence_interval: number;
-    recurrence_until?: string | null;
-    is_active: boolean;
-    is_expense: boolean;
-    is_pointed: boolean;
-    pointed_at?: string | null;
-    linked_calendar_event_id?: string | null;
-    reminder_days?: number | null;
-}
 
 interface BudgetEntry {
     id: string;
@@ -136,12 +115,14 @@ const Budget: React.FC = () => {
     const currency = user?.currency || 'EUR';
     const canEdit = Boolean(user?.is_owner) || (user?.role ?? '').toLowerCase() !== 'enfant';
 
-    // Classic budget, analytics, kakeibo, or the report explorer (feature 10).
-    // Persisted per browser so the choice sticks.
-    type BudgetMode = 'classic' | 'analytics' | 'kakeibo' | 'explorer';
+    // Classic budget, analytics, kakeibo, report explorer (feature 10) or the
+    // recurring registry (post-version n°2). Persisted per browser.
+    type BudgetMode = 'classic' | 'analytics' | 'kakeibo' | 'explorer' | 'recurring';
     const [mode, setMode] = useState<BudgetMode>(() => {
         const saved = safeGetItem('openfamily.budgetMode');
-        return saved === 'analytics' || saved === 'kakeibo' || saved === 'explorer' ? saved : 'classic';
+        return saved === 'analytics' || saved === 'kakeibo' || saved === 'explorer' || saved === 'recurring'
+            ? saved
+            : 'classic';
     });
     const switchMode = (next: BudgetMode) => {
         setMode(next);
@@ -160,20 +141,28 @@ const Budget: React.FC = () => {
     const switchView = (next: ViewMode) => {
         setView(next);
         safeSetItem('openfamily.budgetView', next);
-        // The analytics tab is month-oriented; the annual view replaces it.
+        // The analytics and recurring-registry tabs are month-oriented; the
+        // annual view replaces them.
         if (next === 'year') {
             setMode((m) => {
-                const nextMode = m === 'analytics' ? 'classic' : m;
+                const nextMode = m === 'analytics' || m === 'recurring' ? 'classic' : m;
                 if (nextMode !== m) safeSetItem('openfamily.budgetMode', nextMode);
                 return nextMode;
             });
         }
     };
     // In year view, only the annual blocks are shown (the explorer has its own range).
-    const showAnnual = view === 'year' && mode !== 'kakeibo' && mode !== 'explorer';
+    const showAnnual = view === 'year' && mode !== 'kakeibo' && mode !== 'explorer' && mode !== 'recurring';
 
     const [forecast, setForecast] = useState<Forecast | null>(null);
     const [recurring, setRecurring] = useState<RecurringTransaction[]>([]);
+    // Registry of recurring series ("Récurrents" tab, post-version n°2), loaded
+    // only while that tab is open — never a systematic request.
+    const [series, setSeries] = useState<RecurringTransaction[]>([]);
+    const [seriesLoading, setSeriesLoading] = useState(false);
+    const [seriesSearch, setSeriesSearch] = useState('');
+    const [seriesCategory, setSeriesCategory] = useState('');
+    const [showEndedSeries, setShowEndedSeries] = useState(false);
     const [entries, setEntries] = useState<BudgetEntry[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -272,8 +261,42 @@ const Budget: React.FC = () => {
         return () => { cancelled = true; };
     }, [canEdit]);
 
+    // Registry mode of GET /api/budget/recurring (no month/year): one entry per
+    // series, with next_occurrence / annual_committed / current_occurrence.
+    const loadSeries = useCallback(async () => {
+        setSeriesLoading(true);
+        try {
+            const res = await api.get<{ success: boolean; data: RecurringTransaction[] }>(
+                `/api/budget/recurring?as_of=${format(new Date(), 'yyyy-MM-dd')}`
+            );
+            if (res.success) {
+                setSeries(res.data.map((r) => ({
+                    ...r,
+                    amount: toNumber(r.amount),
+                    debit_day: toNumber(r.debit_day),
+                    recurrence_interval: toNumber(r.recurrence_interval) || 1,
+                    annual_committed: r.annual_committed != null ? toNumber(r.annual_committed) : undefined,
+                })));
+            }
+        } catch (err) {
+            console.error('Recurring registry load error', err);
+        } finally {
+            setSeriesLoading(false);
+        }
+    }, []);
+
+    // Reload after a local mutation; the registry as well when its tab is open.
+    const refreshBudget = useCallback(() => {
+        void loadAll();
+        if (mode === 'recurring') void loadSeries();
+    }, [loadAll, loadSeries, mode]);
+
     useEffect(() => { void loadAll(); }, [loadAll]);
-    useWebSocketUpdates('budget', () => { void loadAll(); });
+    // Load the registry only when its tab is opened (or refreshed by a WS push).
+    useEffect(() => {
+        if (mode === 'recurring') void loadSeries();
+    }, [mode, loadSeries]);
+    useWebSocketUpdates('budget', refreshBudget);
 
     const navigateMonth = (dir: -1 | 1) => {
         let m = currentMonth + dir;
@@ -303,6 +326,14 @@ const Budget: React.FC = () => {
 
             return sameOccurrence ? { ...x, is_pointed: newValue } : x;
         }));
+        // Registry tab: the card is a series flattened with its current-month
+        // occurrence — point the SAME occurrence, updated in place.
+        setSeries((prev) => prev.map((x) => {
+            const cur = x.current_occurrence;
+            return r.occurrence_id && cur && cur.occurrence_id === r.occurrence_id
+                ? { ...x, current_occurrence: { ...cur, is_pointed: newValue } }
+                : x;
+        }));
 
         try {
             await api.post(`/api/budget/recurring/${r.series_id ?? r.id}/point`, {
@@ -310,7 +341,7 @@ const Budget: React.FC = () => {
                 is_pointed: newValue,
             });
         } catch {
-            void loadAll();
+            refreshBudget();
         }
     };
 
@@ -501,7 +532,7 @@ const Budget: React.FC = () => {
             }
 
             setSheetTransaction(false);
-            void loadAll();
+            refreshBudget();
             showToast({
                 title: isRecurring ? t('budget:toast.recurringSaved') : t('budget:toast.entrySaved'),
                 description: !isRecurring && transactionForm.paperless_document_id
@@ -517,7 +548,7 @@ const Budget: React.FC = () => {
         if (!confirm(t('budget:confirm.deleteRecurring'))) return;
         try {
             await api.delete(`/api/budget/recurring/${id}`);
-            void loadAll();
+            refreshBudget();
             showToast({ title: t('budget:toast.recurringDeleted') });
         } catch (err) {
             showToast({ title: friendlyApiError(err, t, 'budget:errors.generic') });
@@ -528,7 +559,7 @@ const Budget: React.FC = () => {
         if (!confirm(t('budget:confirm.deleteEntry'))) return;
         try {
             await api.delete(`/api/budget/entries/${id}`);
-            void loadAll();
+            refreshBudget();
             showToast({ title: t('budget:toast.entryDeleted') });
         } catch (err) {
             showToast({ title: friendlyApiError(err, t, 'budget:errors.generic') });
@@ -558,7 +589,7 @@ const Budget: React.FC = () => {
                 year: currentYear,
             });
             setSheetLimit(false);
-            void loadAll();
+            refreshBudget();
             showToast({ title: t('budget:toast.limitSaved') });
         } catch (err) {
             setFormError(friendlyApiError(err, t, 'budget:errors.save'));
@@ -584,6 +615,26 @@ const Budget: React.FC = () => {
     const expenses = entries.filter((e) => e.is_expense);
     const incomes = entries.filter((e) => !e.is_expense);
     const pointedCount = recurring.filter((r) => r.is_pointed).length;
+
+    // Registry tab (post-version n°2): a series is "ended" when inactive or
+    // when its recurrence_until is in the past. Default view = active only,
+    // sorted by amount descending, with text + category filters.
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const seriesEnded = (s: RecurringTransaction) =>
+        !s.is_active || Boolean(s.recurrence_until && s.recurrence_until < todayStr);
+    const activeSeriesCount = series.filter((s) => !seriesEnded(s)).length;
+    const committedTotal = series
+        .filter((s) => !seriesEnded(s))
+        .reduce((sum, s) => sum + (s.annual_committed ?? 0), 0);
+    const seriesCategories = Array.from(new Set(series.map((s) => s.category))).sort();
+    const visibleSeries = series
+        .filter((s) => showEndedSeries || !seriesEnded(s))
+        .filter((s) => !seriesCategory || s.category === seriesCategory)
+        .filter((s) => {
+            const q = seriesSearch.trim().toLowerCase();
+            return !q || s.label.toLowerCase().includes(q);
+        })
+        .sort((a, b) => b.amount - a.amount);
 
     if (loading) {
         return (
@@ -628,8 +679,10 @@ const Budget: React.FC = () => {
             </div>
             )}
 
-            {/* Toggle Mois / Année (feature 1 ; default month) */}
-            {mode !== 'explorer' && (
+            {/* Toggle Mois / Année (feature 1 ; default month). Hidden for the
+                explorer (own range controls) and the recurring registry (as_of
+                is always today). */}
+            {mode !== 'explorer' && mode !== 'recurring' && (
             <div className="px-4 pt-3">
                 <div className="flex gap-1 rounded-input border border-border bg-surface-2 p-1 max-w-xs">
                     <button
@@ -654,13 +707,13 @@ const Budget: React.FC = () => {
             </div>
             )}
 
-            {/* Budget view switch: classic, analytics, kakeibo, explorer */}
+            {/* Budget view switch: classic, analytics, kakeibo, explorer, recurring */}
             <div className="px-4 pt-4">
                 <div className="flex flex-wrap gap-1 rounded-input border border-border bg-surface-2 p-1">
                     <button
                         type="button"
                         onClick={() => switchMode('classic')}
-                        className={`flex-1 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
+                        className={`flex-1 min-h-11 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
                             mode === 'classic' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
@@ -670,7 +723,7 @@ const Budget: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => switchMode('analytics')}
-                            className={`flex-1 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
+                            className={`flex-1 min-h-11 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
                                 mode === 'analytics' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                             }`}
                         >
@@ -680,7 +733,7 @@ const Budget: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => switchMode('kakeibo')}
-                        className={`flex-1 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
+                        className={`flex-1 min-h-11 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
                             mode === 'kakeibo' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
@@ -689,11 +742,20 @@ const Budget: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => switchMode('explorer')}
-                        className={`flex-1 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
+                        className={`flex-1 min-h-11 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
                             mode === 'explorer' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
                         {t('budget:explorer.tab')}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => switchMode('recurring')}
+                        className={`flex-1 min-h-11 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
+                            mode === 'recurring' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        {t('budget:recurringTab')}
                     </button>
                 </div>
             </div>
@@ -702,6 +764,110 @@ const Budget: React.FC = () => {
             {mode === 'explorer' && (
                 <div className="px-4 pt-4">
                     <ReportExplorer currency={currency} categoryLabel={categoryLabel} />
+                </div>
+            )}
+
+            {/* Recurring series registry (post-version n°2): one card per series —
+                active and ended — with next occurrence and pointing of the
+                current-month occurrence. Read-only for children, like the rest. */}
+            {mode === 'recurring' && (
+                <div className="px-4 pt-4 space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs bg-surface-2 text-muted-foreground px-2 py-1 rounded-full">
+                            {t('budget:recurring.registry.activeCount', { number: activeSeriesCount })}
+                        </span>
+                        <span className="text-xs bg-info/10 text-info px-2 py-1 rounded-full font-medium">
+                            {t('budget:recurring.registry.committed', { amount: formatCurrency(committedTotal, currency) })}
+                        </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <input
+                            type="search"
+                            value={seriesSearch}
+                            onChange={(e) => setSeriesSearch(e.target.value)}
+                            placeholder={t('budget:recurring.registry.searchPlaceholder')}
+                            aria-label={t('budget:recurring.registry.searchPlaceholder')}
+                            className="min-h-11 min-w-40 flex-1 px-3 rounded-xl border border-border bg-surface-1 text-foreground text-base placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
+                        />
+                        <select
+                            value={seriesCategory}
+                            onChange={(e) => setSeriesCategory(e.target.value)}
+                            aria-label={t('budget:fields.category')}
+                            className="min-h-11 px-3 rounded-xl border border-border bg-surface-1 text-foreground text-base focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
+                        >
+                            <option value="">{t('budget:recurring.registry.allCategories')}</option>
+                            {seriesCategories.map((c) => (
+                                <option key={c} value={c}>{categoryLabel(c)}</option>
+                            ))}
+                        </select>
+                        <button
+                            type="button"
+                            onClick={() => setShowEndedSeries((v) => !v)}
+                            aria-pressed={showEndedSeries}
+                            className={`min-h-11 px-3 rounded-xl border text-sm font-medium transition ${
+                                showEndedSeries
+                                    ? 'bg-card text-foreground border-primary shadow-sm'
+                                    : 'bg-surface-1 text-muted-foreground border-border hover:text-foreground'
+                            }`}
+                        >
+                            {t('budget:recurring.registry.showEnded')}
+                        </button>
+                    </div>
+
+                    {seriesLoading && series.length === 0 ? (
+                        <div className="rounded-card border border-dashed border-border p-6 text-center">
+                            <p className="text-sm text-muted-foreground">{t('budget:loading')}</p>
+                        </div>
+                    ) : series.length === 0 ? (
+                        <div className="rounded-card border border-dashed border-border p-6 text-center space-y-2">
+                            <RefreshCw className="w-8 h-8 text-muted-foreground mx-auto opacity-40" />
+                            <p className="text-sm font-medium text-foreground">{t('budget:recurring.registry.emptyTitle')}</p>
+                            <p className="text-sm text-muted-foreground">{t('budget:recurring.registry.emptyText')}</p>
+                            {canEdit && (
+                                <button
+                                    type="button"
+                                    onClick={openNewTransaction}
+                                    className="mt-1 inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white active:scale-95 transition-transform"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    {t('common:actions.add')}
+                                </button>
+                            )}
+                        </div>
+                    ) : visibleSeries.length === 0 ? (
+                        <div className="rounded-card border border-dashed border-border p-6 text-center">
+                            <p className="text-sm text-muted-foreground">{t('budget:recurring.registry.noMatch')}</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            {visibleSeries.map((s) => {
+                                const current = s.current_occurrence ?? null;
+                                const flattened: RecurringTransaction = {
+                                    ...s,
+                                    occurrence_id: current?.occurrence_id,
+                                    occurrence_date: current?.occurrence_date,
+                                    is_pointed: current?.is_pointed ?? false,
+                                    pointed_at: current?.pointed_at ?? null,
+                                };
+                                return (
+                                    <RecurringCard
+                                        key={s.id}
+                                        r={flattened}
+                                        currency={currency}
+                                        canEdit={canEdit}
+                                        categoryLabel={categoryLabel}
+                                        onTogglePoint={handleTogglePoint}
+                                        onEdit={openEditRecurring}
+                                        onDelete={handleDeleteRecurring}
+                                        nextOccurrence={s.next_occurrence}
+                                        ended={seriesEnded(s)}
+                                        endDate={s.recurrence_until ?? null}
+                                    />
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -739,7 +905,7 @@ const Budget: React.FC = () => {
                 />
             )}
 
-            {mode === 'classic' && !showAnnual && canEdit && (
+            {((mode === 'classic' && !showAnnual) || mode === 'recurring') && canEdit && (
                 <div className="px-4 pt-4 flex justify-end">
                     <button
                         type="button"
@@ -945,82 +1111,16 @@ const Budget: React.FC = () => {
                     ) : (
                         <div className="space-y-2">
                             {recurring.map((r) => (
-                                <div
+                                <RecurringCard
                                     key={r.occurrence_id ?? `${r.id}:${r.occurrence_date ?? r.debit_day}`}
-                                    className={`flex items-start gap-3 rounded-card p-4 transition-all
-                                        ${r.is_pointed ? 'bg-surface-1 opacity-60' : 'bg-surface-1 border border-border shadow-sm'}`}
-                                >
-                                    <button
-                                        onClick={() => handleTogglePoint(r)}
-                                        disabled={!canEdit}
-                                        className={`mt-0.5 flex-shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center
-                                            transition-all active:scale-90 disabled:opacity-50
-                                            ${r.is_pointed ? 'bg-success/100 border-success' : 'border-border hover:border-success/50'}`}
-                                        title={r.is_pointed ? t('budget:recurring.markOff') : t('budget:recurring.markOn')}
-                                    >
-                                        {r.is_pointed && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
-                                    </button>
-
-                                    {/* Two lines at every width: what and how much, then
-                                        when and how often with the actions. Side by side,
-                                        the details were squeezed into one-letter columns
-                                        on a phone. */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <p className={`min-w-0 break-words font-medium text-base ${r.is_pointed ? 'line-through text-muted-foreground' : ''}`}>
-                                                {r.label}
-                                            </p>
-                                            <span className={`whitespace-nowrap text-base font-bold ${
-                                                r.is_pointed
-                                                    ? 'text-muted-foreground'
-                                                    : r.is_expense
-                                                        ? 'text-danger'
-                                                        : 'text-success'
-                                            }`}>
-                                                {r.is_expense ? '-' : '+'}{formatCurrency(r.amount, currency)}
-                                            </span>
-                                        </div>
-                                        <div className="mt-1 flex items-center justify-between gap-2">
-                                            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-                                                <span className="whitespace-nowrap">{categoryLabel(r.category)}</span>
-                                                <span aria-hidden>·</span>
-                                                <span className="flex items-center gap-1 whitespace-nowrap">
-                                                    <Calendar className="w-3 h-3" />
-                                                    {r.occurrence_date
-                                                        ? new Date(`${r.occurrence_date}T00:00:00`).toLocaleDateString(intlLocale(), {
-                                                            month: 'short',
-                                                            day: 'numeric',
-                                                        })
-                                                        : `${t('budget:recurring.dayPrefix')} ${r.debit_day}`}
-                                                </span>
-                                                <span aria-hidden>·</span>
-                                                <span className="whitespace-nowrap">
-                                                    {t(`budget:recurring.frequency.${r.recurrence_frequency}`)}
-                                                </span>
-                                            </div>
-                                            {canEdit && (
-                                                <div className="-mr-1.5 flex flex-shrink-0 items-center">
-                                                    <button
-                                                        onClick={() => openEditRecurring(r)}
-                                                        title={t('common:actions.edit')}
-                                                        aria-label={t('common:actions.edit')}
-                                                        className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-surface-2 transition-colors"
-                                                    >
-                                                        <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteRecurring(r.series_id ?? r.id)}
-                                                        title={t('common:actions.delete')}
-                                                        aria-label={t('common:actions.delete')}
-                                                        className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-danger/10 transition-colors"
-                                                    >
-                                                        <Trash2 className="w-3.5 h-3.5 text-danger/60" />
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                                    r={r}
+                                    currency={currency}
+                                    canEdit={canEdit}
+                                    categoryLabel={categoryLabel}
+                                    onTogglePoint={handleTogglePoint}
+                                    onEdit={openEditRecurring}
+                                    onDelete={handleDeleteRecurring}
+                                />
                             ))}
                         </div>
                     )}

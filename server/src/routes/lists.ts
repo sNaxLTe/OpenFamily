@@ -2,6 +2,9 @@ import { Router } from 'express';
 import { query } from '../db';
 import { authMiddleware, AuthRequest, requireParent } from '../middleware/auth';
 import { broadcast } from '../lib/broadcaster';
+// Shared constants: the package is a proper ESM package now ("type": "module",
+// NodeNext emit with explicit '.js' extensions, checked at build time by
+// shared/scripts/check-dist.mjs), so the server can runtime-import it.
 import { LIST_ICONS, LIST_NAME_MAX, LIST_ITEM_TEXT_MAX, LIST_CATEGORY_MAX } from '@openfamily/shared';
 
 /**

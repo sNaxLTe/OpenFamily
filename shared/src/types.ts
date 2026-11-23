@@ -7,7 +7,7 @@ import type {
     RecipeDifficulty,
     TaskPriority,
     BloodType,
-} from './constants';
+} from './constants.js';
 
 // Base Entity
 export interface BaseEntity {

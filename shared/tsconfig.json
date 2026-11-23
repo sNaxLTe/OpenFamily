@@ -3,7 +3,14 @@
     "compilerOptions": {
         "outDir": "./dist",
         "rootDir": "./src",
-        "composite": true
+        "composite": true,
+        // The package is ESM ("type": "module" in package.json) and is imported
+        // at RUNTIME by the server (node require(esm)) — not only bundled by
+        // Vite. NodeNext makes tsc enforce the explicit '.js' extension on
+        // relative imports, so the emitted dist resolves under Node's ESM
+        // loader (extensionless specifiers crash with ERR_MODULE_NOT_FOUND).
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext"
     },
     "include": [
         "src/**/*"

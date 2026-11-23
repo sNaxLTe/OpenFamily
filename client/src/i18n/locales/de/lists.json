@@ -1,0 +1,86 @@
+{
+  "title": "Listen",
+  "subtitle": "Listen, die die ganze Familie teilt",
+  "loading": "Listen werden geladen…",
+  "empty": {
+    "title": "Noch keine Liste",
+    "cta": "Meine erste Liste erstellen"
+  },
+  "create": {
+    "title": "Neue Liste",
+    "nameLabel": "Name der Liste",
+    "namePlaceholder": "z. B. Kinderschuhe",
+    "iconLabel": "Symbol",
+    "submit": "Erstellen"
+  },
+  "rename": {
+    "title": "Liste umbenennen",
+    "nameLabel": "Name",
+    "submit": "Speichern"
+  },
+  "deleteConfirm": "Liste „{{name}}“ und alle ihre Einträge löschen?",
+  "menu": {
+    "pin": "Anheften",
+    "unpin": "Loslösen",
+    "rename": "Umbenennen",
+    "changeIcon": "Symbol ändern",
+    "delete": "Löschen"
+  },
+  "iconPicker": {
+    "title": "Symbol wählen"
+  },
+  "counts": {
+    "items_one": "{{count}} Eintrag",
+    "items_other": "{{count}} Einträge",
+    "remaining": "{{unchecked}} von {{total}} offen"
+  },
+  "allDone": "Alles erledigt",
+  "list": {
+    "back": "Zurück zu den Listen",
+    "addPlaceholder": "Eintrag hinzufügen…",
+    "add": "Hinzufügen",
+    "category": {
+      "label": "Kategorie",
+      "none": "Ohne Kategorie",
+      "new": "Neue Kategorie…",
+      "newPlaceholder": "Kategoriename"
+    },
+    "showChecked": "Erledigte Einträge anzeigen",
+    "hideChecked": "Erledigte Einträge ausblenden",
+    "empty": "Noch keine Einträge. Oben den ersten hinzufügen.",
+    "categoryMenu": {
+      "rename": "Kategorie umbenennen",
+      "delete": "Kategorie löschen"
+    },
+    "renameCategory": {
+      "title": "„{{from}}“ umbenennen",
+      "toLabel": "Neuer Name",
+      "submit": "Umbenennen"
+    },
+    "deleteCategoryConfirm": "Kategorie „{{name}}“ löschen? Ihre Einträge landen in „Ohne Kategorie“.",
+    "itemMenu": {
+      "edit": "Bearbeiten",
+      "delete": "Löschen"
+    },
+    "editItem": {
+      "title": "Eintrag bearbeiten",
+      "textLabel": "Text",
+      "categoryLabel": "Kategorie",
+      "submit": "Speichern"
+    },
+    "deleteItemConfirm": "Diesen Eintrag löschen?"
+  },
+  "errors": {
+    "loadLists": "Listen konnten nicht geladen werden.",
+    "loadItems": "Einträge konnten nicht geladen werden.",
+    "saveList": "Diese Liste konnte nicht gespeichert werden.",
+    "deleteList": "Diese Liste konnte nicht gelöscht werden.",
+    "saveItem": "Dieser Eintrag konnte nicht gespeichert werden.",
+    "deleteItem": "Dieser Eintrag konnte nicht gelöscht werden.",
+    "category": "Diese Kategorie konnte nicht geändert werden.",
+    "invalidName": "Gib der Liste einen Namen (max. 120 Zeichen).",
+    "invalidText": "Gib einen Text ein (max. 200 Zeichen).",
+    "invalidCategory": "Kategorie zu lang (max. 60 Zeichen).",
+    "generic": "Etwas ist schiefgelaufen."
+  }
+}

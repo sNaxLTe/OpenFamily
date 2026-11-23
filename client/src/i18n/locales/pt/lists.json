@@ -1,0 +1,86 @@
+{
+  "title": "Listas",
+  "subtitle": "Listas compartilhadas com toda a família",
+  "loading": "Carregando listas…",
+  "empty": {
+    "title": "Ainda não há listas",
+    "cta": "Criar minha primeira lista"
+  },
+  "create": {
+    "title": "Nova lista",
+    "nameLabel": "Nome da lista",
+    "namePlaceholder": "ex.: Sapatos das crianças",
+    "iconLabel": "Ícone",
+    "submit": "Criar"
+  },
+  "rename": {
+    "title": "Renomear lista",
+    "nameLabel": "Nome",
+    "submit": "Salvar"
+  },
+  "deleteConfirm": "Eliminar a lista «{{name}}» e todos os seus itens?",
+  "menu": {
+    "pin": "Fixar",
+    "unpin": "Soltar",
+    "rename": "Renomear",
+    "changeIcon": "Mudar ícone",
+    "delete": "Eliminar"
+  },
+  "iconPicker": {
+    "title": "Escolher um ícone"
+  },
+  "counts": {
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} itens",
+    "remaining": "{{unchecked}} de {{total}} pendentes"
+  },
+  "allDone": "Tudo feito",
+  "list": {
+    "back": "Voltar às listas",
+    "addPlaceholder": "Adicionar um item…",
+    "add": "Adicionar",
+    "category": {
+      "label": "Categoria",
+      "none": "Sem categoria",
+      "new": "Nova categoria…",
+      "newPlaceholder": "Nome da categoria"
+    },
+    "showChecked": "Mostrar itens concluídos",
+    "hideChecked": "Ocultar itens concluídos",
+    "empty": "Ainda não há itens. Adicione o primeiro acima.",
+    "categoryMenu": {
+      "rename": "Renomear categoria",
+      "delete": "Eliminar categoria"
+    },
+    "renameCategory": {
+      "title": "Renomear «{{from}}»",
+      "toLabel": "Novo nome",
+      "submit": "Renomear"
+    },
+    "deleteCategoryConfirm": "Eliminar a categoria «{{name}}»? Os itens passam para «Sem categoria».",
+    "itemMenu": {
+      "edit": "Editar",
+      "delete": "Eliminar"
+    },
+    "editItem": {
+      "title": "Editar item",
+      "textLabel": "Texto",
+      "categoryLabel": "Categoria",
+      "submit": "Salvar"
+    },
+    "deleteItemConfirm": "Eliminar este item?"
+  },
+  "errors": {
+    "loadLists": "Não foi possível carregar as listas.",
+    "loadItems": "Não foi possível carregar os itens.",
+    "saveList": "Não foi possível salvar esta lista.",
+    "deleteList": "Não foi possível eliminar esta lista.",
+    "saveItem": "Não foi possível salvar este item.",
+    "deleteItem": "Não foi possível eliminar este item.",
+    "category": "Não foi possível alterar esta categoria.",
+    "invalidName": "Dê um nome à lista (máx. 120 caracteres).",
+    "invalidText": "Escreva um texto (máx. 200 caracteres).",
+    "invalidCategory": "Categoria demasiado longa (máx. 60 caracteres).",
+    "generic": "Algo correu mal."
+  }
+}

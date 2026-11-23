@@ -13,14 +13,16 @@
     "family": "Familie",
     "integrations": "Integrationen",
     "settings": "Einstellungen",
-    "posts": "Beiträge"
+    "posts": "Beiträge",
+    "lists": "Listen"
   },
   "mobile": {
     "home": "Start",
     "calendar": "Kalender",
     "tasks": "Aufgaben",
     "shopping": "Einkauf",
-    "more": "Mehr"
+    "more": "Mehr",
+    "lists": "Listen"
   },
   "more": {
     "title": "Alles Weitere",

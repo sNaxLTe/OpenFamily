@@ -1,0 +1,86 @@
+{
+  "title": "Listas",
+  "subtitle": "Listas compartidas con toda la familia",
+  "loading": "Cargando listas…",
+  "empty": {
+    "title": "Aún no hay listas",
+    "cta": "Crear mi primera lista"
+  },
+  "create": {
+    "title": "Nueva lista",
+    "nameLabel": "Nombre de la lista",
+    "namePlaceholder": "p. ej. Zapatos de los niños",
+    "iconLabel": "Icono",
+    "submit": "Crear"
+  },
+  "rename": {
+    "title": "Renombrar lista",
+    "nameLabel": "Nombre",
+    "submit": "Guardar"
+  },
+  "deleteConfirm": "¿Eliminar la lista «{{name}}» y todos sus artículos?",
+  "menu": {
+    "pin": "Fijar",
+    "unpin": "Soltar",
+    "rename": "Renombrar",
+    "changeIcon": "Cambiar icono",
+    "delete": "Eliminar"
+  },
+  "iconPicker": {
+    "title": "Elegir un icono"
+  },
+  "counts": {
+    "items_one": "{{count}} artículo",
+    "items_other": "{{count}} artículos",
+    "remaining": "{{unchecked}} de {{total}} pendientes"
+  },
+  "allDone": "Todo hecho",
+  "list": {
+    "back": "Volver a las listas",
+    "addPlaceholder": "Añadir un artículo…",
+    "add": "Añadir",
+    "category": {
+      "label": "Categoría",
+      "none": "Sin categoría",
+      "new": "Nueva categoría…",
+      "newPlaceholder": "Nombre de la categoría"
+    },
+    "showChecked": "Mostrar artículos marcados",
+    "hideChecked": "Ocultar artículos marcados",
+    "empty": "Aún no hay artículos. Añade el primero arriba.",
+    "categoryMenu": {
+      "rename": "Renombrar categoría",
+      "delete": "Eliminar categoría"
+    },
+    "renameCategory": {
+      "title": "Renombrar «{{from}}»",
+      "toLabel": "Nuevo nombre",
+      "submit": "Renombrar"
+    },
+    "deleteCategoryConfirm": "¿Eliminar la categoría «{{name}}»? Sus artículos pasan a «Sin categoría».",
+    "itemMenu": {
+      "edit": "Editar",
+      "delete": "Eliminar"
+    },
+    "editItem": {
+      "title": "Editar artículo",
+      "textLabel": "Texto",
+      "categoryLabel": "Categoría",
+      "submit": "Guardar"
+    },
+    "deleteItemConfirm": "¿Eliminar este artículo?"
+  },
+  "errors": {
+    "loadLists": "No se pudieron cargar las listas.",
+    "loadItems": "No se pudieron cargar los artículos.",
+    "saveList": "No se pudo guardar esta lista.",
+    "deleteList": "No se pudo eliminar esta lista.",
+    "saveItem": "No se pudo guardar este artículo.",
+    "deleteItem": "No se pudo eliminar este artículo.",
+    "category": "No se pudo cambiar esta categoría.",
+    "invalidName": "Ponle un nombre a la lista (120 caracteres máx.).",
+    "invalidText": "Escribe un texto (200 caracteres máx.).",
+    "invalidCategory": "Categoría demasiado larga (60 caracteres máx.).",
+    "generic": "Algo ha fallado."
+  }
+}

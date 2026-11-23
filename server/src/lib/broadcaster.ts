@@ -14,7 +14,8 @@ export type WsEntity =
     | 'rewards'
     | 'notes'
     | 'posts'
-    | 'pantry';
+    | 'pantry'
+    | 'lists';
 
 export type WsAction = 'created' | 'updated' | 'deleted' | 'synced';
 

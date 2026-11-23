@@ -15,6 +15,7 @@ import {
     LayoutGrid,
     Refrigerator,
     MonitorPlay,
+    ListChecks,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -33,6 +34,7 @@ export const NAVIGATION: NavItem[] = [
     { labelKey: 'items.today', href: '/', icon: Home, tabLabelKey: 'mobile.home' },
     { labelKey: 'items.shopping', href: '/shopping', icon: ShoppingCart, tabLabelKey: 'mobile.shopping' },
     { labelKey: 'items.tasks', href: '/tasks', icon: CheckSquare, tabLabelKey: 'mobile.tasks' },
+    { labelKey: 'items.lists', href: '/lists', icon: ListChecks, module: 'lists', tabLabelKey: 'mobile.lists' },
     { labelKey: 'items.posts', href: '/posts', icon: MessageSquare },
     { labelKey: 'items.rewards', href: '/rewards', icon: PiggyBank, module: 'rewards' },
     { labelKey: 'items.calendar', href: '/calendar', icon: CalendarIcon, tabLabelKey: 'mobile.calendar' },

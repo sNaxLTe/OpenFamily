@@ -32,6 +32,8 @@ export interface DemoStore {
     shopping: Record<string, unknown>[];
     shoppingTemplates: Record<string, unknown>[];
     tasks: Record<string, unknown>[];
+    lists: Record<string, unknown>[];
+    listItems: Record<string, unknown>[];
     appointments: Record<string, unknown>[];
     planning: Record<string, unknown>[];
     recipes: Record<string, unknown>[];
@@ -98,6 +100,17 @@ export function createSeed(): DemoStore {
             { id: 'tk6', title: 'Empty the dishwasher', is_completed: false, frequency: 'Quotidien', priority: 'Moyenne', assigned_to: ['m-kid1'], assigned_to_members: [kid1], due_date: atTime(now, 19), created_at: atTime(now, 7), points: 5, pending_approval: false },
             { id: 'tk7', title: 'Pay the school canteen', is_completed: false, frequency: 'Une fois', priority: 'Haute', assigned_to: ['m-mom'], assigned_to_members: [mom], due_date: atTime(addDays(now, 2), 12), created_at: atTime(addDays(now, -2), 9), points: 0, pending_approval: false },
             { id: 'tk8', title: 'Sort the recycling', is_completed: false, frequency: 'Hebdomadaire', priority: 'Basse', assigned_to: ['m-kid2'], assigned_to_members: [kid2], due_date: atTime(addDays(now, 3), 18), created_at: atTime(addDays(now, -1), 9), points: 5, pending_approval: false },
+        ],
+        lists: [
+            { id: 'ls1', name: 'Groceries', icon: '🛒', created_by: 'm-mom', created_at: atTime(addDays(now, -3), 9) },
+            { id: 'ls2', name: 'Kids shoes', icon: '🎒', created_by: 'm-dad', created_at: atTime(addDays(now, -1), 18) },
+        ],
+        listItems: [
+            { id: 'li1', list_id: 'ls1', text: 'Milk', category: 'Food', checked: true, checked_by: 'm-mom', checked_at: atTime(now, 8), position: 1, created_by: 'm-mom', created_at: atTime(addDays(now, -3), 9) },
+            { id: 'li2', list_id: 'ls1', text: 'Bread', category: 'Food', checked: false, position: 2, created_by: 'm-mom', created_at: atTime(addDays(now, -3), 9) },
+            { id: 'li3', list_id: 'ls1', text: 'Dish soap', category: 'Household', checked: false, position: 3, created_by: 'm-dad', created_at: atTime(addDays(now, -2), 10) },
+            { id: 'li4', list_id: 'ls2', text: 'Mia — size 32 sneakers', category: null, checked: false, position: 1, created_by: 'm-dad', created_at: atTime(addDays(now, -1), 18) },
+            { id: 'li5', list_id: 'ls2', text: 'Noah — size 28 rain boots', category: 'Boots', checked: false, position: 2, created_by: 'm-dad', created_at: atTime(addDays(now, -1), 18) },
         ],
         appointments: [
             { id: 'a1', title: 'Dentist, Mia', start_time: atTime(dayInMonth(now.getDate()), 15), end_time: atTime(dayInMonth(now.getDate()), 16), location: 'City Dental', family_member_ids: ['m-kid1', 'm-mom'], family_members_data: [kid1, mom], reminder_30min: true, reminder_1hour: false, reminder_minutes: [30] },

@@ -1,0 +1,86 @@
+{
+  "title": "Llistes",
+  "subtitle": "Llistes compartides amb tota la família",
+  "loading": "Carregant les llistes…",
+  "empty": {
+    "title": "Encara no hi ha llistes",
+    "cta": "Crear la meva primera llista"
+  },
+  "create": {
+    "title": "Nova llista",
+    "nameLabel": "Nom de la llista",
+    "namePlaceholder": "Ex.: Sabates dels nens",
+    "iconLabel": "Icona",
+    "submit": "Crear"
+  },
+  "rename": {
+    "title": "Reanomenar la llista",
+    "nameLabel": "Nom",
+    "submit": "Desar"
+  },
+  "deleteConfirm": "Eliminar la llista «{{name}}» i tots els seus articles?",
+  "menu": {
+    "pin": "Fixar",
+    "unpin": "Alliberar",
+    "rename": "Reanomenar",
+    "changeIcon": "Canviar la icona",
+    "delete": "Eliminar"
+  },
+  "iconPicker": {
+    "title": "Tria una icona"
+  },
+  "counts": {
+    "items_one": "{{count}} article",
+    "items_other": "{{count}} articles",
+    "remaining": "{{unchecked}} de {{total}} pendents"
+  },
+  "allDone": "Tot fet",
+  "list": {
+    "back": "Torna a les llistes",
+    "addPlaceholder": "Afegir un article…",
+    "add": "Afegir",
+    "category": {
+      "label": "Categoria",
+      "none": "Sense categoria",
+      "new": "Nova categoria…",
+      "newPlaceholder": "Nom de la categoria"
+    },
+    "showChecked": "Mostra els articles fets",
+    "hideChecked": "Amaga els articles fets",
+    "empty": "Encara no hi ha articles. Afegeix el primer a dalt.",
+    "categoryMenu": {
+      "rename": "Reanomenar la categoria",
+      "delete": "Eliminar la categoria"
+    },
+    "renameCategory": {
+      "title": "Reanomenar «{{from}}»",
+      "toLabel": "Nou nom",
+      "submit": "Reanomenar"
+    },
+    "deleteCategoryConfirm": "Eliminar la categoria «{{name}}»? Els seus articles passen a «Sense categoria».",
+    "itemMenu": {
+      "edit": "Editar",
+      "delete": "Eliminar"
+    },
+    "editItem": {
+      "title": "Editar l’article",
+      "textLabel": "Text",
+      "categoryLabel": "Categoria",
+      "submit": "Desar"
+    },
+    "deleteItemConfirm": "Eliminar aquest article?"
+  },
+  "errors": {
+    "loadLists": "No s’han pogut carregar les llistes.",
+    "loadItems": "No s’han pogut carregar els articles.",
+    "saveList": "No s’ha pogut desar aquesta llista.",
+    "deleteList": "No s’ha pogut eliminar aquesta llista.",
+    "saveItem": "No s’ha pogut desar aquest article.",
+    "deleteItem": "No s’ha pogut eliminar aquest article.",
+    "category": "No s’ha pogut canviar aquesta categoria.",
+    "invalidName": "Posa un nom a la llista (120 caràcters màx.).",
+    "invalidText": "Escriu un text (200 caràcters màx.).",
+    "invalidCategory": "Categoria massa llarga (60 caràcters màx.).",
+    "generic": "Alguna cosa ha fallat."
+  }
+}

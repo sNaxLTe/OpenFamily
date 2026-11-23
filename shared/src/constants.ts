@@ -93,3 +93,18 @@ export type TaskPriority = typeof TASK_PRIORITY[keyof typeof TASK_PRIORITY];
 export const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as const;
 
 export type BloodType = typeof BLOOD_TYPES[number];
+
+// ─── Lists module (fonctionnalité 15 du fork) ────────────────────────────────
+// The fixed icon set of a list: emojis only, chosen once here so the client
+// grid and the server-side CHECK (migration annual/0009) always agree.
+export const LIST_ICONS = [
+    '📝', '🛒', '🎒', '✅', '🏠', '🚗', '🎁', '💊',
+    '📚', '🧸', '🍽️', '🔧', '🌳', '🐶', '✈️', '💼',
+] as const;
+
+export type ListIcon = typeof LIST_ICONS[number];
+
+/** Validation bounds, shared by the client form and the server API. */
+export const LIST_NAME_MAX = 120;
+export const LIST_ITEM_TEXT_MAX = 200;
+export const LIST_CATEGORY_MAX = 60;

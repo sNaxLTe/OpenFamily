@@ -13,14 +13,16 @@
     "family": "Семья",
     "integrations": "Интеграции",
     "settings": "Настройки",
-    "posts": "Публикации"
+    "posts": "Публикации",
+    "lists": "Списки"
   },
   "mobile": {
     "home": "Главная",
     "calendar": "Календарь",
     "tasks": "Задачи",
     "shopping": "Покупки",
-    "more": "Ещё"
+    "more": "Ещё",
+    "lists": "Списки"
   },
   "more": {
     "title": "Всё остальное",

@@ -402,6 +402,84 @@ async function route(method: string, path: string, q: Record<string, string>, bo
     if (path === '/api/tasks' && method === 'GET') return ok(store.tasks);
     if (path === '/api/tasks' && method === 'POST') return ok(create('tasks', { is_completed: false, points: 0, pending_approval: false, ...body }));
     if (path === '/api/tasks/statistics') return ok(taskStats());
+
+    // ── Lists (module Listes, fonctionnalité 15) ─────────────────────────────
+    const listCounts = (listId: string) => {
+        const items = (store.listItems as Json[]).filter((x) => x.list_id === listId);
+        return {
+            total: items.length,
+            unchecked: items.filter((x) => !x.checked).length,
+            done: items.filter((x) => x.checked).length,
+        };
+    };
+    if (path === '/api/lists' && method === 'GET') {
+        return ok((store.lists as Json[]).map((l) => ({ ...l, counts: listCounts(String(l.id)) })));
+    }
+    if (path === '/api/lists' && method === 'POST') return ok({ ...create('lists', { icon: '📝', ...body }), counts: { total: 0, unchecked: 0, done: 0 } });
+    if (seg[1] === 'lists' && seg.length === 3) {
+        const list = (store.lists as Json[]).find((x) => x.id === seg[2]);
+        if (!list) return ok(null);
+        if (method === 'PUT') return ok({ ...update('lists', seg[2], body), counts: listCounts(seg[2]) });
+        if (method === 'DELETE') {
+            remove('lists', seg[2]);
+            (store.listItems as Json[]).filter((x) => x.list_id === seg[2]).forEach((x) => remove('listItems', String(x.id)));
+            return ok({});
+        }
+    }
+    if (seg[1] === 'lists' && seg.length === 4 && seg[3] === 'items' && method === 'GET') {
+        const list = (store.lists as Json[]).find((x) => x.id === seg[2]);
+        if (!list) return ok(null);
+        const items = (store.listItems as Json[])
+            .filter((x) => x.list_id === seg[2])
+            .sort((a, b) => num(a.position) - num(b.position));
+        const byCat = new Map<string | null, { total: number; unchecked: number; firstPosition: number }>();
+        for (const it of items) {
+            const key = (it.category as string) ?? null;
+            const c = byCat.get(key) ?? { total: 0, unchecked: 0, firstPosition: num(it.position) };
+            c.total += 1;
+            if (!it.checked) c.unchecked += 1;
+            c.firstPosition = Math.min(c.firstPosition, num(it.position));
+            byCat.set(key, c);
+        }
+        return ok({
+            list: { ...list, counts: listCounts(seg[2]) },
+            items,
+            categories: [...byCat.entries()].map(([name, c]) => ({ name, ...c })),
+        });
+    }
+    if (seg[1] === 'lists' && seg.length === 4 && seg[3] === 'items' && method === 'POST') {
+        const items = (store.listItems as Json[]).filter((x) => x.list_id === seg[2]);
+        const position = items.reduce((m, x) => Math.max(m, num(x.position)), 0) + 1;
+        return ok(create('listItems', { list_id: seg[2], checked: false, position, ...body }));
+    }
+    if (seg[1] === 'lists' && seg.length === 4 && seg[3] === 'category') {
+        if (method === 'PUT') {
+            let updated = 0;
+            for (const it of store.listItems as Json[]) {
+                if (it.list_id === seg[2] && it.category === body.from) { it.category = body.to; updated += 1; }
+            }
+            return ok({ updated });
+        }
+        if (method === 'DELETE') {
+            const name = q.name ?? (body.name as string | undefined);
+            let updated = 0;
+            for (const it of store.listItems as Json[]) {
+                if (it.list_id === seg[2] && it.category === name) { it.category = null; updated += 1; }
+            }
+            return ok({ updated });
+        }
+    }
+    if (seg[1] === 'items' && seg.length === 3) {
+        if (method === 'PUT') {
+            const checked = body.checked;
+            const extra: Json = {};
+            if (checked === true) { extra.checked_by = 'm-dad'; extra.checked_at = new Date().toISOString(); }
+            if (checked === false) { extra.checked_by = null; extra.checked_at = null; }
+            return ok(update('listItems', seg[2], { ...body, ...extra }));
+        }
+        if (method === 'DELETE') { remove('listItems', seg[2]); return ok({}); }
+    }
+
     // Parent approval of a child-completed chore (the demo account is a parent).
     if (seg[1] === 'tasks' && seg.length === 4 && (seg[3] === 'approve' || seg[3] === 'reject') && method === 'POST') {
         const task = (store.tasks as Json[]).find((x) => x.id === seg[2]);

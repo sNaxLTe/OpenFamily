@@ -1,0 +1,86 @@
+{
+  "title": "Listes",
+  "subtitle": "Des listes partagées avec toute la famille",
+  "loading": "Chargement des listes…",
+  "empty": {
+    "title": "Aucune liste pour le moment",
+    "cta": "Créer ma première liste"
+  },
+  "create": {
+    "title": "Nouvelle liste",
+    "nameLabel": "Nom de la liste",
+    "namePlaceholder": "Ex : Chaussures kids",
+    "iconLabel": "Icône",
+    "submit": "Créer"
+  },
+  "rename": {
+    "title": "Renommer la liste",
+    "nameLabel": "Nom",
+    "submit": "Enregistrer"
+  },
+  "deleteConfirm": "Supprimer la liste « {{name}} » et tous ses articles ?",
+  "menu": {
+    "pin": "Épingler",
+    "unpin": "Détacher",
+    "rename": "Renommer",
+    "changeIcon": "Changer l’icône",
+    "delete": "Supprimer"
+  },
+  "iconPicker": {
+    "title": "Choisir une icône"
+  },
+  "counts": {
+    "items_one": "{{count}} article",
+    "items_other": "{{count}} articles",
+    "remaining": "{{unchecked}} restant sur {{total}}"
+  },
+  "allDone": "Tout est coché",
+  "list": {
+    "back": "Retour aux listes",
+    "addPlaceholder": "Ajouter un article…",
+    "add": "Ajouter",
+    "category": {
+      "label": "Catégorie",
+      "none": "Sans catégorie",
+      "new": "Nouvelle catégorie…",
+      "newPlaceholder": "Nom de la catégorie"
+    },
+    "showChecked": "Afficher les articles cochés",
+    "hideChecked": "Masquer les articles cochés",
+    "empty": "Aucun article. Ajoutez le premier ci-dessus.",
+    "categoryMenu": {
+      "rename": "Renommer la catégorie",
+      "delete": "Supprimer la catégorie"
+    },
+    "renameCategory": {
+      "title": "Renommer « {{from}} »",
+      "toLabel": "Nouveau nom",
+      "submit": "Renommer"
+    },
+    "deleteCategoryConfirm": "Supprimer la catégorie « {{name}} » ? Ses articles passent en « Sans catégorie ».",
+    "itemMenu": {
+      "edit": "Modifier",
+      "delete": "Supprimer"
+    },
+    "editItem": {
+      "title": "Modifier l’article",
+      "textLabel": "Texte",
+      "categoryLabel": "Catégorie",
+      "submit": "Enregistrer"
+    },
+    "deleteItemConfirm": "Supprimer cet article ?"
+  },
+  "errors": {
+    "loadLists": "Impossible de charger les listes.",
+    "loadItems": "Impossible de charger les articles.",
+    "saveList": "Impossible d’enregistrer cette liste.",
+    "deleteList": "Impossible de supprimer cette liste.",
+    "saveItem": "Impossible d’enregistrer cet article.",
+    "deleteItem": "Impossible de supprimer cet article.",
+    "category": "Impossible de modifier cette catégorie.",
+    "invalidName": "Donnez un nom à la liste (120 caractères max).",
+    "invalidText": "Indiquez un texte (200 caractères max).",
+    "invalidCategory": "Catégorie trop longue (60 caractères max).",
+    "generic": "Une erreur est survenue."
+  }
+}

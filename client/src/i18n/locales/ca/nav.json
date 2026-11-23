@@ -13,14 +13,16 @@
     "family": "Família",
     "integrations": "Integracions",
     "settings": "Configuració",
-    "posts": "Publicacions"
+    "posts": "Publicacions",
+    "lists": "Llistes"
   },
   "mobile": {
     "home": "Llar",
     "calendar": "Agenda",
     "tasks": "Tasques",
     "shopping": "Compra",
-    "more": "Més"
+    "more": "Més",
+    "lists": "Llistes"
   },
   "more": {
     "title": "Tota la resta",

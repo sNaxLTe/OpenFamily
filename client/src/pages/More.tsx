@@ -27,6 +27,7 @@ const TINTS: Record<string, string> = {
     '/meal-planning': 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300',
     '/pantry': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300',
     '/budget': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
+    '/lists': 'bg-lime-100 text-lime-700 dark:bg-lime-950/60 dark:text-lime-300',
     '/family': 'bg-pink-100 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300',
     '/integrations': 'bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300',
     '/settings': 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200',

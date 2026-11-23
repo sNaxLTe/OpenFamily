@@ -13,14 +13,16 @@
     "family": "家庭",
     "integrations": "集成",
     "settings": "设置",
-    "posts": "家庭动态"
+    "posts": "家庭动态",
+    "lists": "清单"
   },
   "mobile": {
     "home": "首页",
     "calendar": "日历",
     "tasks": "任务",
     "shopping": "购物",
-    "more": "更多"
+    "more": "更多",
+    "lists": "清单"
   },
   "more": {
     "title": "其他功能",

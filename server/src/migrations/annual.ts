@@ -168,4 +168,42 @@ export const annualMigrations: readonly Migration[] = [
              ON tasks_reminder_log(member_id, log_date) WHERE kind = 'recap'`,
         ],
     },
+    {
+        // Module Listes (fonctionnalité 15 du fork) : liste de listes
+        // familiales (toute la famille voit tout), items cochables
+        // regroupés par catégorie texte libre. Strictement additif.
+        // - lists.user_id : scoping famille (comme toutes les tables
+        //   familiales ; absent de la spec d'origine, ajouté ici).
+        // - icon : emoji du jeu fixe LIST_ICONS (shared), CHECK en base.
+        // - created_by / checked_by : profil membre (family_members.id),
+        //   NULL si le compte n'est lié à aucun profil.
+        // - list_items.position : ordre de création (MAX+1), pas de
+        //   glisser-déposer en v1. Cascade sur la suppression de la liste.
+        id: 'annual/0009-lists-module',
+        statements: [
+            `CREATE TABLE IF NOT EXISTS lists (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                name TEXT NOT NULL CHECK (char_length(trim(name)) BETWEEN 1 AND 120),
+                icon TEXT NOT NULL DEFAULT '📝' CHECK (icon IN ('📝','🛒','🎒','✅','🏠','🚗','🎁','💊','📚','🧸','🍽️','🔧','🌳','🐶','✈️','💼')),
+                created_by UUID REFERENCES family_members(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )`,
+            'CREATE INDEX IF NOT EXISTS idx_lists_user ON lists(user_id)',
+            `CREATE TABLE IF NOT EXISTS list_items (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                list_id UUID NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
+                text TEXT NOT NULL CHECK (char_length(trim(text)) BETWEEN 1 AND 200),
+                category TEXT CHECK (category IS NULL OR char_length(category) <= 60),
+                checked BOOLEAN NOT NULL DEFAULT FALSE,
+                checked_by UUID REFERENCES family_members(id) ON DELETE SET NULL,
+                checked_at TIMESTAMPTZ,
+                position INTEGER NOT NULL,
+                created_by UUID REFERENCES family_members(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )`,
+            'CREATE INDEX IF NOT EXISTS idx_list_items_list_position ON list_items(list_id, position)',
+            'CREATE INDEX IF NOT EXISTS idx_list_items_list_category ON list_items(list_id, category)',
+        ],
+    },
 ];

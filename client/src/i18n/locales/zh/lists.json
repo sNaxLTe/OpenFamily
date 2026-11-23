@@ -1,0 +1,86 @@
+{
+  "title": "清单",
+  "subtitle": "与全家共享的清单",
+  "loading": "正在加载清单…",
+  "empty": {
+    "title": "还没有清单",
+    "cta": "创建我的第一份清单"
+  },
+  "create": {
+    "title": "新建清单",
+    "nameLabel": "清单名称",
+    "namePlaceholder": "例如：孩子的鞋子",
+    "iconLabel": "图标",
+    "submit": "创建"
+  },
+  "rename": {
+    "title": "重命名清单",
+    "nameLabel": "名称",
+    "submit": "保存"
+  },
+  "deleteConfirm": "删除清单「{{name}}」及其所有条目？",
+  "menu": {
+    "pin": "置顶",
+    "unpin": "取消置顶",
+    "rename": "重命名",
+    "changeIcon": "更换图标",
+    "delete": "删除"
+  },
+  "iconPicker": {
+    "title": "选择图标"
+  },
+  "counts": {
+    "items_one": "{{count}} 个条目",
+    "items_other": "{{count}} 个条目",
+    "remaining": "{{total}} 项中剩 {{unchecked}} 项"
+  },
+  "allDone": "全部完成",
+  "list": {
+    "back": "返回清单列表",
+    "addPlaceholder": "添加条目…",
+    "add": "添加",
+    "category": {
+      "label": "分类",
+      "none": "无分类",
+      "new": "新建分类…",
+      "newPlaceholder": "分类名称"
+    },
+    "showChecked": "显示已完成条目",
+    "hideChecked": "隐藏已完成条目",
+    "empty": "还没有条目，请在上方添加第一个。",
+    "categoryMenu": {
+      "rename": "重命名分类",
+      "delete": "删除分类"
+    },
+    "renameCategory": {
+      "title": "重命名「{{from}}」",
+      "toLabel": "新名称",
+      "submit": "重命名"
+    },
+    "deleteCategoryConfirm": "删除分类「{{name}}」？其条目将归入「无分类」。",
+    "itemMenu": {
+      "edit": "编辑",
+      "delete": "删除"
+    },
+    "editItem": {
+      "title": "编辑条目",
+      "textLabel": "内容",
+      "categoryLabel": "分类",
+      "submit": "保存"
+    },
+    "deleteItemConfirm": "删除此条目？"
+  },
+  "errors": {
+    "loadLists": "无法加载清单。",
+    "loadItems": "无法加载条目。",
+    "saveList": "无法保存此清单。",
+    "deleteList": "无法删除此清单。",
+    "saveItem": "无法保存此条目。",
+    "deleteItem": "无法删除此条目。",
+    "category": "无法修改此分类。",
+    "invalidName": "请为清单命名（最多 120 个字符）。",
+    "invalidText": "请输入内容（最多 200 个字符）。",
+    "invalidCategory": "分类过长（最多 60 个字符）。",
+    "generic": "出了点问题。"
+  }
+}

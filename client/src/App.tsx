@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard';
 import Posts from './pages/Posts';
 import ShoppingList from './pages/ShoppingList';
 import Tasks from './pages/Tasks';
+import Lists from './pages/Lists';
 import Rewards from './pages/Rewards';
 import Pantry from './pages/Pantry';
 import Calendar from './pages/Calendar';
@@ -81,6 +82,8 @@ function App() {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/shopping" element={<ShoppingList />} />
                 <Route path="/tasks" element={<Tasks />} />
+                <Route path="/lists" element={moduleRoute('lists', <Lists />)} />
+                <Route path="/lists/:listId" element={moduleRoute('lists', <Lists />)} />
                 <Route path="/posts" element={<Posts />} />
                 <Route path="/rewards" element={moduleRoute('rewards', <Rewards />)} />
                 <Route path="/calendar" element={<Calendar />} />

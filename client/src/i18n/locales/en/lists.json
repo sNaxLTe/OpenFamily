@@ -1,0 +1,86 @@
+{
+  "title": "Lists",
+  "subtitle": "Lists shared with the whole family",
+  "loading": "Loading lists…",
+  "empty": {
+    "title": "No list yet",
+    "cta": "Create my first list"
+  },
+  "create": {
+    "title": "New list",
+    "nameLabel": "List name",
+    "namePlaceholder": "e.g. Kids shoes",
+    "iconLabel": "Icon",
+    "submit": "Create"
+  },
+  "rename": {
+    "title": "Rename list",
+    "nameLabel": "Name",
+    "submit": "Save"
+  },
+  "deleteConfirm": "Delete the list \"{{name}}\" and all its items?",
+  "menu": {
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "rename": "Rename",
+    "changeIcon": "Change icon",
+    "delete": "Delete"
+  },
+  "iconPicker": {
+    "title": "Choose an icon"
+  },
+  "counts": {
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} items",
+    "remaining": "{{unchecked}} left of {{total}}"
+  },
+  "allDone": "All done",
+  "list": {
+    "back": "Back to lists",
+    "addPlaceholder": "Add an item…",
+    "add": "Add",
+    "category": {
+      "label": "Category",
+      "none": "No category",
+      "new": "New category…",
+      "newPlaceholder": "Category name"
+    },
+    "showChecked": "Show checked items",
+    "hideChecked": "Hide checked items",
+    "empty": "No item yet. Add the first one above.",
+    "categoryMenu": {
+      "rename": "Rename category",
+      "delete": "Delete category"
+    },
+    "renameCategory": {
+      "title": "Rename \"{{from}}\"",
+      "toLabel": "New name",
+      "submit": "Rename"
+    },
+    "deleteCategoryConfirm": "Delete the category \"{{name}}\"? Its items move to \"No category\".",
+    "itemMenu": {
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "editItem": {
+      "title": "Edit item",
+      "textLabel": "Text",
+      "categoryLabel": "Category",
+      "submit": "Save"
+    },
+    "deleteItemConfirm": "Delete this item?"
+  },
+  "errors": {
+    "loadLists": "Could not load the lists.",
+    "loadItems": "Could not load the items.",
+    "saveList": "Could not save this list.",
+    "deleteList": "Could not delete this list.",
+    "saveItem": "Could not save this item.",
+    "deleteItem": "Could not delete this item.",
+    "category": "Could not update this category.",
+    "invalidName": "Give the list a name (120 characters max).",
+    "invalidText": "Enter a text (200 characters max).",
+    "invalidCategory": "Category too long (60 characters max).",
+    "generic": "Something went wrong."
+  }
+}

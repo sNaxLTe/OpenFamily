@@ -38,7 +38,9 @@
     "saving": "Salvando…",
     "empty": "Nenhum item aqui ainda",
     "error": "Ocorreu um erro",
-    "chartError": "Não foi possível apresentar o gráfico."
+    "chartError": "Não foi possível apresentar o gráfico.",
+    "on": "ativado",
+    "off": "desativado"
   },
   "labels": {
     "name": "Nome",

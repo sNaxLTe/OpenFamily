@@ -38,7 +38,9 @@
     "saving": "Guardando…",
     "empty": "Todavía no hay nada",
     "error": "Se produjo un error",
-    "chartError": "No se pudo mostrar el gráfico."
+    "chartError": "No se pudo mostrar el gráfico.",
+    "on": "activado",
+    "off": "desactivado"
   },
   "labels": {
     "name": "Nombre",

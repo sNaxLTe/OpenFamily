@@ -38,7 +38,9 @@
     "saving": "Saving…",
     "empty": "Nothing here yet",
     "error": "An error occurred",
-    "chartError": "The chart could not be displayed."
+    "chartError": "The chart could not be displayed.",
+    "on": "on",
+    "off": "off"
   },
   "labels": {
     "name": "Name",

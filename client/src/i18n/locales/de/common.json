@@ -38,7 +38,9 @@
     "saving": "Wird gespeichert…",
     "empty": "Hier ist noch nichts",
     "error": "Ein Fehler ist aufgetreten",
-    "chartError": "Das Diagramm konnte nicht angezeigt werden."
+    "chartError": "Das Diagramm konnte nicht angezeigt werden.",
+    "on": "an",
+    "off": "aus"
   },
   "labels": {
     "name": "Name",

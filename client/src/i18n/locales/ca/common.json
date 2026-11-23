@@ -38,7 +38,9 @@
     "saving": "Desant…",
     "empty": "Encara no hi ha res",
     "error": "S'ha produït un error",
-    "chartError": "No s'ha pogut mostrar el gràfic."
+    "chartError": "No s'ha pogut mostrar el gràfic.",
+    "on": "activat",
+    "off": "desactivat"
   },
   "labels": {
     "name": "Nom",

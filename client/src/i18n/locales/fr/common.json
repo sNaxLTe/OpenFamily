@@ -38,7 +38,9 @@
     "saving": "Enregistrement…",
     "empty": "Rien pour le moment",
     "error": "Une erreur est survenue",
-    "chartError": "Le graphique n'a pas pu s'afficher."
+    "chartError": "Le graphique n'a pas pu s'afficher.",
+    "on": "activé",
+    "off": "désactivé"
   },
   "labels": {
     "name": "Nom",

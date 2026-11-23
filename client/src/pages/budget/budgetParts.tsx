@@ -54,15 +54,20 @@ export const Sheet: React.FC<{ open: boolean; onClose: () => void; title: string
 
     // Accessibility: Escape closes the sheet, and focus lands on the title
     // when it opens (screen readers announce the dialog through its label).
+    // onClose changes identity on every parent render: keep it in a ref and
+    // depend only on `open`, so focus() runs ONCE at opening — otherwise it
+    // would re-fire on every keystroke and steal the input's focus.
+    const onCloseRef = useRef(onClose);
+    useEffect(() => { onCloseRef.current = onClose; });
     useEffect(() => {
         if (!open) return;
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
+            if (e.key === 'Escape') onCloseRef.current();
         };
         window.addEventListener('keydown', onKey);
         titleRef.current?.focus();
         return () => window.removeEventListener('keydown', onKey);
-    }, [open, onClose]);
+    }, [open]);
 
     if (!open) return null;
     return (

@@ -100,13 +100,19 @@ const Sheet: React.FC<{ open: boolean; onClose: () => void; title: string; child
     const { t } = useTranslation('common');
     const titleRef = useRef<HTMLHeadingElement>(null);
     useHistoryAwareOverlay(open, onClose);
+    // onClose changes identity on every parent render: keep it in a ref and
+    // depend only on `open`, so this effect runs ONCE when the sheet opens.
+    // Otherwise titleRef.focus() would re-fire on every keystroke and steal
+    // the focus from the input being typed in (keyboard closes on iOS).
+    const onCloseRef = useRef(onClose);
+    useEffect(() => { onCloseRef.current = onClose; });
     useEffect(() => {
         if (!open) return;
-        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCloseRef.current(); };
         window.addEventListener('keydown', onKey);
         titleRef.current?.focus();
         return () => window.removeEventListener('keydown', onKey);
-    }, [open, onClose]);
+    }, [open]);
     if (!open) return null;
     return (
         <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
@@ -694,25 +700,31 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
                         {t('lists:counts.items', { count: items.length })}
                     </p>
                 </div>
-                <button
-                    type="button"
-                    role="switch"
-                    aria-checked={showChecked}
-                    aria-label={showChecked ? t('lists:list.hideChecked') : t('lists:list.showChecked')}
-                    title={showChecked ? t('lists:list.hideChecked') : t('lists:list.showChecked')}
-                    onClick={toggleShowChecked}
-                    className={cn(
-                        'relative h-7 w-12 shrink-0 rounded-full transition-colors',
-                        showChecked ? 'bg-primary' : 'border border-border bg-surface-2'
-                    )}
-                >
-                    <span
+                {/* Labelled toggle: visible text + aria-label with the on/off state. */}
+                <div className="flex min-h-11 items-center gap-3">
+                    <span className="text-body-sm text-foreground">
+                        {t('lists:list.showChecked')}
+                    </span>
+                    <button
+                        type="button"
+                        role="switch"
+                        aria-checked={showChecked}
+                        aria-label={`${t('lists:list.showChecked')} — ${showChecked ? t('common:states.on') : t('common:states.off')}`}
+                        title={`${t('lists:list.showChecked')} — ${showChecked ? t('common:states.on') : t('common:states.off')}`}
+                        onClick={toggleShowChecked}
                         className={cn(
-                            'absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all',
-                            showChecked ? 'left-6' : 'left-1'
+                            'relative h-7 w-12 shrink-0 rounded-full transition-colors',
+                            showChecked ? 'bg-primary' : 'border border-border bg-surface-2'
                         )}
-                    />
-                </button>
+                    >
+                        <span
+                            className={cn(
+                                'absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all',
+                                showChecked ? 'left-6' : 'left-1'
+                            )}
+                        />
+                    </button>
+                </div>
             </div>
 
             {/* Add row */}
@@ -821,20 +833,26 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
                                         <ul className="divide-y divide-border">
                                             {visible.map((item) => (
                                                 <li key={item.id} className={cn('flex items-center gap-2 px-2 py-1', item.checked && 'opacity-50')}>
+                                                    {/* Touch target ≥ 44 px on the button; the drawn box is
+                                                        h-4 w-4 like the design-system checkbox (Tasks module). */}
                                                     <button
                                                         type="button"
                                                         role="checkbox"
                                                         aria-checked={item.checked}
                                                         aria-label={item.text}
                                                         onClick={() => { void handleToggleChecked(item); }}
-                                                        className={cn(
-                                                            'flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full transition-colors',
-                                                            item.checked
-                                                                ? 'bg-success text-white'
-                                                                : 'border-2 border-border hover:border-primary'
-                                                        )}
+                                                        className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-surface-2"
                                                     >
-                                                        {item.checked && <Check className="h-4 w-4" />}
+                                                        <span
+                                                            className={cn(
+                                                                'flex h-4 w-4 items-center justify-center rounded border-2 transition-colors',
+                                                                item.checked
+                                                                    ? 'border-success bg-success text-white'
+                                                                    : 'border-border bg-transparent'
+                                                            )}
+                                                        >
+                                                            {item.checked && <Check className="h-3 w-3" />}
+                                                        </span>
                                                     </button>
                                                     <span
                                                         className={cn(

@@ -38,7 +38,9 @@
     "saving": "正在保存……",
     "empty": "这里暂时没有内容",
     "error": "发生错误",
-    "chartError": "图表无法显示。"
+    "chartError": "图表无法显示。",
+    "on": "开",
+    "off": "关"
   },
   "labels": {
     "name": "名称",

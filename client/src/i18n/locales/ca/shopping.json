@@ -136,5 +136,33 @@
     "increase": "Augmenta",
     "unset": "Defineix una quantitat",
     "done": "Fet"
+  },
+  "stores": {
+    "tabsLabel": "Botigues",
+    "general": "General",
+    "add": "Nova botiga",
+    "newTitle": "Nova botiga",
+    "editTitle": "Edita la botiga",
+    "nameLabel": "Nom de la botiga",
+    "namePlaceholder": "p. ex. Mercadona",
+    "iconLabel": "Icona",
+    "submitCreate": "Crear",
+    "submitSave": "Desa",
+    "rename": "Reanomena",
+    "delete": "Suprimeix",
+    "deleteConfirm": "Suprimir «{{name}}»? Els seus articles passaran a la pestanya General.",
+    "menuLabel": "Opcions de la botiga «{{name}}»",
+    "itemStore": "Botiga",
+    "generalOption": "General",
+    "editItemTitle": "Edita l’article",
+    "remaining_one": "{{count}} article pendent",
+    "remaining_other": "{{count}} articles pendents",
+    "errors": {
+      "loadStores": "No s’han pogut carregar les botigues.",
+      "saveStore": "No s’ha pogut desar aquesta botiga.",
+      "deleteStore": "No s’ha pogut suprimir aquesta botiga.",
+      "nameRequired": "El nom de la botiga és obligatori.",
+      "saveItem": "No s’ha pogut moure aquest article."
+    }
   }
 }

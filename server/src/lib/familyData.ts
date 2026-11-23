@@ -26,6 +26,9 @@ export const FAMILY_TABLES: ReadonlyArray<{ table: string; column: string }> = [
     // Lists module (annual/0009): the lists follow the family; their items
     // follow through the FK list_items.list_id → lists.id.
     { table: 'lists', column: 'user_id' },
+    // Shopping stores (annual/0010): the stores follow the family; their
+    // items follow through the FK shopping_items.store_id → shopping_stores.id.
+    { table: 'shopping_stores', column: 'user_id' },
     { table: 'appointments', column: 'user_id' },
     { table: 'calendar_subscriptions', column: 'user_id' },
     { table: 'schedule_entries', column: 'user_id' },

@@ -364,7 +364,25 @@ async function route(method: string, path: string, q: Record<string, string>, bo
 
     // ── Shopping ──────────────────────────────────────────────────────────────
     if (path === '/api/shopping' && method === 'GET') return ok(store.shopping);
-    if (path === '/api/shopping' && method === 'POST') return ok(create('shopping', { is_checked: false, ...body }));
+    if (path === '/api/shopping' && method === 'POST') return ok(create('shopping', { is_checked: false, store_id: null, ...body }));
+    // Shopping stores (fonctionnalité 16) : onglets magasin.
+    if (path === '/api/shopping/stores' && method === 'GET') {
+        return ok((store.shoppingStores as Json[]).slice().sort((a, b) => num(a.position) - num(b.position)));
+    }
+    if (path === '/api/shopping/stores' && method === 'POST') {
+        const position = (store.shoppingStores as Json[]).reduce((m, s) => Math.max(m, num(s.position)), 0) + 1;
+        return ok(create('shoppingStores', { icon: '🛒', position, ...body }));
+    }
+    if (seg[1] === 'shopping' && seg[2] === 'stores' && seg.length === 4) {
+        if (!(store.shoppingStores as Json[]).some((s) => s.id === seg[3])) return ok(null);
+        if (method === 'PUT') return ok(update('shoppingStores', seg[3], body));
+        if (method === 'DELETE') {
+            // FK ON DELETE SET NULL : les articles retombent en Général.
+            for (const it of store.shopping as Json[]) if (it.store_id === seg[3]) it.store_id = null;
+            remove('shoppingStores', seg[3]);
+            return ok({});
+        }
+    }
     if (path === '/api/shopping/templates' && method === 'GET') return ok(store.shoppingTemplates);
     if (path === '/api/shopping/templates' && method === 'POST') return ok(create('shoppingTemplates', body));
     if (path === '/api/shopping/checked/clear') { store.shopping = (store.shopping as Json[]).filter((s) => !s.is_checked) as never; return ok({}); }

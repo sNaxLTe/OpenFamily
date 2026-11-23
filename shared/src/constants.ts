@@ -108,3 +108,9 @@ export type ListIcon = typeof LIST_ICONS[number];
 export const LIST_NAME_MAX = 120;
 export const LIST_ITEM_TEXT_MAX = 200;
 export const LIST_CATEGORY_MAX = 60;
+
+// ─── Shopping stores (fonctionnalité 16 du fork) ─────────────────────────────
+// A shopping store is a tab ("magasin") on the Shopping page. The icon set is
+// the same fixed set as the Lists module (LIST_ICONS), so the client grid and
+// the server-side CHECK (migration annual/0010) always agree.
+export const SHOPPING_STORE_NAME_MAX = 60;

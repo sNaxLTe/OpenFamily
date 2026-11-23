@@ -136,5 +136,33 @@
     "increase": "增加",
     "unset": "设置数量",
     "done": "完成"
+  },
+  "stores": {
+    "tabsLabel": "商店",
+    "general": "全部",
+    "add": "新建商店",
+    "newTitle": "新建商店",
+    "editTitle": "编辑商店",
+    "nameLabel": "商店名称",
+    "namePlaceholder": "例如：永辉超市",
+    "iconLabel": "图标",
+    "submitCreate": "创建",
+    "submitSave": "保存",
+    "rename": "重命名",
+    "delete": "删除",
+    "deleteConfirm": "删除「{{name}}」？其商品将移至「全部」标签页。",
+    "menuLabel": "商店「{{name}}」的选项",
+    "itemStore": "商店",
+    "generalOption": "全部",
+    "editItemTitle": "编辑商品",
+    "remaining_one": "剩余 {{count}} 件商品",
+    "remaining_other": "剩余 {{count}} 件商品",
+    "errors": {
+      "loadStores": "无法加载商店。",
+      "saveStore": "无法保存此商店。",
+      "deleteStore": "无法删除此商店。",
+      "nameRequired": "商店名称为必填。",
+      "saveItem": "无法移动此商品。"
+    }
   }
 }

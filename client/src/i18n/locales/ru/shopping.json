@@ -144,5 +144,33 @@
     "increase": "Увеличить",
     "unset": "Указать количество",
     "done": "Готово"
+  },
+  "stores": {
+    "tabsLabel": "Магазины",
+    "general": "Общее",
+    "add": "Новый магазин",
+    "newTitle": "Новый магазин",
+    "editTitle": "Изменить магазин",
+    "nameLabel": "Название магазина",
+    "namePlaceholder": "напр. Пятёрочка",
+    "iconLabel": "Значок",
+    "submitCreate": "Создать",
+    "submitSave": "Сохранить",
+    "rename": "Переименовать",
+    "delete": "Удалить",
+    "deleteConfirm": "Удалить «{{name}}»? Его товары перейдут на вкладку «Общее».",
+    "menuLabel": "Параметры магазина «{{name}}»",
+    "itemStore": "Магазин",
+    "generalOption": "Общее",
+    "editItemTitle": "Изменить товар",
+    "remaining_one": "Остался {{count}} товар",
+    "remaining_other": "Осталось {{count}} товаров",
+    "errors": {
+      "loadStores": "Не удалось загрузить магазины.",
+      "saveStore": "Не удалось сохранить этот магазин.",
+      "deleteStore": "Не удалось удалить этот магазин.",
+      "nameRequired": "Укажите название магазина.",
+      "saveItem": "Не удалось переместить этот товар."
+    }
   }
 }

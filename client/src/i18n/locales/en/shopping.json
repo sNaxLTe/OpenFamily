@@ -136,5 +136,33 @@
     "increase": "Increase",
     "unset": "Set a quantity",
     "done": "Done"
+  },
+  "stores": {
+    "tabsLabel": "Stores",
+    "general": "General",
+    "add": "New store",
+    "newTitle": "New store",
+    "editTitle": "Edit store",
+    "nameLabel": "Store name",
+    "namePlaceholder": "e.g. Walmart",
+    "iconLabel": "Icon",
+    "submitCreate": "Create",
+    "submitSave": "Save",
+    "rename": "Rename",
+    "delete": "Delete",
+    "deleteConfirm": "Delete “{{name}}”? Its items will move to the General tab.",
+    "menuLabel": "Options for store “{{name}}”",
+    "itemStore": "Store",
+    "generalOption": "General",
+    "editItemTitle": "Edit item",
+    "remaining_one": "{{count}} item left",
+    "remaining_other": "{{count}} items left",
+    "errors": {
+      "loadStores": "Could not load the stores.",
+      "saveStore": "Could not save this store.",
+      "deleteStore": "Could not delete this store.",
+      "nameRequired": "Store name is required.",
+      "saveItem": "Could not move this item."
+    }
   }
 }

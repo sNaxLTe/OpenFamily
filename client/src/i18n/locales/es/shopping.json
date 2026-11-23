@@ -136,5 +136,33 @@
     "increase": "Aumentar",
     "unset": "Definir una cantidad",
     "done": "Hecho"
+  },
+  "stores": {
+    "tabsLabel": "Tiendas",
+    "general": "General",
+    "add": "Nueva tienda",
+    "newTitle": "Nueva tienda",
+    "editTitle": "Editar tienda",
+    "nameLabel": "Nombre de la tienda",
+    "namePlaceholder": "p. ej. Mercadona",
+    "iconLabel": "Icono",
+    "submitCreate": "Crear",
+    "submitSave": "Guardar",
+    "rename": "Renombrar",
+    "delete": "Eliminar",
+    "deleteConfirm": "¿Eliminar «{{name}}»? Sus artículos pasarán a la pestaña General.",
+    "menuLabel": "Opciones de la tienda «{{name}}»",
+    "itemStore": "Tienda",
+    "generalOption": "General",
+    "editItemTitle": "Editar artículo",
+    "remaining_one": "{{count}} artículo pendiente",
+    "remaining_other": "{{count}} artículos pendientes",
+    "errors": {
+      "loadStores": "No se pudieron cargar las tiendas.",
+      "saveStore": "No se pudo guardar esta tienda.",
+      "deleteStore": "No se pudo eliminar esta tienda.",
+      "nameRequired": "El nombre de la tienda es obligatorio.",
+      "saveItem": "No se pudo mover este artículo."
+    }
   }
 }

@@ -31,6 +31,7 @@ export interface DemoStore {
     familyMembers: Record<string, unknown>[];
     shopping: Record<string, unknown>[];
     shoppingTemplates: Record<string, unknown>[];
+    shoppingStores: Record<string, unknown>[];
     tasks: Record<string, unknown>[];
     lists: Record<string, unknown>[];
     listItems: Record<string, unknown>[];
@@ -73,13 +74,16 @@ export function createSeed(): DemoStore {
         },
         familyMembers: [dad, mom, kid1, kid2],
         shopping: [
-            { id: 's1', name: 'Milk', category: 'Alimentation', quantity: 2, unit: 'L', price: 1.2, is_checked: false },
-            { id: 's2', name: 'Bread', category: 'Alimentation', quantity: 1, price: 1.5, is_checked: false },
+            { id: 's1', name: 'Milk', category: 'Alimentation', quantity: 2, unit: 'L', price: 1.2, is_checked: false, store_id: 'st1' },
+            { id: 's2', name: 'Bread', category: 'Alimentation', quantity: 1, price: 1.5, is_checked: false, store_id: 'st1' },
             { id: 's3', name: 'Apples', category: 'Alimentation', quantity: 6, price: 0.4, is_checked: false },
             { id: 's4', name: 'Pasta', category: 'Alimentation', quantity: 3, price: 0.9, is_checked: true },
             { id: 's5', name: 'Diapers', category: 'Bebe', quantity: 1, price: 12.9, is_checked: false },
             { id: 's6', name: 'Dish soap', category: 'Menage', quantity: 1, price: 2.3, is_checked: false },
             { id: 's7', name: 'Toothpaste', category: 'Sante', quantity: 2, price: 2.1, is_checked: false },
+        ],
+        shoppingStores: [
+            { id: 'st1', name: 'Leclerc', icon: '🛒', position: 1, created_at: now },
         ],
         shoppingTemplates: [
             {

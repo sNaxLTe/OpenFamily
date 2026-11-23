@@ -1,17 +1,20 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWebSocketUpdates } from '../hooks/useWebSocketUpdates';
 import { api } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import { formatCurrency } from '../lib/utils';
+import { cn, formatCurrency } from '../lib/utils';
 import { intlLocale } from '../i18n/format';
-import { Plus, Trash2, Check, ShoppingBag, Save, ListChecks, Store, ChevronLeft, Minus } from 'lucide-react';
+import { Plus, Trash2, Check, ShoppingBag, Save, ListChecks, Store, ChevronLeft, Minus, MoreVertical, Pencil, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Dialog } from '../components/ui';
+import { Dialog, useToast } from '../components/ui';
 import { useCategories } from '../hooks/useCategories';
 import { SHOPPING_CATALOG } from '../lib/shoppingCatalog';
+import { friendlyApiError } from '../lib/friendlyError';
+import { useHistoryAwareOverlay } from '../lib/useHistoryAwareOverlay';
+import { LIST_ICONS, SHOPPING_STORE_NAME_MAX } from '@openfamily/shared';
 
 // Quantities come back from the database as "2.00": show 2, 1,5, 0,25.
 const formatQty = (q: number | string) =>
@@ -26,6 +29,17 @@ interface ShoppingItem {
     price?: number;
     is_checked: boolean;
     notes?: string;
+    /** Shopping store tab (annual/0010) : null/undefined = onglet « Général ». */
+    store_id?: string | null;
+}
+
+/** A shopping store = one tab on the Shopping page (annual/0010). */
+interface ShoppingStore {
+    id: string;
+    name: string;
+    icon: string;
+    position: number;
+    created_at?: string;
 }
 
 interface ShoppingTemplate {
@@ -51,6 +65,127 @@ const parseOptionalPositiveNumber = (value: string): number | undefined => {
     return Number.isFinite(parsed) ? parsed : Number.NaN;
 };
 
+/** History-aware bottom sheet (same pattern as the Lists module's Sheet). */
+const Sheet: React.FC<{ open: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({
+    open, onClose, title, children,
+}) => {
+    const { t } = useTranslation('common');
+    const titleRef = useRef<HTMLHeadingElement>(null);
+    useHistoryAwareOverlay(open, onClose);
+    // onClose changes identity on every parent render: keep it in a ref and
+    // depend only on `open`, so the effect runs ONCE when the sheet opens —
+    // otherwise titleRef.focus() would re-fire on every keystroke and steal
+    // the focus from the input being typed in (keyboard closes on iOS).
+    const onCloseRef = useRef(onClose);
+    useEffect(() => { onCloseRef.current = onClose; });
+    useEffect(() => {
+        if (!open) return;
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCloseRef.current(); };
+        window.addEventListener('keydown', onKey);
+        titleRef.current?.focus();
+        return () => window.removeEventListener('keydown', onKey);
+    }, [open]);
+    if (!open) return null;
+    return (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-label={title}
+                className="relative bg-background rounded-t-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="flex items-center justify-between p-4 border-b border-border">
+                    <h2 ref={titleRef} tabIndex={-1} className="text-lg font-semibold outline-none">{title}</h2>
+                    <button
+                        onClick={onClose}
+                        aria-label={t('common:actions.close')}
+                        className="p-3 rounded-full hover:bg-surface-2 transition-colors"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+                <div className="p-4">{children}</div>
+            </div>
+        </div>
+    );
+};
+
+/** A "…" menu: a ≥ 44 px button opening a popover of ≥ 44 px actions. */
+const Menu: React.FC<{
+    label: string;
+    items: Array<{ key: string; label: string; icon?: React.ReactNode; danger?: boolean; onClick: () => void }>;
+}> = ({ label, items }) => {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (!open) return;
+        const onDoc = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', onDoc);
+        return () => document.removeEventListener('mousedown', onDoc);
+    }, [open]);
+    return (
+        <div className="relative" ref={ref}>
+            <button
+                type="button"
+                aria-label={label}
+                aria-expanded={open}
+                onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+                className="flex min-h-11 min-w-11 items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
+            >
+                <MoreVertical className="h-5 w-5 text-muted-foreground" />
+            </button>
+            {open && (
+                <div
+                    className="absolute right-0 z-40 mt-1 w-56 rounded-card border border-border bg-popover shadow-surface-hover overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {items.map((item) => (
+                        <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => { setOpen(false); item.onClick(); }}
+                            className={cn(
+                                'flex min-h-11 w-full items-center gap-2 px-3 text-left text-body-sm hover:bg-surface-2 transition-colors',
+                                item.danger && 'text-destructive'
+                            )}
+                        >
+                            {item.icon}
+                            {item.label}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+/** The fixed store icon grid (LIST_ICONS), every cell a ≥ 44 px target. */
+const IconGrid: React.FC<{ value: string; onChange: (icon: string) => void }> = ({ value, onChange }) => (
+    <div className="grid grid-cols-8 gap-2">
+        {LIST_ICONS.map((icon) => (
+            <button
+                key={icon}
+                type="button"
+                aria-label={icon}
+                aria-pressed={value === icon}
+                onClick={() => onChange(icon)}
+                className={cn(
+                    'flex min-h-11 min-w-11 items-center justify-center rounded-input text-2xl transition-colors',
+                    value === icon
+                        ? 'bg-primary-soft ring-2 ring-primary'
+                        : 'hover:bg-surface-2 border border-border'
+                )}
+            >
+                {icon}
+            </button>
+        ))}
+    </div>
+);
+
 const ShoppingList: React.FC = () => {
     const { t } = useTranslation(['shopping', 'common']);
     const categoryLabel = (value: string) => t(`shopping:categories.${value}`, { defaultValue: value });
@@ -59,8 +194,22 @@ const ShoppingList: React.FC = () => {
     // Family-customizable category list (Settings → Categories).
     const { categories: familyCategories } = useCategories();
     const categories = familyCategories.shopping;
+    const { showToast } = useToast();
+    const isParent = Boolean(user?.is_owner) || user?.role !== 'enfant';
     const [items, setItems] = useState<ShoppingItem[]>([]);
     const [templates, setTemplates] = useState<ShoppingTemplate[]>([]);
+    // Shopping stores = tabs (annual/0010). '' = onglet « Général ».
+    const [stores, setStores] = useState<ShoppingStore[]>([]);
+    const tabKey = `openfamily.shoppingTab.${user?.id ?? 'anon'}`;
+    const [activeTab, setActiveTab] = useState<string>(() => {
+        try { return localStorage.getItem(tabKey) ?? ''; } catch { return ''; }
+    });
+    const [storeSheet, setStoreSheet] = useState<null | { mode: 'create' } | { mode: 'edit'; store: ShoppingStore }>(null);
+    const [storeName, setStoreName] = useState('');
+    const [storeIcon, setStoreIcon] = useState('🛒');
+    // Item edit sheet (store dropdown only: moving between stores).
+    const [editingItem, setEditingItem] = useState<ShoppingItem | null>(null);
+    const [editItemStore, setEditItemStore] = useState('');
     const [selectedTemplateId, setSelectedTemplateId] = useState('');
     const [templateName, setTemplateName] = useState('');
     const [newItem, setNewItem] = useState({
@@ -80,7 +229,7 @@ const ShoppingList: React.FC = () => {
     const [quantityDraft, setQuantityDraft] = useState('');
 
     useEffect(() => {
-        void Promise.all([loadItems(), loadTemplates()]).finally(() => setLoading(false));
+        void Promise.all([loadItems(), loadTemplates(), loadStores()]).finally(() => setLoading(false));
     }, []);
 
     // If the family's custom list doesn't contain the form's current category
@@ -88,7 +237,7 @@ const ShoppingList: React.FC = () => {
     useEffect(() => {
         setNewItem((prev) => (categories.includes(prev.category) ? prev : { ...prev, category: categories[0] }));
     }, [categories]);
-    useWebSocketUpdates('shopping', () => { void loadItems(); });
+    useWebSocketUpdates('shopping', () => { void loadItems(); void loadStores(); });
 
     const loadItems = async () => {
         try {
@@ -99,6 +248,111 @@ const ShoppingList: React.FC = () => {
         } catch (err) {
             console.error('Failed to load shopping items:', err);
             setError(err instanceof Error ? err.message : t('shopping:errors.loadItems'));
+        }
+    };
+
+    const loadStores = async () => {
+        try {
+            const response = await api.get<{ success: boolean; data: ShoppingStore[] }>('/api/shopping/stores');
+            if (response.success) {
+                setStores(response.data);
+            }
+        } catch (err) {
+            console.error('Failed to load shopping stores:', err);
+            setError(friendlyApiError(err, t, 'shopping:stores.errors.loadStores'));
+        }
+    };
+
+    // Last active tab, per account and per device. A stored tab whose store
+    // was deleted falls back to "Général".
+    const effectiveTab = useMemo(() => {
+        if (!activeTab) return '';
+        return stores.some((s) => s.id === activeTab) ? activeTab : '';
+    }, [activeTab, stores]);
+
+    const selectTab = (tabId: string) => {
+        setActiveTab(tabId);
+        try { localStorage.setItem(tabKey, tabId); } catch { /* private mode */ }
+    };
+
+    // Items of the active tab: '' = "Général" = items without a store.
+    // With zero stores every item has store_id NULL → the page is exactly
+    // the pre-stores one (no tab bar rendered either).
+    const visibleItems = useMemo(() => {
+        if (!effectiveTab) return items.filter((i) => !i.store_id);
+        return items.filter((i) => i.store_id === effectiveTab);
+    }, [items, effectiveTab]);
+
+    const uncheckedInTab = (tabId: string) =>
+        (tabId === '' ? items.filter((i) => !i.store_id) : items.filter((i) => i.store_id === tabId))
+            .filter((i) => !i.is_checked).length;
+
+    // ─── Stores (parents manage them) ────────────────────────────────────────
+
+    const openCreateStore = () => {
+        setStoreName('');
+        setStoreIcon('🛒');
+        setStoreSheet({ mode: 'create' });
+    };
+    const openEditStore = (store: ShoppingStore) => {
+        setStoreName(store.name);
+        setStoreIcon(store.icon);
+        setStoreSheet({ mode: 'edit', store });
+    };
+
+    const submitStoreSheet = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const name = storeName.trim();
+        if (!name || name.length > SHOPPING_STORE_NAME_MAX) {
+            setError(t('shopping:stores.errors.nameRequired'));
+            return;
+        }
+        try {
+            if (storeSheet?.mode === 'edit') {
+                await api.put(`/api/shopping/stores/${storeSheet.store.id}`, { name, icon: storeIcon });
+                showToast({ title: t('shopping:stores.editTitle'), description: name });
+            } else {
+                await api.post('/api/shopping/stores', { name, icon: storeIcon });
+                showToast({ title: t('shopping:stores.newTitle'), description: name });
+            }
+            setStoreSheet(null);
+            await loadStores();
+        } catch (err) {
+            console.error('Failed to save store:', err);
+            setError(friendlyApiError(err, t, 'shopping:stores.errors.saveStore'));
+        }
+    };
+
+    const deleteStore = async (store: ShoppingStore) => {
+        if (!confirm(t('shopping:stores.deleteConfirm', { name: store.name }))) return;
+        try {
+            await api.delete(`/api/shopping/stores/${store.id}`);
+            showToast({ title: t('shopping:stores.delete'), description: store.name });
+            if (effectiveTab === store.id) selectTab('');
+            await Promise.all([loadStores(), loadItems()]);
+        } catch (err) {
+            console.error('Failed to delete store:', err);
+            setError(friendlyApiError(err, t, 'shopping:stores.errors.deleteStore'));
+        }
+    };
+
+    // ─── Item edit sheet (move the item between stores) ─────────────────────
+
+    const openEditItem = (item: ShoppingItem) => {
+        setEditingItem(item);
+        setEditItemStore(item.store_id ?? '');
+    };
+
+    const submitEditItem = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingItem) return;
+        try {
+            await api.put(`/api/shopping/${editingItem.id}`, { store_id: editItemStore || null });
+            setEditingItem(null);
+            await loadItems();
+        } catch (err) {
+            console.error('Failed to move item:', err);
+            setError(friendlyApiError(err, t, 'shopping:stores.errors.saveItem'));
         }
     };
 
@@ -143,6 +397,9 @@ const ShoppingList: React.FC = () => {
                 quantity,
                 price,
                 unit: newItem.unit || null,
+                // An item created from a store tab lands in that store; from
+                // "Général" (or with no stores at all) it stays in Général.
+                store_id: effectiveTab || null,
             });
 
             if (response.success) {
@@ -353,8 +610,8 @@ const ShoppingList: React.FC = () => {
         }
     };
 
-    const pendingItems = useMemo(() => items.filter((item) => !item.is_checked), [items]);
-    const completedItems = useMemo(() => items.filter((item) => item.is_checked), [items]);
+    const pendingItems = useMemo(() => visibleItems.filter((item) => !item.is_checked), [visibleItems]);
+    const completedItems = useMemo(() => visibleItems.filter((item) => item.is_checked), [visibleItems]);
 
     /**
      * Ready-made items to add in one tap. Filtered by what has been typed, and
@@ -396,7 +653,7 @@ const ShoppingList: React.FC = () => {
         // Items whose category is not in the family's (customizable) list fall back
         // to "Autre" when it exists, otherwise to a trailing catch-all group.
         const fallback = groups.has('Autre') ? 'Autre' : categories[categories.length - 1];
-        for (const item of items) {
+        for (const item of visibleItems) {
             const cat = groups.has(item.category) ? item.category : fallback;
             groups.get(cat)!.push(item);
         }
@@ -406,7 +663,7 @@ const ShoppingList: React.FC = () => {
                 category,
                 list: [...list].sort((a, b) => Number(a.is_checked) - Number(b.is_checked)),
             }));
-    }, [items, categories]);
+    }, [visibleItems, categories]);
 
     const totalPrice = useMemo(() => {
         return pendingItems.reduce((sum, item) => {
@@ -430,7 +687,7 @@ const ShoppingList: React.FC = () => {
     // ─── Mode magasin ───────────────────────────────────────────────────────────
     if (storeMode) {
         const remaining = pendingItems.length;
-        const total = items.length;
+        const total = visibleItems.length;
         const done = total - remaining;
         return (
             <div className="mx-auto max-w-2xl space-y-4 pb-28">
@@ -515,13 +772,90 @@ const ShoppingList: React.FC = () => {
                     <h1 className="text-h1 text-foreground">{t('shopping:header.title')}</h1>
                     <p className="text-body text-muted-foreground">{t('shopping:header.remaining', { count: pendingItems.length })}</p>
                 </div>
-                {items.length > 0 && (
+                {visibleItems.length > 0 && (
                     <Button onClick={() => setStoreMode(true)}>
                         <Store className="mr-1 h-4 w-4" />
                         {t('shopping:storeMode.enter')}
                     </Button>
                 )}
             </div>
+
+            {/* Store tabs (annual/0010): rendered only when at least one store
+                exists — with zero stores the page is strictly the old one. */}
+            {stores.length > 0 && (
+                <div
+                    role="tablist"
+                    aria-label={t('shopping:stores.tabsLabel')}
+                    className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1"
+                >
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={effectiveTab === ''}
+                        onClick={() => selectTab('')}
+                        aria-label={`${t('shopping:stores.general')} — ${t('shopping:stores.remaining', { count: uncheckedInTab('') })}`}
+                        className={cn(
+                            'flex min-h-11 shrink-0 items-center gap-1.5 rounded-pill border px-3 text-caption transition-colors',
+                            effectiveTab === ''
+                                ? 'border-primary bg-primary-soft font-medium text-primary'
+                                : 'border-border bg-card text-foreground hover:bg-surface-2'
+                        )}
+                    >
+                        {t('shopping:stores.general')}
+                        {uncheckedInTab('') > 0 && (
+                            <span className="rounded-pill bg-surface-2 px-1.5 text-micro text-muted-foreground">{uncheckedInTab('')}</span>
+                        )}
+                    </button>
+                    {stores.map((store) => {
+                        const remaining = uncheckedInTab(store.id);
+                        const active = effectiveTab === store.id;
+                        return (
+                            <div key={store.id} className="flex shrink-0 items-center">
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={active}
+                                    onClick={() => selectTab(store.id)}
+                                    aria-label={`${store.name} — ${t('shopping:stores.remaining', { count: remaining })}`}
+                                    className={cn(
+                                        'flex min-h-11 items-center gap-1.5 border px-3 text-caption transition-colors',
+                                        isParent ? 'rounded-l-pill border-r-0' : 'rounded-pill',
+                                        active
+                                            ? 'border-primary bg-primary-soft font-medium text-primary'
+                                            : 'border-border bg-card text-foreground hover:bg-surface-2'
+                                    )}
+                                >
+                                    <span aria-hidden="true">{store.icon}</span>
+                                    <span className="max-w-32 truncate">{store.name}</span>
+                                    {remaining > 0 && (
+                                        <span className="rounded-pill bg-surface-2 px-1.5 text-micro text-muted-foreground">{remaining}</span>
+                                    )}
+                                </button>
+                                {isParent && (
+                                    <Menu
+                                        label={t('shopping:stores.menuLabel', { name: store.name })}
+                                        items={[
+                                            { key: 'rename', label: t('shopping:stores.rename'), icon: <Pencil className="h-4 w-4" />, onClick: () => openEditStore(store) },
+                                            { key: 'delete', label: t('shopping:stores.delete'), icon: <Trash2 className="h-4 w-4" />, danger: true, onClick: () => { void deleteStore(store); } },
+                                        ]}
+                                    />
+                                )}
+                            </div>
+                        );
+                    })}
+                    {isParent && (
+                        <button
+                            type="button"
+                            onClick={openCreateStore}
+                            aria-label={t('shopping:stores.add')}
+                            title={t('shopping:stores.add')}
+                            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full border border-dashed border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                        >
+                            <Plus className="h-5 w-5" />
+                        </button>
+                    )}
+                </div>
+            )}
 
             {/* On a wide screen: the form and the templates on the left, the
                 list and its total on the right. The third row only absorbs
@@ -707,6 +1041,16 @@ const ShoppingList: React.FC = () => {
                                 <Button
                                     variant="ghost"
                                     size="sm"
+                                    onClick={() => openEditItem(item)}
+                                    aria-label={t('shopping:stores.editItemTitle')}
+                                    title={t('shopping:stores.editItemTitle')}
+                                    className="text-muted-foreground hover:bg-surface-2"
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={() => deleteItem(item.id)}
                                     className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                                 >
@@ -739,6 +1083,14 @@ const ShoppingList: React.FC = () => {
                                                 </span>
                                             </button>
                                             <p className="line-through text-caption text-muted-foreground">{item.name}</p>
+                                            <button
+                                                type="button"
+                                                onClick={() => openEditItem(item)}
+                                                aria-label={t('shopping:stores.editItemTitle')}
+                                                className="ml-auto flex min-h-11 min-w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-surface-2"
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </button>
                                         </div>
                                     ))}
                                 </div>
@@ -808,6 +1160,72 @@ const ShoppingList: React.FC = () => {
                 </div>
             </div>
             </div>
+
+            {/* Store sheet (create | edit) — parents only see the entry points */}
+            <Sheet
+                open={storeSheet !== null}
+                onClose={() => setStoreSheet(null)}
+                title={storeSheet?.mode === 'edit' ? t('shopping:stores.editTitle') : t('shopping:stores.newTitle')}
+            >
+                <form onSubmit={submitStoreSheet} className="space-y-4">
+                    <Input
+                        label={t('shopping:stores.nameLabel')}
+                        value={storeName}
+                        onChange={(e) => setStoreName(e.target.value)}
+                        placeholder={t('shopping:stores.namePlaceholder')}
+                        maxLength={SHOPPING_STORE_NAME_MAX}
+                        required
+                        autoFocus
+                    />
+                    <div>
+                        <span className="mb-1.5 block text-label font-medium text-foreground">
+                            {t('shopping:stores.iconLabel')}
+                        </span>
+                        <IconGrid value={storeIcon} onChange={setStoreIcon} />
+                    </div>
+                    <div className="flex justify-end gap-3 pt-2">
+                        <Button type="button" variant="secondary" onClick={() => setStoreSheet(null)}>
+                            {t('common:actions.cancel')}
+                        </Button>
+                        <Button type="submit">
+                            {storeSheet?.mode === 'edit' ? t('shopping:stores.submitSave') : t('shopping:stores.submitCreate')}
+                        </Button>
+                    </div>
+                </form>
+            </Sheet>
+
+            {/* Item edit sheet: the store dropdown moves the item between tabs
+                ("Général" + existing stores, no inline creation). */}
+            <Sheet
+                open={editingItem !== null}
+                onClose={() => setEditingItem(null)}
+                title={t('shopping:stores.editItemTitle')}
+            >
+                <form onSubmit={submitEditItem} className="space-y-4">
+                    <div>
+                        <label className="mb-1.5 block text-caption font-medium text-foreground" htmlFor="edit-item-store">
+                            {t('shopping:stores.itemStore')}
+                        </label>
+                        <select
+                            id="edit-item-store"
+                            value={editItemStore}
+                            onChange={(e) => setEditItemStore(e.target.value)}
+                            className="input-nexus w-full py-0 text-caption"
+                        >
+                            <option value="">{t('shopping:stores.generalOption')}</option>
+                            {stores.map((s) => (
+                                <option key={s.id} value={s.id}>{s.icon} {s.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-2">
+                        <Button type="button" variant="secondary" onClick={() => setEditingItem(null)}>
+                            {t('common:actions.cancel')}
+                        </Button>
+                        <Button type="submit">{t('common:actions.save')}</Button>
+                    </div>
+                </form>
+            </Sheet>
 
             {/* Template creation dialog */}
             <Dialog

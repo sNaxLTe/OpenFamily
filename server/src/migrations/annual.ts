@@ -206,4 +206,29 @@ export const annualMigrations: readonly Migration[] = [
             'CREATE INDEX IF NOT EXISTS idx_list_items_list_category ON list_items(list_id, category)',
         ],
     },
+    {
+        // Shopping stores (fonctionnalité 16 du fork) : onglets « magasin » de
+        // la page Courses. shopping_items.store_id NULL = onglet « Général »
+        // (aucune donnée migrée : tout l'existant reste dans Général).
+        // La suppression d'un magasin rapatrie ses articles dans Général via
+        // ON DELETE SET NULL — jamais de perte. L'icône est dans le même jeu
+        // fixe que les listes (LIST_ICONS de @openfamily/shared) ; le CHECK
+        // reprend la liste en dur comme annual/0009, les deux doivent rester
+        // synchronisés.
+        id: 'annual/0010-shopping-stores',
+        statements: [
+            `CREATE TABLE IF NOT EXISTS shopping_stores (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                name TEXT NOT NULL CHECK (char_length(trim(name)) BETWEEN 1 AND 60),
+                icon TEXT NOT NULL DEFAULT '🛒' CHECK (icon IN ('📝','🛒','🎒','✅','🏠','🚗','🎁','💊','📚','🧸','🍽️','🔧','🌳','🐶','✈️','💼')),
+                position INTEGER NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )`,
+            'CREATE INDEX IF NOT EXISTS idx_shopping_stores_user ON shopping_stores(user_id)',
+            `ALTER TABLE shopping_items ADD COLUMN IF NOT EXISTS store_id UUID NULL
+             REFERENCES shopping_stores(id) ON DELETE SET NULL`,
+            'CREATE INDEX IF NOT EXISTS idx_shopping_items_store ON shopping_items(store_id)',
+        ],
+    },
 ];

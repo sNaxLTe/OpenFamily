@@ -136,5 +136,33 @@
     "increase": "Erhöhen",
     "unset": "Menge festlegen",
     "done": "Fertig"
+  },
+  "stores": {
+    "tabsLabel": "Geschäfte",
+    "general": "Allgemein",
+    "add": "Neues Geschäft",
+    "newTitle": "Neues Geschäft",
+    "editTitle": "Geschäft bearbeiten",
+    "nameLabel": "Name des Geschäfts",
+    "namePlaceholder": "z. B. Rewe",
+    "iconLabel": "Symbol",
+    "submitCreate": "Erstellen",
+    "submitSave": "Speichern",
+    "rename": "Umbenennen",
+    "delete": "Löschen",
+    "deleteConfirm": "„{{name}}“ löschen? Seine Artikel wandern in den Tab „Allgemein“.",
+    "menuLabel": "Optionen für Geschäft „{{name}}“",
+    "itemStore": "Geschäft",
+    "generalOption": "Allgemein",
+    "editItemTitle": "Artikel bearbeiten",
+    "remaining_one": "{{count}} Artikel offen",
+    "remaining_other": "{{count}} Artikel offen",
+    "errors": {
+      "loadStores": "Geschäfte konnten nicht geladen werden.",
+      "saveStore": "Dieses Geschäft konnte nicht gespeichert werden.",
+      "deleteStore": "Dieses Geschäft konnte nicht gelöscht werden.",
+      "nameRequired": "Name des Geschäfts ist erforderlich.",
+      "saveItem": "Artikel konnte nicht verschoben werden."
+    }
   }
 }

@@ -136,5 +136,33 @@
     "increase": "Augmenter",
     "unset": "Ajouter une quantité",
     "done": "Terminé"
+  },
+  "stores": {
+    "tabsLabel": "Magasins",
+    "general": "Général",
+    "add": "Nouveau magasin",
+    "newTitle": "Nouveau magasin",
+    "editTitle": "Modifier le magasin",
+    "nameLabel": "Nom du magasin",
+    "namePlaceholder": "ex. Leclerc",
+    "iconLabel": "Icône",
+    "submitCreate": "Créer",
+    "submitSave": "Enregistrer",
+    "rename": "Renommer",
+    "delete": "Supprimer",
+    "deleteConfirm": "Supprimer « {{name}} » ? Ses articles passeront dans l’onglet Général.",
+    "menuLabel": "Options du magasin « {{name}} »",
+    "itemStore": "Magasin",
+    "generalOption": "Général",
+    "editItemTitle": "Modifier l’article",
+    "remaining_one": "{{count}} article restant",
+    "remaining_other": "{{count}} articles restants",
+    "errors": {
+      "loadStores": "Impossible de charger les magasins.",
+      "saveStore": "Impossible d’enregistrer ce magasin.",
+      "deleteStore": "Impossible de supprimer ce magasin.",
+      "nameRequired": "Le nom du magasin est requis.",
+      "saveItem": "Impossible de déplacer cet article."
+    }
   }
 }

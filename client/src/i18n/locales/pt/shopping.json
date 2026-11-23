@@ -136,5 +136,33 @@
     "showerGel": "Sabonete líquido",
     "tissues": "Lenços de papel",
     "plasters": "Curativos"
+  },
+  "stores": {
+    "tabsLabel": "Lojas",
+    "general": "Geral",
+    "add": "Nova loja",
+    "newTitle": "Nova loja",
+    "editTitle": "Editar loja",
+    "nameLabel": "Nome da loja",
+    "namePlaceholder": "ex. Continente",
+    "iconLabel": "Ícone",
+    "submitCreate": "Criar",
+    "submitSave": "Guardar",
+    "rename": "Renomear",
+    "delete": "Eliminar",
+    "deleteConfirm": "Eliminar «{{name}}»? Os seus itens passarão para o separador Geral.",
+    "menuLabel": "Opções da loja «{{name}}»",
+    "itemStore": "Loja",
+    "generalOption": "Geral",
+    "editItemTitle": "Editar item",
+    "remaining_one": "{{count}} item pendente",
+    "remaining_other": "{{count}} itens pendentes",
+    "errors": {
+      "loadStores": "Não foi possível carregar as lojas.",
+      "saveStore": "Não foi possível guardar esta loja.",
+      "deleteStore": "Não foi possível eliminar esta loja.",
+      "nameRequired": "O nome da loja é obrigatório.",
+      "saveItem": "Não foi possível mover este item."
+    }
   }
 }

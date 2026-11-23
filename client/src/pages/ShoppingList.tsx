@@ -780,9 +780,12 @@ const ShoppingList: React.FC = () => {
                 )}
             </div>
 
-            {/* Store tabs (annual/0010): rendered only when at least one store
-                exists — with zero stores the page is strictly the old one. */}
-            {stores.length > 0 && (
+            {/* Store tabs (annual/0010): rendered when at least one store exists
+                OR when the user is a parent — with zero stores a parent still
+                sees "Général | +" so there is an entry point to create the FIRST
+                store (otherwise the "+" chip would be unreachable). Children
+                with zero stores get strictly the upstream page (no bar at all). */}
+            {(stores.length > 0 || isParent) && (
                 <div
                     role="tablist"
                     aria-label={t('shopping:stores.tabsLabel')}

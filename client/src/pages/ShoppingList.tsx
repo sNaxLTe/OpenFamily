@@ -852,8 +852,24 @@ const ShoppingList: React.FC = () => {
                     {stores.map((store) => {
                         const remaining = uncheckedInTab(store.id);
                         const active = effectiveTab === store.id;
+                        // One single pill per store: full border + rounded both
+                        // sides, active state (accent border + bg) on the WHOLE
+                        // pill. The "…" menu button lives INSIDE the pill, right
+                        // of the name (a <button> cannot nest in a <button>, so
+                        // the pill is a div and the tab zone is the inner
+                        // button). Children: same pill without the menu and
+                        // without residual right padding.
                         return (
-                            <div key={store.id} className="flex shrink-0 items-center">
+                            <div
+                                key={store.id}
+                                className={cn(
+                                    'flex min-h-11 shrink-0 items-center rounded-pill border transition-colors',
+                                    isParent ? 'pr-2' : '',
+                                    active
+                                        ? 'border-primary bg-primary-soft'
+                                        : 'border-border bg-card hover:bg-surface-2'
+                                )}
+                            >
                                 <button
                                     type="button"
                                     role="tab"
@@ -861,11 +877,8 @@ const ShoppingList: React.FC = () => {
                                     onClick={() => selectTab(store.id)}
                                     aria-label={`${store.name} — ${t('shopping:stores.remaining', { count: remaining })}`}
                                     className={cn(
-                                        'flex min-h-11 items-center gap-1.5 border px-3 text-caption transition-colors',
-                                        isParent ? 'rounded-l-pill border-r-0' : 'rounded-pill',
-                                        active
-                                            ? 'border-primary bg-primary-soft font-medium text-primary'
-                                            : 'border-border bg-card text-foreground hover:bg-surface-2'
+                                        'flex min-h-11 items-center gap-1.5 pl-3 pr-3 text-caption',
+                                        active ? 'font-medium text-primary' : 'text-foreground'
                                     )}
                                 >
                                     <span aria-hidden="true">{store.icon}</span>

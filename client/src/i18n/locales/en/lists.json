@@ -68,7 +68,9 @@
       "categoryLabel": "Category",
       "submit": "Save"
     },
-    "deleteItemConfirm": "Delete this item?"
+    "deleteItemConfirm": "Delete this item?",
+    "moveUp": "Move “{{text}}” up one step",
+    "moveDown": "Move “{{text}}” down one step"
   },
   "errors": {
     "loadLists": "Could not load the lists.",

@@ -68,7 +68,9 @@
       "categoryLabel": "Catégorie",
       "submit": "Enregistrer"
     },
-    "deleteItemConfirm": "Supprimer cet article ?"
+    "deleteItemConfirm": "Supprimer cet article ?",
+    "moveUp": "Monter « {{text}} » d’un cran",
+    "moveDown": "Descendre « {{text}} » d’un cran"
   },
   "errors": {
     "loadLists": "Impossible de charger les listes.",

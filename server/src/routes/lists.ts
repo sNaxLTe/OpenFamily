@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { query } from '../db';
+import { query, withTransaction } from '../db';
 import { authMiddleware, AuthRequest, requireParent } from '../middleware/auth';
 import { broadcast } from '../lib/broadcaster';
 // Shared constants: the package is a proper ESM package now ("type": "module",
@@ -389,6 +389,50 @@ itemsRouter.put('/:id', async (req: AuthRequest, res) => {
         res.json({ success: true, data: mapItem(result.rows[0]) });
     } catch (error) {
         console.error('Update list item error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
+// PUT /api/items/:id/move — every member. Moves the item ONE rank inside its
+// category by swapping `position` with the position-adjacent item of the SAME
+// category AND same checked state (the displayed order sorts unchecked first
+// within a category, so a move only makes sense within the same stratum).
+// At a bound there is no neighbor: idempotent no-op { moved: false }.
+// No drag & drop in v1; moving across categories stays with the category
+// dropdown (PUT /api/items/:id { category }).
+itemsRouter.put('/:id/move', async (req: AuthRequest, res) => {
+    try {
+        const existing = await familyItem(req.params.id, req.userId!);
+        if (!existing) return res.status(404).json({ success: false, error: 'Item not found' });
+        const direction = req.body?.direction;
+        if (direction !== 'up' && direction !== 'down') {
+            return res.status(400).json({ success: false, error: 'Invalid direction' });
+        }
+        const position = Number(existing.position);
+        // 'up' = towards the top of the category = smaller position.
+        const neighbor = await query(
+            `SELECT id, position FROM list_items
+             WHERE list_id = $1
+               AND category IS NOT DISTINCT FROM $2
+               AND checked = $3
+               AND ${direction === 'up' ? 'position < $4' : 'position > $4'}
+             ORDER BY position ${direction === 'up' ? 'DESC' : 'ASC'}
+             LIMIT 1`,
+            [existing.list_id, existing.category ?? null, Boolean(existing.checked), position]
+        );
+        if (neighbor.rows.length === 0) {
+            return res.json({ success: true, data: { moved: false, item: mapItem(existing) } });
+        }
+        const other = neighbor.rows[0];
+        await withTransaction(async (tx) => {
+            await tx.query('UPDATE list_items SET position = $2 WHERE id = $1', [existing.id, Number(other.position)]);
+            await tx.query('UPDATE list_items SET position = $2 WHERE id = $1', [other.id, position]);
+        });
+        const updated = await familyItem(req.params.id, req.userId!);
+        broadcast(req.userId!, { type: 'update', entity: 'lists', action: 'updated' });
+        res.json({ success: true, data: { moved: true, item: mapItem(updated) } });
+    } catch (error) {
+        console.error('Move list item error:', error);
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });

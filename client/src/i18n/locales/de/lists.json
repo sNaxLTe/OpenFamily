@@ -68,7 +68,9 @@
       "categoryLabel": "Kategorie",
       "submit": "Speichern"
     },
-    "deleteItemConfirm": "Diesen Eintrag löschen?"
+    "deleteItemConfirm": "Diesen Eintrag löschen?",
+    "moveUp": "„{{text}}“ eine Stufe nach oben verschieben",
+    "moveDown": "„{{text}}“ eine Stufe nach unten verschieben"
   },
   "errors": {
     "loadLists": "Listen konnten nicht geladen werden.",

@@ -68,7 +68,9 @@
       "categoryLabel": "Категория",
       "submit": "Сохранить"
     },
-    "deleteItemConfirm": "Удалить этот пункт?"
+    "deleteItemConfirm": "Удалить этот пункт?",
+    "moveUp": "Поднять «{{text}}» на один пункт вверх",
+    "moveDown": "Опустить «{{text}}» на один пункт вниз"
   },
   "errors": {
     "loadLists": "Не удалось загрузить списки.",

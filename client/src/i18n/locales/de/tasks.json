@@ -113,6 +113,7 @@
     "time": "Uhrzeit",
     "overdue": "Erinnerung bei Überfälligkeit",
     "overdueHint": "Täglich bis erledigt",
-    "recapNote": "Jeden Morgen um 08:00 erhältst du eine Zusammenfassung deiner heutigen Aufgaben, unabhängig von dieser Einstellung."
+    "recapNote": "Jeden Morgen um 08:00 erhältst du eine Zusammenfassung deiner heutigen Aufgaben, unabhängig von dieser Einstellung.",
+    "roundedTime": "Erinnerungszeit gerundet: {{from}} → {{to}}"
   }
 }

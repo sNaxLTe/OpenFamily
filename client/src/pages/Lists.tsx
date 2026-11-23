@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
-    Plus, Check, ChevronDown, ChevronLeft, MoreVertical, Pin, PinOff, Pencil, Trash2, X, ListChecks,
+    Plus, Check, ChevronDown, ChevronUp, ChevronLeft, MoreVertical, Pin, PinOff, Pencil, Trash2, X, ListChecks,
 } from 'lucide-react';
 import { Card, CardContent, Button, Input, Select, useToast } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
@@ -213,6 +213,60 @@ const IconGrid: React.FC<{ value: string; onChange: (icon: string) => void }> = 
         ))}
     </div>
 );
+
+/**
+ * Shared category picker, used by both the add row and the edit-item sheet:
+ * "Sans catégorie" + the list's existing categories (order of appearance) +
+ * "+ Nouvelle catégorie" revealing a free-text field. Defined ONCE at module
+ * level so its identity is stable across renders — an inline component would
+ * be recreated on every render and remount the input on each keystroke
+ * (focus loss on iOS/Mac).
+ */
+const CategorySelect: React.FC<{
+    id?: string;
+    label: string;
+    value: string;
+    customValue: string;
+    existing: string[];
+    onChange: (value: string) => void;
+    onCustomChange: (value: string) => void;
+}> = ({ id, label, value, customValue, existing, onChange, onCustomChange }) => {
+    const { t } = useTranslation(['lists']);
+    return (
+        <div>
+            <span className="block text-label font-medium text-foreground mb-1.5">{label}</span>
+            {value === NEW_CATEGORY ? (
+                <Input
+                    id={id}
+                    value={customValue}
+                    onChange={(e) => onCustomChange(e.target.value)}
+                    placeholder={t('lists:list.category.newPlaceholder')}
+                    maxLength={LIST_CATEGORY_MAX}
+                    autoFocus
+                />
+            ) : (
+                <Select
+                    value={value}
+                    onValueChange={onChange}
+                    options={[
+                        { value: '', label: t('lists:list.category.none') },
+                        ...existing.map((c) => ({ value: c, label: c })),
+                        { value: NEW_CATEGORY, label: t('lists:list.category.new') },
+                    ]}
+                />
+            )}
+        </div>
+    );
+};
+
+/** Resolves the picker state to the category sent to the API (null = none). */
+const resolveCategory = (value: string, customValue: string): string | null => {
+    if (value === NEW_CATEGORY) {
+        const custom = customValue.trim();
+        return custom ? custom : null;
+    }
+    return value ? value : null;
+};
 
 // ─── The page ─────────────────────────────────────────────────────────────────
 
@@ -476,6 +530,7 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
     const [editItem, setEditItem] = useState<ListItem | null>(null);
     const [editText, setEditText] = useState('');
     const [editCategory, setEditCategory] = useState('');
+    const [editCategoryCustom, setEditCategoryCustom] = useState('');
     // Category rename sheet
     const [renameCat, setRenameCat] = useState<string | null>(null);
     const [renameCatTo, setRenameCatTo] = useState('');
@@ -561,16 +616,10 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
             setError(t('lists:errors.invalidText'));
             return;
         }
-        let category: string | null = null;
-        if (newCategory === NEW_CATEGORY) {
-            category = newCategoryCustom.trim();
-            if (!category) category = null;
-            else if (category.length > LIST_CATEGORY_MAX) {
-                setError(t('lists:errors.invalidCategory'));
-                return;
-            }
-        } else if (newCategory) {
-            category = newCategory;
+        const category = resolveCategory(newCategory, newCategoryCustom);
+        if (category && category.length > LIST_CATEGORY_MAX) {
+            setError(t('lists:errors.invalidCategory'));
+            return;
         }
         try {
             await api.post(`/api/lists/${listId}/items`, { text, category });
@@ -594,6 +643,19 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
         }
     };
 
+    // Move one step up/down within the item's own category (persisted server-side).
+    // The server swaps position with the neighbour of the same category AND same
+    // checked state, matching the display order (checked sort last in a category).
+    const handleMoveItem = async (item: ListItem, direction: 'up' | 'down') => {
+        try {
+            await api.put(`/api/items/${item.id}/move`, { direction });
+            await load();
+        } catch (err) {
+            console.error('Failed to move item:', err);
+            setError(friendlyApiError(err, t, 'lists:errors.saveItem'));
+        }
+    };
+
     const handleDeleteItem = async (item: ListItem) => {
         if (!confirm(t('lists:list.deleteItemConfirm'))) return;
         try {
@@ -609,7 +671,18 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
     const openEditItem = (item: ListItem) => {
         setEditItem(item);
         setEditText(item.text);
-        setEditCategory(item.category ?? '');
+        // Existing category → picked in the dropdown; a category that no longer
+        // appears in the list (renamed meanwhile) → free-text via "new".
+        if (!item.category) {
+            setEditCategory('');
+            setEditCategoryCustom('');
+        } else if (existingCategories.includes(item.category)) {
+            setEditCategory(item.category);
+            setEditCategoryCustom('');
+        } else {
+            setEditCategory(NEW_CATEGORY);
+            setEditCategoryCustom(item.category);
+        }
     };
     const submitEditItem = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -620,8 +693,8 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
             setError(t('lists:errors.invalidText'));
             return;
         }
-        const category = editCategory.trim();
-        if (category.length > LIST_CATEGORY_MAX) {
+        const category = resolveCategory(editCategory, editCategoryCustom);
+        if (category && category.length > LIST_CATEGORY_MAX) {
             setError(t('lists:errors.invalidCategory'));
             return;
         }
@@ -741,27 +814,14 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
                             />
                         </div>
                         <div className="sm:w-56">
-                            <label className="block text-label font-medium text-foreground mb-1.5">
-                                {t('lists:list.category.label')}
-                            </label>
-                            {newCategory === NEW_CATEGORY ? (
-                                <Input
-                                    value={newCategoryCustom}
-                                    onChange={(e) => setNewCategoryCustom(e.target.value)}
-                                    placeholder={t('lists:list.category.newPlaceholder')}
-                                    maxLength={LIST_CATEGORY_MAX}
-                                />
-                            ) : (
-                                <Select
-                                    value={newCategory}
-                                    onValueChange={setNewCategory}
-                                    options={[
-                                        { value: '', label: t('lists:list.category.none') },
-                                        ...existingCategories.map((c) => ({ value: c, label: c })),
-                                        { value: NEW_CATEGORY, label: t('lists:list.category.new') },
-                                    ]}
-                                />
-                            )}
+                            <CategorySelect
+                                label={t('lists:list.category.label')}
+                                value={newCategory}
+                                customValue={newCategoryCustom}
+                                existing={existingCategories}
+                                onChange={setNewCategory}
+                                onCustomChange={setNewCategoryCustom}
+                            />
                         </div>
                         <Button type="submit" disabled={!newText.trim()}>
                             <Plus className="w-4 h-4 mr-1" />
@@ -831,7 +891,7 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
                                         </p>
                                     ) : (
                                         <ul className="divide-y divide-border">
-                                            {visible.map((item) => (
+                                            {visible.map((item, idx) => (
                                                 <li key={item.id} className={cn('flex items-center gap-2 px-2 py-1', item.checked && 'opacity-50')}>
                                                     {/* Touch target ≥ 44 px on the button; the drawn box is
                                                         h-4 w-4 like the design-system checkbox (Tasks module). */}
@@ -862,6 +922,30 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
                                                     >
                                                         {item.text}
                                                     </span>
+                                                    {/* Reorder one step within the category
+                                                        (persisted server-side). Disabled at the
+                                                        category edges; the neighbour always shares
+                                                        the same checked state, matching the display. */}
+                                                    <button
+                                                        type="button"
+                                                        aria-label={t('lists:list.moveUp', { text: item.text })}
+                                                        title={t('lists:list.moveUp', { text: item.text })}
+                                                        disabled={idx === 0}
+                                                        onClick={() => { void handleMoveItem(item, 'up'); }}
+                                                        className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-30"
+                                                    >
+                                                        <ChevronUp className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        aria-label={t('lists:list.moveDown', { text: item.text })}
+                                                        title={t('lists:list.moveDown', { text: item.text })}
+                                                        disabled={idx === visible.length - 1}
+                                                        onClick={() => { void handleMoveItem(item, 'down'); }}
+                                                        className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-30"
+                                                    >
+                                                        <ChevronDown className="h-4 w-4" />
+                                                    </button>
                                                     <Menu
                                                         label={item.text}
                                                         items={[
@@ -891,24 +975,15 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
                         required
                         autoFocus
                     />
-                    <div>
-                        <label className="block text-label font-medium text-foreground mb-1.5" htmlFor="edit-item-category">
-                            {t('lists:list.editItem.categoryLabel')}
-                        </label>
-                        <Input
-                            id="edit-item-category"
-                            list="lists-existing-categories"
-                            value={editCategory}
-                            onChange={(e) => setEditCategory(e.target.value)}
-                            placeholder={t('lists:list.category.newPlaceholder')}
-                            maxLength={LIST_CATEGORY_MAX}
-                        />
-                        <datalist id="lists-existing-categories">
-                            {existingCategories.map((c) => (
-                                <option key={c} value={c} />
-                            ))}
-                        </datalist>
-                    </div>
+                    <CategorySelect
+                        id="edit-item-category"
+                        label={t('lists:list.editItem.categoryLabel')}
+                        value={editCategory}
+                        customValue={editCategoryCustom}
+                        existing={existingCategories}
+                        onChange={setEditCategory}
+                        onCustomChange={setEditCategoryCustom}
+                    />
                     <div className="flex justify-end gap-3 pt-2">
                         <Button type="button" variant="secondary" onClick={() => setEditItem(null)}>
                             {t('common:actions.cancel')}

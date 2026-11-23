@@ -68,7 +68,9 @@
       "categoryLabel": "Categoria",
       "submit": "Desar"
     },
-    "deleteItemConfirm": "Eliminar aquest article?"
+    "deleteItemConfirm": "Eliminar aquest article?",
+    "moveUp": "Pujar «{{text}}» una posició",
+    "moveDown": "Baixar «{{text}}» una posició"
   },
   "errors": {
     "loadLists": "No s’han pogut carregar les llistes.",

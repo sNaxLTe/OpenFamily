@@ -113,6 +113,7 @@
     "time": "Time",
     "overdue": "Remind if overdue",
     "overdueHint": "Every day until completed",
-    "recapNote": "A recap of your tasks for the day is sent every morning at 08:00, regardless of this setting."
+    "recapNote": "A recap of your tasks for the day is sent every morning at 08:00, regardless of this setting.",
+    "roundedTime": "Reminder time rounded: {{from}} → {{to}}"
   }
 }

@@ -58,6 +58,23 @@ const DEFAULT_FILTERS: TaskFilters = { priority: '', status: 'all', member: '', 
 /** Filter value for tasks without a category. */
 const NO_CATEGORY = '__none__';
 
+/**
+ * Arrondit 'HH:MM' au quart d'heure le plus proche (15:38 → 15:45, 15:29 → 15:30).
+ * Gère le dépassement de minute (…:52 → heure suivante :00) et minuit (23:52 → 00:00).
+ * Retourne 'HH:MM' sur 24 h, minutes ∈ {00,15,30,45}.
+ */
+export function roundToQuarterHour(value: string): string {
+    const match = /^([01][0-9]|2[0-3]):([0-9]{2})$/.exec(value.trim());
+    if (!match) return '08:00';
+    const hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const total = hours * 60 + minutes;
+    const rounded = Math.round(total / 15) * 15;
+    const h = Math.floor(rounded / 60) % 24;
+    const m = rounded % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
 /** Same sliding pill as the kiosk settings, as a full-width row (≥ 44 px target). */
 const SwitchRow: React.FC<{ checked: boolean; onChange: () => void; label: string; hint?: string; disabled?: boolean }> = ({
     checked, onChange, label, hint, disabled,
@@ -268,8 +285,10 @@ const Tasks: React.FC = () => {
             customValue = n;
         }
         // Rappels (fonctionnalité 14) : validation client des bornes —
-        // J-X dans 0..7, heure au quart d'heure (l'input time step=900 le
-        // garantit, double vérification ici). Bloc désactivé = NULL envoyé.
+        // J-X dans 0..7. L'heure est ARRONDIE au quart d'heure le plus proche
+        // avant l'envoi (le serveur garde sa validation stricte 400) :
+        // 15:38 → 15:45, 15:29 → 15:30, avec un toast explicite.
+        // Heure vide avec rappel actif → repli 08:00.
         let reminderOffset: number | null = null;
         let reminderTime: string | null = null;
         if (formData.reminder_enabled) {
@@ -278,14 +297,14 @@ const Tasks: React.FC = () => {
                 setError(t('tasks:errors.invalidReminder'));
                 return;
             }
-            const timeOk = /^([01][0-9]|2[0-3]):([0-9]{2})$/.test(formData.reminder_time)
-                && ['00', '15', '30', '45'].includes(formData.reminder_time.slice(3));
-            if (!timeOk) {
-                setError(t('tasks:errors.invalidReminder'));
-                return;
+            const typed = formData.reminder_time.trim() || '08:00';
+            const rounded = roundToQuarterHour(typed);
+            if (rounded !== typed) {
+                setFormData((prev) => ({ ...prev, reminder_time: rounded }));
+                showToast({ title: t('tasks:reminders.roundedTime', { from: typed, to: rounded }) });
             }
             reminderOffset = offset;
-            reminderTime = formData.reminder_time;
+            reminderTime = rounded;
         }
         try {
             const payload: Record<string, unknown> = {

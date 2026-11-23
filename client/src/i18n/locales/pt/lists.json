@@ -68,7 +68,9 @@
       "categoryLabel": "Categoria",
       "submit": "Salvar"
     },
-    "deleteItemConfirm": "Eliminar este item?"
+    "deleteItemConfirm": "Eliminar este item?",
+    "moveUp": "Subir «{{text}}» uma posição",
+    "moveDown": "Descer «{{text}}» uma posição"
   },
   "errors": {
     "loadLists": "Não foi possível carregar as listas.",

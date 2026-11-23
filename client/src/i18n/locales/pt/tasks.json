@@ -113,6 +113,7 @@
     "time": "Hora",
     "overdue": "Lembrete se atrasada",
     "overdueHint": "Diariamente até concluir",
-    "recapNote": "Um resumo das suas tarefas do dia é enviado todas as manhãs às 08:00, independentemente desta definição."
+    "recapNote": "Um resumo das suas tarefas do dia é enviado todas as manhãs às 08:00, independentemente desta definição.",
+    "roundedTime": "Hora do lembrete arredondada: {{from}} → {{to}}"
   }
 }

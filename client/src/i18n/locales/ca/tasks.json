@@ -113,6 +113,7 @@
     "time": "Hora",
     "overdue": "Recordatori si endarrerida",
     "overdueHint": "Cada dia fins a completar-la",
-    "recapNote": "Cada matí a les 08:00 reps un resum de les teves tasques del dia, independentment d’aquest ajust."
+    "recapNote": "Cada matí a les 08:00 reps un resum de les teves tasques del dia, independentment d’aquest ajust.",
+    "roundedTime": "Hora del recordatori arrodonida: {{from}} → {{to}}"
   }
 }

@@ -113,6 +113,7 @@
     "time": "Heure",
     "overdue": "Rappel si en retard",
     "overdueHint": "Chaque jour jusqu'à complétion",
-    "recapNote": "Un récap de tes tâches du jour part chaque matin à 08:00, indépendamment de ce réglage."
+    "recapNote": "Un récap de tes tâches du jour part chaque matin à 08:00, indépendamment de ce réglage.",
+    "roundedTime": "Heure du rappel arrondie : {{from}} → {{to}}"
   }
 }

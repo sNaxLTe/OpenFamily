@@ -68,7 +68,9 @@
       "categoryLabel": "分类",
       "submit": "保存"
     },
-    "deleteItemConfirm": "删除此条目？"
+    "deleteItemConfirm": "删除此条目？",
+    "moveUp": "将「{{text}}」上移一项",
+    "moveDown": "将「{{text}}」下移一项"
   },
   "errors": {
     "loadLists": "无法加载清单。",

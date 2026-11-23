@@ -247,6 +247,87 @@ describe('items', () => {
     });
 });
 
+describe('move (flèches ↑↓)', () => {
+    const move = (id: string, direction: string, token = parent.token) =>
+        put(`/api/items/${id}/move`, { direction }, token);
+
+    it('swap de position d\'un cran dans la catégorie, ordre re-lu', async () => {
+        const list = await createList();
+        const a = await addItem(list.id, { text: 'a', category: 'Frais' });
+        const b = await addItem(list.id, { text: 'b', category: 'Frais' });
+        const c = await addItem(list.id, { text: 'c', category: 'Frais' });
+        // b monte : a↔b swap
+        const res = await move(b.id, 'up');
+        expect(res.status).toBe(200);
+        expect(res.body.data.moved).toBe(true);
+        let items = (await get(`/api/lists/${list.id}/items`)).body.data.items;
+        expect(items.map((i: any) => i.text)).toEqual(['b', 'a', 'c']);
+        expect(items.find((i: any) => i.id === b.id).position).toBe(1);
+        expect(items.find((i: any) => i.id === a.id).position).toBe(2);
+        // b redescend : retour à l'état initial
+        await move(b.id, 'down');
+        items = (await get(`/api/lists/${list.id}/items`)).body.data.items;
+        expect(items.map((i: any) => i.text)).toEqual(['a', 'b', 'c']);
+        expect(items.find((i: any) => i.id === c.id).position).toBe(3);
+    });
+
+    it('butées : premier/dernier de la catégorie = no-op idempotent {moved:false}, positions inchangées', async () => {
+        const list = await createList();
+        const a = await addItem(list.id, { text: 'a' });
+        const b = await addItem(list.id, { text: 'b' });
+        const upAtTop = await move(a.id, 'up');
+        expect(upAtTop.body.data.moved).toBe(false);
+        const downAtBottom = await move(b.id, 'down');
+        expect(downAtBottom.body.data.moved).toBe(false);
+        // rejoué → toujours no-op
+        expect((await move(a.id, 'up')).body.data.moved).toBe(false);
+        const items = (await get(`/api/lists/${list.id}/items`)).body.data.items;
+        expect(items.map((i: any) => i.text)).toEqual(['a', 'b']);
+    });
+
+    it('invariant : jamais hors de sa catégorie ni hors de son état coché', async () => {
+        const list = await createList();
+        const a = await addItem(list.id, { text: 'a', category: 'Frais' });
+        const b = await addItem(list.id, { text: 'b', category: 'Sec' });
+        const c = await addItem(list.id, { text: 'c', category: 'Frais' });
+        // 'a' en haut de Frais : up = no-op (ne touche pas 'Sec')
+        expect((await move(a.id, 'up')).body.data.moved).toBe(false);
+        // 'a' down échange avec 'c' (même catégorie), pas avec 'b'
+        expect((await move(a.id, 'down')).body.data.moved).toBe(true);
+        let items = (await get(`/api/lists/${list.id}/items`)).body.data.items;
+        const cat = (id: string) => items.find((i: any) => i.id === id).category;
+        expect(cat(a.id)).toBe('Frais');
+        expect(cat(b.id)).toBe('Sec');
+        expect(items.filter((i: any) => i.category === 'Frais').map((i: any) => i.text)).toEqual(['c', 'a']);
+        // état coché : un item coché ne bouge que parmi les cochés de sa catégorie
+        await put(`/api/items/${c.id}`, { checked: true });
+        const d = await addItem(list.id, { text: 'd', category: 'Frais' }); // non coché
+        await put(`/api/items/${d.id}`, { checked: true });
+        // Après le swap a↔c du début : c pos 1, a pos 3, b pos 2, d pos 4.
+        // 'c' (coché, pos 1) up → aucun coché de même catégorie au-dessus = no-op
+        expect((await move(c.id, 'up')).body.data.moved).toBe(false);
+        // down de c → échange avec d (seul autre coché de 'Frais') : c↔d swap 1↔4
+        expect((await move(c.id, 'down')).body.data.moved).toBe(true);
+        items = (await get(`/api/lists/${list.id}/items`)).body.data.items;
+        expect(items.find((i: any) => i.id === c.id).position).toBe(4);
+        expect(items.find((i: any) => i.id === d.id).position).toBe(1);
+        // 'a' (non coché) ne peut pas monter sur 'd' (coché)
+        expect((await move(a.id, 'up')).body.data.moved).toBe(false);
+    });
+
+    it('permissions/validation : enfant peut déplacer (items = tous), 400 direction invalide, 404 hors famille', async () => {
+        const list = await createList();
+        const a = await addItem(list.id, { text: 'a' });
+        await addItem(list.id, { text: 'b' });
+        expect((await move(a.id, 'down', child.token)).status).toBe(200);
+        expect((await move(a.id, 'sideways')).status).toBe(400);
+        expect((await move(a.id, '')).status).toBe(400);
+        const other = await registerWithPassword('other2@example.org');
+        expect((await move(a.id, 'up', other.token)).status).toBe(404);
+        expect((await request(app).put(`/api/items/${a.id}/move`).send({ direction: 'up' })).status).toBe(401);
+    });
+});
+
 describe('catégories en masse (parents)', () => {
     it('PUT category : renomme from→to sur tous les items de la liste, sans toucher le reste', async () => {
         const list = await createList();

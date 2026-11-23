@@ -479,6 +479,25 @@ async function route(method: string, path: string, q: Record<string, string>, bo
         }
         if (method === 'DELETE') { remove('listItems', seg[2]); return ok({}); }
     }
+    if (seg[1] === 'items' && seg.length === 4 && seg[3] === 'move' && method === 'PUT') {
+        const direction = body.direction === 'down' ? 'down' : 'up';
+        const item = (store.listItems as Json[]).find((x) => x.id === seg[2]);
+        if (!item) return ok(null);
+        // Swap position with the neighbour of the same list, category AND
+        // checked state (same invariant as the server route).
+        const siblings = (store.listItems as Json[])
+            .filter((x) => x.list_id === item.list_id
+                && (x.category ?? null) === (item.category ?? null)
+                && Boolean(x.checked) === Boolean(item.checked))
+            .sort((a, b) => num(a.position) - num(b.position));
+        const idx = siblings.findIndex((x) => x.id === seg[2]);
+        const j = direction === 'up' ? idx - 1 : idx + 1;
+        if (idx < 0 || j < 0 || j >= siblings.length) return ok({ moved: false });
+        const tmp = num(siblings[idx].position);
+        siblings[idx].position = num(siblings[j].position);
+        siblings[j].position = tmp;
+        return ok({ moved: true });
+    }
 
     // Parent approval of a child-completed chore (the demo account is a parent).
     if (seg[1] === 'tasks' && seg.length === 4 && (seg[3] === 'approve' || seg[3] === 'reject') && method === 'POST') {

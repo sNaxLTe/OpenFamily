@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useWebSocketUpdates } from '../hooks/useWebSocketUpdates';
 import { api } from '../lib/api';
@@ -112,41 +113,79 @@ const Sheet: React.FC<{ open: boolean; onClose: () => void; title: string; child
     );
 };
 
-/** A "…" menu: a ≥ 44 px button opening a popover of ≥ 44 px actions. */
+/**
+ * A "…" menu: a ≥ 44 px button opening a popover of ≥ 44 px actions.
+ * The popover is PORTALED to <body> with position:fixed: the trigger lives
+ * inside the horizontally scrollable tab bar (overflow-x-auto), and an
+ * in-flow absolute popover there would be clipped (overflow-x non-visible
+ * forces overflow-y to auto) — the menu would open but stay invisible,
+ * which read as "the tap does nothing" on iOS. Fixed coordinates are taken
+ * from the button's rect at open time; any scroll/resize closes the menu.
+ */
 const Menu: React.FC<{
     label: string;
     items: Array<{ key: string; label: string; icon?: React.ReactNode; danger?: boolean; onClick: () => void }>;
 }> = ({ label, items }) => {
     const [open, setOpen] = useState(false);
+    const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
     const ref = useRef<HTMLDivElement>(null);
+    const btnRef = useRef<HTMLButtonElement>(null);
+    const popRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         if (!open) return;
-        const onDoc = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        const onDoc = (e: MouseEvent | TouchEvent) => {
+            const target = e.target as Node;
+            if (ref.current?.contains(target) || popRef.current?.contains(target)) return;
+            setOpen(false);
         };
+        const onMove = () => setOpen(false);
         document.addEventListener('mousedown', onDoc);
-        return () => document.removeEventListener('mousedown', onDoc);
+        document.addEventListener('touchstart', onDoc);
+        window.addEventListener('scroll', onMove, true);
+        window.addEventListener('resize', onMove);
+        return () => {
+            document.removeEventListener('mousedown', onDoc);
+            document.removeEventListener('touchstart', onDoc);
+            window.removeEventListener('scroll', onMove, true);
+            window.removeEventListener('resize', onMove);
+        };
     }, [open]);
+    const toggle = () => {
+        if (open) { setOpen(false); return; }
+        const rect = btnRef.current?.getBoundingClientRect();
+        if (rect) {
+            setPos({ top: rect.bottom + 4, right: Math.max(8, window.innerWidth - rect.right) });
+        }
+        setOpen(true);
+    };
     return (
         <div className="relative" ref={ref}>
             <button
+                ref={btnRef}
                 type="button"
                 aria-label={label}
                 aria-expanded={open}
-                onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
-                className="flex min-h-11 min-w-11 items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
+                onClick={(e) => { e.stopPropagation(); toggle(); }}
+                // Smaller visible button (h-9 w-9) but the negative margin
+                // keeps the touch target ≥ 44 px (same pattern as the item
+                // checkboxes of this page).
+                className="-m-1.5 flex h-9 w-9 items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
             >
-                <MoreVertical className="h-5 w-5 text-muted-foreground" />
+                <MoreVertical className="h-4 w-4 text-muted-foreground" />
             </button>
-            {open && (
+            {open && pos && createPortal(
                 <div
-                    className="absolute right-0 z-40 mt-1 w-56 rounded-card border border-border bg-popover shadow-surface-hover overflow-hidden"
-                    onClick={(e) => e.stopPropagation()}
+                    ref={popRef}
+                    role="menu"
+                    aria-label={label}
+                    className="fixed z-50 w-56 rounded-card border border-border bg-popover shadow-surface-hover overflow-hidden"
+                    style={{ top: pos.top, right: pos.right }}
                 >
                     {items.map((item) => (
                         <button
                             key={item.key}
                             type="button"
+                            role="menuitem"
                             onClick={() => { setOpen(false); item.onClick(); }}
                             className={cn(
                                 'flex min-h-11 w-full items-center gap-2 px-3 text-left text-body-sm hover:bg-surface-2 transition-colors',
@@ -157,7 +196,8 @@ const Menu: React.FC<{
                             {item.label}
                         </button>
                     ))}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

@@ -13,5 +13,13 @@
     "unsupported": "Push not supported on this browser",
     "denied": "Permission denied",
     "noVapid": "VAPID key unavailable"
+  },
+  "tasks": {
+    "recapTitle": "☀️ Your tasks for today",
+    "recapBody": "{{titles}} +{{count}} more",
+    "reminderTitle": "🔔 Reminder: {{title}}",
+    "reminderBody": "Due {{when}}",
+    "overdueTitle": "⏰ Overdue: {{title}}",
+    "overdueBody": "Still to do — reminded every day until completed"
   }
 }

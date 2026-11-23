@@ -66,6 +66,9 @@ export const FAMILY_USER_COLUMNS: ReadonlyArray<{ column: string; reset: string 
 export const ACCOUNT_REFERENCES: ReadonlyArray<string> = [
     'notifications.user_id',
     'push_subscriptions.user_id',
+    // Idempotence log of the task reminders (annual/0008): member_id is the
+    // recipient ACCOUNT of the push, not the family — it stays with that account.
+    'tasks_reminder_log.member_id',
     'password_resets.user_id',
     'user_identities.user_id',
     'oidc_flows.link_user_id',

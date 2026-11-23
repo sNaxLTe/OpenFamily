@@ -91,7 +91,8 @@
     "deleteTask": "No se puede eliminar esta tarea.",
     "approveTask": "No se puede aprobar esta tarea.",
     "rejectTask": "No se puede rechazar esta tarea.",
-    "customFrequency": "Indica un número entre 1 y 365 días (o 1 y 12 meses)."
+    "customFrequency": "Indica un número entre 1 y 365 días (o 1 y 12 meses).",
+    "invalidReminder": "Recordatorio no válido: de J-0 a J-7 y hora en cuartos (p. ej. 08:00, 08:15…)."
   },
   "categories": {
     "Cuisine": "Cocina",
@@ -102,5 +103,16 @@
     "École": "Colegio",
     "Administratif": "Papeleo",
     "Autre": "Otro"
+  },
+  "reminders": {
+    "title": "Recordatorios",
+    "enable": "Recordatorios push",
+    "moment": "Cuándo",
+    "dayJ": "El día del vencimiento",
+    "dayMinus": "{{count}} día(s) antes",
+    "time": "Hora",
+    "overdue": "Recordatorio si hay retraso",
+    "overdueHint": "Cada día hasta completarla",
+    "recapNote": "Cada mañana a las 08:00 recibirás un resumen de tus tareas del día, independientemente de este ajuste."
   }
 }

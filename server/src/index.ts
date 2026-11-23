@@ -6,6 +6,7 @@ import { broadcast } from './lib/broadcaster';
 import { attachWebSocketServer } from './lib/wsServer';
 import { startReminderScheduler } from './lib/reminderScheduler';
 import { startBudgetReminderScheduler } from './lib/budgetReminderScheduler';
+import { startTaskReminderScheduler } from './lib/taskReminderScheduler';
 import { startCalendarSubscriptionScheduler } from './lib/calendarSources';
 import { getAuthConfig } from './config/authConfig';
 
@@ -32,6 +33,7 @@ const startServer = async () => {
 
         startReminderScheduler();
         startBudgetReminderScheduler();
+        startTaskReminderScheduler();
         startCalendarSubscriptionScheduler();
 
         server.listen(PORT, () => {

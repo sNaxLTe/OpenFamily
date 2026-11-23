@@ -13,6 +13,7 @@ import { ApiError } from './api';
 const KNOWN: Array<[RegExp, string]> = [
     [/^category, amount and date are required$/i, 'budget:errors.fieldsRequired'],
     [/^paperless_document_id must be/i, 'budget:errors.paperlessIdInvalid'],
+    [/^Invalid reminder_(offset_days|time|overdue)$/i, 'tasks:errors.invalidReminder'],
 ];
 
 export const friendlyApiError = (

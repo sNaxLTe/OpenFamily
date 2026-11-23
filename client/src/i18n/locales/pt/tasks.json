@@ -91,7 +91,8 @@
     "deleteTask": "Não foi possível excluir esta tarefa.",
     "approveTask": "Não foi possível aprovar esta tarefa.",
     "rejectTask": "Não foi possível rejeitar esta tarefa.",
-    "customFrequency": "Indique um número entre 1 e 365 dias (ou 1 e 12 meses)."
+    "customFrequency": "Indique um número entre 1 e 365 dias (ou 1 e 12 meses).",
+    "invalidReminder": "Lembrete inválido: dia J-0 a J-7 e hora em quartos de hora (ex. 08:00, 08:15…)."
   },
   "categories": {
     "Cuisine": "Cozinha",
@@ -102,5 +103,16 @@
     "École": "Escola",
     "Administratif": "Burocracia",
     "Autre": "Outro"
+  },
+  "reminders": {
+    "title": "Lembretes",
+    "enable": "Lembretes push",
+    "moment": "Quando",
+    "dayJ": "No dia",
+    "dayMinus": "{{count}} dia(s) antes",
+    "time": "Hora",
+    "overdue": "Lembrete se atrasada",
+    "overdueHint": "Diariamente até concluir",
+    "recapNote": "Um resumo das suas tarefas do dia é enviado todas as manhãs às 08:00, independentemente desta definição."
   }
 }

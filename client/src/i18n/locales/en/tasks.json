@@ -91,7 +91,8 @@
     "deleteTask": "Unable to delete this task.",
     "approveTask": "Unable to approve this task.",
     "rejectTask": "Unable to reject this task.",
-    "customFrequency": "Enter a number between 1 and 365 days (or 1 and 12 months)."
+    "customFrequency": "Enter a number between 1 and 365 days (or 1 and 12 months).",
+    "invalidReminder": "Invalid reminder: day J-0 to J-7 and a quarter-hour time (e.g. 08:00, 08:15…)."
   },
   "categories": {
     "Cuisine": "Kitchen",
@@ -102,5 +103,16 @@
     "École": "School",
     "Administratif": "Paperwork",
     "Autre": "Other"
+  },
+  "reminders": {
+    "title": "Reminders",
+    "enable": "Push reminders",
+    "moment": "When",
+    "dayJ": "On due day",
+    "dayMinus": "{{count}} day(s) before",
+    "time": "Time",
+    "overdue": "Remind if overdue",
+    "overdueHint": "Every day until completed",
+    "recapNote": "A recap of your tasks for the day is sent every morning at 08:00, regardless of this setting."
   }
 }

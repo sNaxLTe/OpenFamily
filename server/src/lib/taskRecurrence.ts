@@ -1,4 +1,5 @@
 import { formatDateOnly, parseDateOnly } from './budgetRecurrence';
+import type { QueryFn } from '../db';
 
 // Auto-gestion des tâches récurrentes (post-version n°2, étendu en chantier C) :
 // à la complétion, l'échéance avance au cycle suivant selon l'ancre choisie —
@@ -142,6 +143,120 @@ export const advanceTaskDueDate = (
 };
 
 const dateOfToday = (): Date => parseDateOnly(formatDateOnly(new Date())) as Date;
+
+/**
+ * Reset paresseux des corvées récurrentes (post-version n°2, corrigé en lot D),
+ * extrait tel quel de GET /api/tasks (lot fdbc2f7) pour être réutilisé par le
+ * scheduler de rappels AVANT lecture — sans aucun changement de comportement :
+ * une tâche récurrente complétée dont l'échéance est ATTEINTE
+ * (due_date <= aujourd'hui, et non "passée") redevient « à faire » dès le
+ * démarrage du cycle. C'est un UPDATE direct, JAMAIS la route d'édition :
+ * jamais de reward_transactions touchées, pending_approval jamais reset,
+ * les retards jamais effacés, « Une fois »/NULL strictement ponctuel, et
+ * « Personnalisé » reset seulement avec un intervalle custom valide
+ * (défense anti-garbage). Idempotent.
+ * `q` est query() ou la query d'une transaction : même WHERE dans les deux cas.
+ */
+export const resetRecurringTasksDue = async (q: QueryFn, userId: string): Promise<void> => {
+    await q(
+        `UPDATE tasks
+         SET is_completed = false, completed_at = NULL
+         WHERE user_id = $1
+           AND (
+                frequency = ANY($2)
+                OR (
+                    frequency = 'Personnalisé'
+                    AND recurrence_custom_unit IN ('days', 'months')
+                    AND recurrence_custom_value IS NOT NULL
+                    AND (
+                        (recurrence_custom_unit = 'days' AND recurrence_custom_value BETWEEN 1 AND 365)
+                        OR (recurrence_custom_unit = 'months' AND recurrence_custom_value BETWEEN 1 AND 12)
+                    )
+                )
+           )
+           AND is_completed
+           AND NOT pending_approval
+           AND due_date IS NOT NULL
+           AND due_date <= CURRENT_DATE`,
+        [userId, [...BUILTIN_RECURRING_TASK_FREQUENCIES]]
+    );
+};
+
+// ─── Rappels push des tâches (fonctionnalité 14 du fork) ──────────────────────
+
+/** Heure de repli quand reminder_time est NULL : celle du récap du matin. */
+export const TASK_REMINDER_DEFAULT_TIME = '08:00';
+/** Heure du récap global du matin, sur les horloges de la famille. */
+export const TASK_RECAP_HOUR = 8;
+/** Jours avant l'échéance : 0 (jour-J) à 7. */
+export const TASK_REMINDER_MAX_OFFSET_DAYS = 7;
+
+const TIME_RE = /^([01][0-9]|2[0-3]):([0-9]{2})$/;
+const QUARTER_MINUTES = new Set(['00', '15', '30', '45']);
+
+/** 'HH:MM' valide au quart d'heure près, ou null. */
+export const isValidReminderTime = (value: unknown): value is string | null => {
+    if (value === null) return true;
+    if (typeof value !== 'string') return false;
+    const match = TIME_RE.exec(value);
+    return match !== null && QUARTER_MINUTES.has(match[2]);
+};
+
+export interface TaskReminderFields {
+    reminder_offset_days: number | null;
+    reminder_time: string | null;
+    reminder_overdue: boolean;
+}
+
+/**
+ * Validation stricte des trois champs de rappel envoyés par le client
+ * (POST et PUT /api/tasks) — défense anti-garbage identique au lot C :
+ * - reminder_offset_days : null (aucun rappel dédié) ou entier 0..7 ;
+ * - reminder_time : null/'' (repli 08:00) ou 'HH:MM' au quart d'heure ;
+ * - reminder_overdue : booléen.
+ * `undefined` = champ absent de la requête (non modifié en PUT, défaut en
+ * POST). Toute valeur hors bornes → { ok: false, field } → 400.
+ */
+export const normalizeTaskReminderInput = (body: {
+    reminder_offset_days?: unknown;
+    reminder_time?: unknown;
+    reminder_overdue?: unknown;
+}): { ok: true; fields: Partial<TaskReminderFields> } | { ok: false; field: string } => {
+    const fields: Partial<TaskReminderFields> = {};
+
+    if (body.reminder_offset_days !== undefined) {
+        const v = body.reminder_offset_days;
+        if (v === null) {
+            fields.reminder_offset_days = null;
+        } else {
+            const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : v;
+            if (typeof n !== 'number' || !Number.isInteger(n) || n < 0 || n > TASK_REMINDER_MAX_OFFSET_DAYS) {
+                return { ok: false, field: 'reminder_offset_days' };
+            }
+            fields.reminder_offset_days = n;
+        }
+    }
+
+    if (body.reminder_time !== undefined) {
+        const v = body.reminder_time;
+        if (v === null || (typeof v === 'string' && v.trim() === '')) {
+            fields.reminder_time = null;
+        } else if (isValidReminderTime(v)) {
+            fields.reminder_time = (v as string).trim();
+        } else {
+            return { ok: false, field: 'reminder_time' };
+        }
+    }
+
+    if (body.reminder_overdue !== undefined) {
+        if (typeof body.reminder_overdue !== 'boolean') {
+            return { ok: false, field: 'reminder_overdue' };
+        }
+        fields.reminder_overdue = body.reminder_overdue;
+    }
+
+    return { ok: true, fields };
+};
 
 /**
  * Prochaine échéance à la complétion d'une tâche récurrente (calculée pour

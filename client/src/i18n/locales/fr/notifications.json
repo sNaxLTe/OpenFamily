@@ -13,5 +13,13 @@
     "unsupported": "Push non supporté sur ce navigateur",
     "denied": "Permission refusée",
     "noVapid": "Clé VAPID non disponible"
+  },
+  "tasks": {
+    "recapTitle": "☀️ Tes tâches du jour",
+    "recapBody": "{{titles}} +{{count}} autre(s)",
+    "reminderTitle": "🔔 Rappel : {{title}}",
+    "reminderBody": "Échéance {{when}}",
+    "overdueTitle": "⏰ En retard : {{title}}",
+    "overdueBody": "Toujours à faire — rappel chaque jour jusqu'à complétion"
   }
 }

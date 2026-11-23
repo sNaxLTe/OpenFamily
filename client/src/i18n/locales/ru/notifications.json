@@ -13,5 +13,13 @@
     "unsupported": "Этот браузер не поддерживает push-уведомления",
     "denied": "В доступе отказано",
     "noVapid": "VAPID-ключ недоступен"
+  },
+  "tasks": {
+    "recapTitle": "☀️ Ваши задачи на сегодня",
+    "recapBody": "{{titles}} + ещё {{count}}",
+    "reminderTitle": "🔔 Напоминание: {{title}}",
+    "reminderBody": "Срок: {{when}}",
+    "overdueTitle": "⏰ Просрочено: {{title}}",
+    "overdueBody": "Ещё не выполнено — напоминание каждый день до завершения"
   }
 }

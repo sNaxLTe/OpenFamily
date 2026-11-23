@@ -121,4 +121,51 @@ export const annualMigrations: readonly Migration[] = [
              CHECK ((recurrence_custom_value IS NULL) = (recurrence_custom_unit IS NULL))`,
         ],
     },
+    {
+        // Rappels push des tâches (fonctionnalité 14 du fork) : configuration
+        // PAR TÂCHE, purement additive — les tâches existantes gardent
+        // reminder_offset_days = NULL et reminder_overdue = false, donc aucun
+        // rappel dédié ni rappel de retard pour elles (pas de pluie de push à
+        // la mise en prod ; le récap du matin, lui, est global et les couvre).
+        // - reminder_offset_days : J-X du rappel dédié, 0..7 (0 = jour-J) ;
+        //   NULL = aucun rappel dédié.
+        // - reminder_time : 'HH:MM' au quart d'heure près (aligné sur le cron
+        //   */15), NULL = repli 08:00.
+        // - reminder_overdue : rappel chaque jour à reminder_time tant que la
+        //   tâche est en retard et non cochée.
+        id: 'annual/0008-tasks-reminders',
+        statements: [
+            `ALTER TABLE tasks ADD COLUMN IF NOT EXISTS reminder_offset_days INTEGER
+             CHECK (reminder_offset_days IS NULL OR reminder_offset_days BETWEEN 0 AND 7)`,
+            `ALTER TABLE tasks ADD COLUMN IF NOT EXISTS reminder_time TEXT
+             CHECK (
+                reminder_time IS NULL
+                OR (
+                    reminder_time ~ '^([01][0-9]|2[0-3]):[0-9]{2}$'
+                    AND substring(reminder_time from 4 for 2) IN ('00', '15', '30', '45')
+                )
+             )`,
+            'ALTER TABLE tasks ADD COLUMN IF NOT EXISTS reminder_overdue BOOLEAN NOT NULL DEFAULT FALSE',
+            // Log d'idempotence des rappels tâches (même pattern que
+            // annual_reminder_log / appointment_reminder_log) : une ligne est
+            // CLAIMED avant l'envoi, donc un rappel ne part qu'une fois, même
+            // après reboot (le rattrapage au boot rejoue la passe du jour).
+            // - kind 'due' / 'overdue' : claim par (task_id, kind, log_date) ;
+            // - kind 'recap' (récap du matin) : claim par (member_id, log_date),
+            //   member_id = le compte (users.id) destinataire du push.
+            `CREATE TABLE IF NOT EXISTS tasks_reminder_log (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                task_id UUID REFERENCES tasks(id) ON DELETE CASCADE,
+                member_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                kind TEXT NOT NULL CHECK (kind IN ('due', 'overdue', 'recap')),
+                log_date DATE NOT NULL,
+                sent_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )`,
+            'CREATE INDEX IF NOT EXISTS idx_tasks_reminder_log_sent_at ON tasks_reminder_log(sent_at)',
+            `CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_reminder_log_task_kind_day
+             ON tasks_reminder_log(task_id, kind, log_date) WHERE kind IN ('due', 'overdue')`,
+            `CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_reminder_log_recap_member_day
+             ON tasks_reminder_log(member_id, log_date) WHERE kind = 'recap'`,
+        ],
+    },
 ];

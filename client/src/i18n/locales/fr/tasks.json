@@ -91,7 +91,8 @@
     "deleteTask": "Impossible de supprimer cette tâche.",
     "approveTask": "Impossible de valider cette tâche.",
     "rejectTask": "Impossible de refuser cette tâche.",
-    "customFrequency": "Indiquez un nombre entre 1 et 365 jours (ou 1 et 12 mois)."
+    "customFrequency": "Indiquez un nombre entre 1 et 365 jours (ou 1 et 12 mois).",
+    "invalidReminder": "Rappel invalide : J-0 à J-7 et heure au quart d'heure (ex. 08:00, 08:15…)."
   },
   "categories": {
     "Cuisine": "Cuisine",
@@ -102,5 +103,16 @@
     "École": "École",
     "Administratif": "Administratif",
     "Autre": "Autre"
+  },
+  "reminders": {
+    "title": "Rappels",
+    "enable": "Rappels push",
+    "moment": "Moment",
+    "dayJ": "Jour-J",
+    "dayMinus": "J-{{count}}",
+    "time": "Heure",
+    "overdue": "Rappel si en retard",
+    "overdueHint": "Chaque jour jusqu'à complétion",
+    "recapNote": "Un récap de tes tâches du jour part chaque matin à 08:00, indépendamment de ce réglage."
   }
 }

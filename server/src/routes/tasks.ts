@@ -5,11 +5,12 @@ import { toNullIfEmpty } from '../lib/normalize';
 import { broadcast } from '../lib/broadcaster';
 import { getFamilyCategories } from './categories';
 import {
-    BUILTIN_RECURRING_TASK_FREQUENCIES,
     customFrequencyFromRow,
     nextTaskDueDateOnComplete,
     normalizeCustomFrequencyInput,
     normalizeTaskAnchorInput,
+    normalizeTaskReminderInput,
+    resetRecurringTasksDue,
 } from '../lib/taskRecurrence';
 
 /**
@@ -92,29 +93,10 @@ router.get('/', async (req: AuthRequest, res) => {
         // ses points. Les retards (tâches non cochées) ne sont jamais
         // effacés, et « Une fois »/NULL reste strictement ponctuel.
         // « Personnalisé » n'est reset que si son intervalle custom est
-        // valide (défense anti-garbage).
-        await query(
-            `UPDATE tasks
-             SET is_completed = false, completed_at = NULL
-             WHERE user_id = $1
-               AND (
-                    frequency = ANY($2)
-                    OR (
-                        frequency = 'Personnalisé'
-                        AND recurrence_custom_unit IN ('days', 'months')
-                        AND recurrence_custom_value IS NOT NULL
-                        AND (
-                            (recurrence_custom_unit = 'days' AND recurrence_custom_value BETWEEN 1 AND 365)
-                            OR (recurrence_custom_unit = 'months' AND recurrence_custom_value BETWEEN 1 AND 12)
-                        )
-                    )
-               )
-               AND is_completed
-               AND NOT pending_approval
-               AND due_date IS NOT NULL
-               AND due_date <= CURRENT_DATE`,
-            [req.userId, [...BUILTIN_RECURRING_TASK_FREQUENCIES]]
-        );
+        // valide (défense anti-garbage). Même helper que le scheduler de
+        // rappels (qui le rejoue avant lecture) : un seul WHERE, un seul
+        // comportement.
+        await resetRecurringTasksDue(query, req.userId!);
         const result = await query(
             'SELECT * FROM tasks WHERE user_id = $1 ORDER BY due_date ASC NULLS LAST, created_at DESC',
             [req.userId]
@@ -138,6 +120,14 @@ router.post('/', async (req: AuthRequest, res) => {
         const cleanedTitle = typeof title === 'string' ? title.trim() : '';
         if (!cleanedTitle) {
             return res.status(400).json({ success: false, error: 'Title is required' });
+        }
+
+        // Rappels push (fonctionnalité 14) : validation stricte, 400 hors
+        // bornes. Absents à la création → NULL/false = aucun rappel dédié
+        // (défaut sûr, identique aux tâches pré-migration).
+        const reminders = normalizeTaskReminderInput(req.body);
+        if (!reminders.ok) {
+            return res.status(400).json({ success: false, error: `Invalid ${reminders.field}` });
         }
 
         // Ancrage de la récurrence (post-version n°2) : absent = NULL (défaut
@@ -184,8 +174,8 @@ router.post('/', async (req: AuthRequest, res) => {
             : 0;
 
         const result = await query(
-            `INSERT INTO tasks (user_id, title, description, due_date, frequency, priority, assigned_to, points, category, recurrence_anchor, recurrence_custom_value, recurrence_custom_unit)
-       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12) RETURNING *`,
+            `INSERT INTO tasks (user_id, title, description, due_date, frequency, priority, assigned_to, points, category, recurrence_anchor, recurrence_custom_value, recurrence_custom_unit, reminder_offset_days, reminder_time, reminder_overdue)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
             [
                 req.userId,
                 cleanedTitle,
@@ -199,6 +189,9 @@ router.post('/', async (req: AuthRequest, res) => {
                 anchor,
                 custom ? custom.value : null,
                 custom ? custom.unit : null,
+                reminders.fields.reminder_offset_days ?? null,
+                reminders.fields.reminder_time ?? null,
+                reminders.fields.reminder_overdue ?? false,
             ]
         );
 
@@ -223,6 +216,13 @@ router.put('/:id', async (req: AuthRequest, res) => {
             title, description, is_completed, due_date, frequency, priority, assigned_to, points, category,
             recurrence_anchor, recurrence_custom_value, recurrence_custom_unit,
         } = req.body;
+
+        // Rappels push (fonctionnalité 14) : mêmes bornes qu'au POST ; un
+        // champ à null/'' repasse la colonne à NULL (rappel dédié désactivé).
+        const reminders = normalizeTaskReminderInput(req.body);
+        if (!reminders.ok) {
+            return res.status(400).json({ success: false, error: `Invalid ${reminders.field}` });
+        }
 
         // The previous state drives the reward logic (false→true transition only).
         const existingResult = await query(
@@ -324,6 +324,17 @@ router.put('/:id', async (req: AuthRequest, res) => {
 
         if (priority !== undefined) {
             pushUpdate('priority', toNullIfEmpty(priority));
+        }
+
+        // Rappels push (fonctionnalité 14) : only when the client sends them.
+        if (reminders.fields.reminder_offset_days !== undefined) {
+            pushUpdate('reminder_offset_days', reminders.fields.reminder_offset_days);
+        }
+        if (reminders.fields.reminder_time !== undefined) {
+            pushUpdate('reminder_time', reminders.fields.reminder_time);
+        }
+        if (reminders.fields.reminder_overdue !== undefined) {
+            pushUpdate('reminder_overdue', reminders.fields.reminder_overdue);
         }
 
         if (assigned_to !== undefined) {

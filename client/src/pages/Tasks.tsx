@@ -8,6 +8,8 @@ import { Plus, CheckSquare, Square, Trash2, Edit2, Filter, TrendingUp, Star, Hou
 import { Card, CardContent, Button, Dialog, Input, Select, Textarea, DatePicker, Badge, useToast } from '../components/ui';
 import { format, parseISO } from 'date-fns';
 import { dateLocale } from '../i18n/format';
+import { cn } from '../lib/utils';
+import { friendlyApiError } from '../lib/friendlyError';
 
 interface Task {
     id: string;
@@ -24,6 +26,10 @@ interface Task {
     priority?: string;
     /** One of the family's task categories (Settings), or none. */
     category?: string | null;
+    /** Rappels push (fonctionnalité 14) : null = aucun rappel dédié (défaut des tâches pré-migration). */
+    reminder_offset_days?: number | null;
+    reminder_time?: string | null;
+    reminder_overdue?: boolean;
     assigned_to?: string[];
     assigned_to_members?: Array<{ id: string; name: string; color: string }>;
     points?: number;
@@ -51,6 +57,39 @@ interface TaskFilters {
 const DEFAULT_FILTERS: TaskFilters = { priority: '', status: 'all', member: '', frequency: '', category: '' };
 /** Filter value for tasks without a category. */
 const NO_CATEGORY = '__none__';
+
+/** Same sliding pill as the kiosk settings, as a full-width row (≥ 44 px target). */
+const SwitchRow: React.FC<{ checked: boolean; onChange: () => void; label: string; hint?: string; disabled?: boolean }> = ({
+    checked, onChange, label, hint, disabled,
+}) => (
+    <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        disabled={disabled}
+        onClick={onChange}
+        className="flex min-h-11 w-full items-center gap-3 rounded-input px-2 text-left disabled:cursor-not-allowed disabled:opacity-50"
+    >
+        <span
+            className={cn(
+                'relative h-7 w-12 shrink-0 rounded-full transition-colors',
+                checked ? 'bg-primary' : 'border border-border bg-surface-2'
+            )}
+        >
+            <span
+                className={cn(
+                    'absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all',
+                    checked ? 'left-6' : 'left-1'
+                )}
+            />
+        </span>
+        <span className="flex-1">
+            <span className="block text-label font-medium text-foreground">{label}</span>
+            {hint && <span className="block text-micro text-muted-foreground">{hint}</span>}
+        </span>
+    </button>
+);
 
 // Each account keeps its own filters on this device, so a child signed in on the
 // family tablet finds "my tasks" again instead of everyone's after every visit.
@@ -120,6 +159,11 @@ const Tasks: React.FC = () => {
         { value: 'calendar', label: t('tasks:anchors.calendar') },
         { value: 'completion', label: t('tasks:anchors.completion') },
     ];
+    // Moments du rappel dédié (fonctionnalité 14) : Jour-J, J-1 … J-7.
+    const REMINDER_OFFSETS = [0, 1, 2, 3, 4, 5, 6, 7].map((n) => ({
+        value: String(n),
+        label: n === 0 ? t('tasks:reminders.dayJ') : t('tasks:reminders.dayMinus', { count: n }),
+    }));
     const TASK_CATEGORIES = categories.task.map((name) => ({
         value: name,
         label: t(`tasks:categories.${name}`, { defaultValue: name }),
@@ -156,6 +200,12 @@ const Tasks: React.FC = () => {
         category: '',
         assigned_to: [] as string[],
         points: '',
+        // Rappels push (fonctionnalité 14) : activés par défaut à la création
+        // (jour-J à 08:00, sans rappel de retard).
+        reminder_enabled: true,
+        reminder_offset_days: '0',
+        reminder_time: '08:00',
+        reminder_overdue: false,
     });
 
     useEffect(() => {
@@ -217,6 +267,26 @@ const Tasks: React.FC = () => {
             }
             customValue = n;
         }
+        // Rappels (fonctionnalité 14) : validation client des bornes —
+        // J-X dans 0..7, heure au quart d'heure (l'input time step=900 le
+        // garantit, double vérification ici). Bloc désactivé = NULL envoyé.
+        let reminderOffset: number | null = null;
+        let reminderTime: string | null = null;
+        if (formData.reminder_enabled) {
+            const offset = parseInt(formData.reminder_offset_days, 10);
+            if (!Number.isInteger(offset) || offset < 0 || offset > 7) {
+                setError(t('tasks:errors.invalidReminder'));
+                return;
+            }
+            const timeOk = /^([01][0-9]|2[0-3]):([0-9]{2})$/.test(formData.reminder_time)
+                && ['00', '15', '30', '45'].includes(formData.reminder_time.slice(3));
+            if (!timeOk) {
+                setError(t('tasks:errors.invalidReminder'));
+                return;
+            }
+            reminderOffset = offset;
+            reminderTime = formData.reminder_time;
+        }
         try {
             const payload: Record<string, unknown> = {
                 ...formData,
@@ -229,7 +299,13 @@ const Tasks: React.FC = () => {
                 // the server stores NULL columns (no state leak).
                 recurrence_custom_value: formData.frequency === 'Personnalisé' ? customValue : null,
                 recurrence_custom_unit: formData.frequency === 'Personnalisé' ? formData.recurrence_custom_unit : null,
+                // Rappels : null = aucun rappel dédié (le récap du matin reste actif).
+                reminder_offset_days: reminderOffset,
+                reminder_time: reminderTime,
+                reminder_overdue: formData.reminder_enabled ? formData.reminder_overdue : false,
             };
+            // The switch state itself is UI-only.
+            delete payload.reminder_enabled;
             if (editingTask) {
                 await api.put(`/api/tasks/${editingTask.id}`, payload);
             } else {
@@ -241,7 +317,7 @@ const Tasks: React.FC = () => {
             loadStats();
         } catch (error) {
             console.error('Failed to save task:', error);
-            setError(error instanceof Error ? error.message : t('tasks:errors.saveTask'));
+            setError(friendlyApiError(error, t, 'tasks:errors.saveTask'));
         }
     };
 
@@ -316,6 +392,12 @@ const Tasks: React.FC = () => {
             category: task.category || '',
             assigned_to: task.assigned_to || [],
             points: task.points ? String(task.points) : '',
+            // Rappels : une tâche existante sans reminder_offset_days (pré-migration)
+            // ouvre le bloc désactivé ; sinon les 3 champs sont rechargés.
+            reminder_enabled: task.reminder_offset_days != null,
+            reminder_offset_days: task.reminder_offset_days != null ? String(task.reminder_offset_days) : '0',
+            reminder_time: task.reminder_time || '08:00',
+            reminder_overdue: Boolean(task.reminder_overdue),
         });
         setDialogOpen(true);
     };
@@ -334,6 +416,10 @@ const Tasks: React.FC = () => {
             category: '',
             assigned_to: [],
             points: '',
+            reminder_enabled: true,
+            reminder_offset_days: '0',
+            reminder_time: '08:00',
+            reminder_overdue: false,
         });
     };
 
@@ -773,6 +859,50 @@ const Tasks: React.FC = () => {
                         value={formData.due_date}
                         onChange={(value) => setFormData({ ...formData, due_date: value })}
                     />
+                    {/* Rappels push (fonctionnalité 14) — même permission que l'édition de tâche. */}
+                    <div className="rounded-input border border-border bg-surface-2/40 p-3 space-y-2">
+                        <p className="text-label font-medium text-foreground">{t('tasks:reminders.title')}</p>
+                        <SwitchRow
+                            checked={formData.reminder_enabled}
+                            onChange={() => setFormData({ ...formData, reminder_enabled: !formData.reminder_enabled })}
+                            label={t('tasks:reminders.enable')}
+                        />
+                        {formData.reminder_enabled && (
+                            <>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-label font-medium text-foreground mb-1.5">
+                                            {t('tasks:reminders.moment')}
+                                        </label>
+                                        <Select
+                                            value={formData.reminder_offset_days}
+                                            onValueChange={(value) => setFormData({ ...formData, reminder_offset_days: value })}
+                                            options={REMINDER_OFFSETS}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-label font-medium text-foreground mb-1.5" htmlFor="reminder-time">
+                                            {t('tasks:reminders.time')}
+                                        </label>
+                                        <Input
+                                            id="reminder-time"
+                                            type="time"
+                                            step={900}
+                                            value={formData.reminder_time}
+                                            onChange={(e) => setFormData({ ...formData, reminder_time: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <SwitchRow
+                                    checked={formData.reminder_overdue}
+                                    onChange={() => setFormData({ ...formData, reminder_overdue: !formData.reminder_overdue })}
+                                    label={t('tasks:reminders.overdue')}
+                                    hint={t('tasks:reminders.overdueHint')}
+                                />
+                            </>
+                        )}
+                        <p className="text-micro text-muted-foreground">{t('tasks:reminders.recapNote')}</p>
+                    </div>
                     {isParent && (
                         <div>
                             <label className="flex items-center gap-1.5 text-label font-medium text-foreground mb-1.5">

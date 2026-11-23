@@ -13,5 +13,13 @@
     "unsupported": "Notificações Push não são suportadas neste navegador",
     "denied": "Permissão negada",
     "noVapid": "Chave VAPID indisponível"
+  },
+  "tasks": {
+    "recapTitle": "☀️ Suas tarefas de hoje",
+    "recapBody": "{{titles}} +{{count}} outra(s)",
+    "reminderTitle": "🔔 Lembrete: {{title}}",
+    "reminderBody": "Vencimento {{when}}",
+    "overdueTitle": "⏰ Atrasada: {{title}}",
+    "overdueBody": "Ainda por fazer — lembrete diário até concluir"
   }
 }

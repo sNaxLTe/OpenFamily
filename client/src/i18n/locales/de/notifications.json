@@ -13,5 +13,13 @@
     "unsupported": "Push wird von diesem Browser nicht unterstützt",
     "denied": "Berechtigung verweigert",
     "noVapid": "VAPID-Schlüssel nicht verfügbar"
+  },
+  "tasks": {
+    "recapTitle": "☀️ Deine Aufgaben für heute",
+    "recapBody": "{{titles}} +{{count}} weitere",
+    "reminderTitle": "🔔 Erinnerung: {{title}}",
+    "reminderBody": "Fällig {{when}}",
+    "overdueTitle": "⏰ Überfällig: {{title}}",
+    "overdueBody": "Noch offen — tägliche Erinnerung bis erledigt"
   }
 }

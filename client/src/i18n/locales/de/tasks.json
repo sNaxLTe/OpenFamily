@@ -91,7 +91,8 @@
     "deleteTask": "Diese Aufgabe konnte nicht gelöscht werden.",
     "approveTask": "Diese Aufgabe konnte nicht bestätigt werden.",
     "rejectTask": "Diese Aufgabe konnte nicht abgelehnt werden.",
-    "customFrequency": "Geben Sie eine Zahl zwischen 1 und 365 Tagen (oder 1 und 12 Monaten) an."
+    "customFrequency": "Geben Sie eine Zahl zwischen 1 und 365 Tagen (oder 1 und 12 Monaten) an.",
+    "invalidReminder": "Ungültige Erinnerung: J-0 bis J-7 und Uhrzeit im Viertelstundentakt (z. B. 08:00, 08:15…)."
   },
   "categories": {
     "Cuisine": "Küche",
@@ -102,5 +103,16 @@
     "École": "Schule",
     "Administratif": "Papierkram",
     "Autre": "Sonstiges"
+  },
+  "reminders": {
+    "title": "Erinnerungen",
+    "enable": "Push-Erinnerungen",
+    "moment": "Wann",
+    "dayJ": "Am Fälligkeitstag",
+    "dayMinus": "{{count}} Tag(e) vorher",
+    "time": "Uhrzeit",
+    "overdue": "Erinnerung bei Überfälligkeit",
+    "overdueHint": "Täglich bis erledigt",
+    "recapNote": "Jeden Morgen um 08:00 erhältst du eine Zusammenfassung deiner heutigen Aufgaben, unabhängig von dieser Einstellung."
   }
 }

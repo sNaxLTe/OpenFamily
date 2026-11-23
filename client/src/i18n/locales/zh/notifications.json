@@ -13,5 +13,13 @@
     "unsupported": "此浏览器不支持推送通知",
     "denied": "权限被拒绝",
     "noVapid": "VAPID 密钥不可用"
+  },
+  "tasks": {
+    "recapTitle": "☀️ 今日待办",
+    "recapBody": "{{titles}} +{{count}} 项其他",
+    "reminderTitle": "🔔 提醒：{{title}}",
+    "reminderBody": "截止{{when}}",
+    "overdueTitle": "⏰ 已逾期：{{title}}",
+    "overdueBody": "尚未完成 — 每天提醒直至完成"
   }
 }

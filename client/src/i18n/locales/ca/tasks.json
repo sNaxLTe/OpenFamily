@@ -91,7 +91,8 @@
     "deleteTask": "No s'ha pogut suprimir aquesta tasca.",
     "approveTask": "No s'ha pogut aprovar aquesta tasca.",
     "rejectTask": "No s'ha pogut rebutjar aquesta tasca.",
-    "customFrequency": "Indiqueu un nombre entre 1 i 365 dies (o 1 i 12 mesos)."
+    "customFrequency": "Indiqueu un nombre entre 1 i 365 dies (o 1 i 12 mesos).",
+    "invalidReminder": "Recordatori no vàlid: de J-0 a J-7 i hora en quarts (p. ex. 08:00, 08:15…)."
   },
   "categories": {
     "Cuisine": "Cuina",
@@ -102,5 +103,16 @@
     "École": "Escola",
     "Administratif": "Tràmits",
     "Autre": "Altres"
+  },
+  "reminders": {
+    "title": "Recordatoris",
+    "enable": "Recordatoris push",
+    "moment": "Quan",
+    "dayJ": "El dia del venciment",
+    "dayMinus": "{{count}} dia(es) abans",
+    "time": "Hora",
+    "overdue": "Recordatori si endarrerida",
+    "overdueHint": "Cada dia fins a completar-la",
+    "recapNote": "Cada matí a les 08:00 reps un resum de les teves tasques del dia, independentment d’aquest ajust."
   }
 }

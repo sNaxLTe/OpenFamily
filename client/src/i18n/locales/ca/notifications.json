@@ -13,5 +13,13 @@
     "unsupported": "Aquest navegador no admet les notificacions push",
     "denied": "Permís denegat",
     "noVapid": "Clau VAPID no disponible"
+  },
+  "tasks": {
+    "recapTitle": "☀️ Les teves tasques d’avui",
+    "recapBody": "{{titles}} +{{count}} més",
+    "reminderTitle": "🔔 Recordatori: {{title}}",
+    "reminderBody": "Venciment {{when}}",
+    "overdueTitle": "⏰ Endarrerida: {{title}}",
+    "overdueBody": "Encara per fer — recordatori diari fins a completar-la"
   }
 }

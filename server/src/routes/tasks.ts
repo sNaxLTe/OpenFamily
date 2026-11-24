@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { query } from '../db';
 import { authMiddleware, AuthRequest, isParentAccount, requireParent } from '../middleware/auth';
 import { toNullIfEmpty } from '../lib/normalize';
+import { addDays } from '../lib/timeZone';
 import { broadcast } from '../lib/broadcaster';
 import { getFamilyCategories } from './categories';
 import {
@@ -432,6 +433,29 @@ router.put('/:id', async (req: AuthRequest, res) => {
 
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'Task not found' });
+        }
+
+        // Réarmement du rappel 'due' (décision 24/11) : si reminder_time ou
+        // reminder_offset_days change effectivement, le claim
+        // (task_id, 'due', log_date) du JOUR CIBLE de la nouvelle config est
+        // purgé, pour que le scheduler renvoie au prochain tick ≥ nouvelle
+        // heure. Jour cible = due_day - COALESCE(reminder_offset_days, 0),
+        // même calcul de dates naïves que le scheduler. 'overdue' et 'recap'
+        // ne sont jamais purgés ; sans changement effectif, aucun claim
+        // n'est touché (anti-doublon intact).
+        const updated = result.rows[0];
+        const prevTime = existing.reminder_time ?? null;
+        const nextTime = updated.reminder_time ?? null;
+        const prevOffset = existing.reminder_offset_days == null ? null : Number(existing.reminder_offset_days);
+        const nextOffset = updated.reminder_offset_days == null ? null : Number(updated.reminder_offset_days);
+        const timeChanged = reminders.fields.reminder_time !== undefined && prevTime !== null && nextTime !== null && prevTime !== nextTime;
+        const offsetChanged = reminders.fields.reminder_offset_days !== undefined && prevOffset !== nextOffset;
+        if ((timeChanged || offsetChanged) && updated.due_date) {
+            const targetDay = addDays(String(updated.due_date).slice(0, 10), -(nextOffset ?? 0));
+            await query(
+                `DELETE FROM tasks_reminder_log WHERE task_id = $1 AND kind = 'due' AND log_date = $2::date`,
+                [id, targetDay]
+            );
         }
 
         if (awardAfterUpdate) {

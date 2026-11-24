@@ -560,3 +560,160 @@ describe('prune', () => {
         expect(remaining.rows[0].d).toBe(await dbd(0));
     });
 });
+
+describe('réarmement du rappel due au changement d\'heure (PUT, décision 24/11)', () => {
+    const setupDueToday = async (time: string) => {
+        await addSub(parent.user.id, 'parent');
+        const member = await makeMember(parent.user.id);
+        const task = await createTask({
+            title: 'Réarmement',
+            due_date: await dbd(0),
+            assigned_to: [member],
+            reminder_offset_days: 0,
+            reminder_time: time,
+        });
+        return { task, member };
+    };
+
+    const dueClaims = async () => (await claims()).filter((c) => c.kind === 'due');
+    const dueNotifs = async (userId: string) =>
+        (await notificationsFor(userId)).filter((n) => n.type === 'task_reminder');
+
+    it('T1 : rappel parti à T1, PUT change l\'heure à T2>T1 le même jour → tick T2 renvoie + log re-saisi', async () => {
+        const { task } = await setupDueToday('10:00');
+        await checkTaskReminders(await nowAt(0, '10:00'));
+        expect((await dueClaims()).length).toBe(1);
+        expect((await dueNotifs(parent.user.id)).length).toBe(1);
+
+        const res = await put(`/api/tasks/${task.id}`, { reminder_time: '12:00' });
+        expect(res.status).toBe(200);
+        expect(res.body.data.reminder_time).toBe('12:00');
+        // Le claim du jour cible (aujourd'hui) est purgé.
+        expect((await dueClaims()).length).toBe(0);
+
+        // Avant T2 : rien ne tire.
+        await checkTaskReminders(await nowAt(0, '11:45'));
+        expect((await dueClaims()).length).toBe(0);
+        // À T2 : renvoi, log re-saisi, puis idempotent.
+        await checkTaskReminders(await nowAt(0, '12:00'));
+        await checkTaskReminders(await nowAt(0, '12:15'));
+        const due = await dueClaims();
+        expect(due.length).toBe(1);
+        expect(due[0].log_date).toBe(await dbd(0));
+        expect((await dueNotifs(parent.user.id)).length).toBe(2);
+    });
+
+    it('T2 : PUT sans changement d\'heure après envoi → pas de second envoi (clé intacte)', async () => {
+        const { task } = await setupDueToday('10:00');
+        await checkTaskReminders(await nowAt(0, '10:00'));
+        expect((await dueClaims()).length).toBe(1);
+
+        // Même heure envoyée explicitement.
+        let res = await put(`/api/tasks/${task.id}`, { reminder_time: '10:00' });
+        expect(res.status).toBe(200);
+        // Champ sans rapport.
+        res = await put(`/api/tasks/${task.id}`, { title: 'Renommée' });
+        expect(res.status).toBe(200);
+        // Aucun claim purgé.
+        expect((await dueClaims()).length).toBe(1);
+
+        await checkTaskReminders(await nowAt(0, '10:15'));
+        await checkTaskReminders(await nowAt(0, '23:45'));
+        expect((await dueClaims()).length).toBe(1);
+        expect((await dueNotifs(parent.user.id)).length).toBe(1);
+    });
+
+    it('T3 : PUT vers une heure déjà passée → comportement réel du scheduler figé : renvoi au prochain tick (slot manqué)', async () => {
+        const { task } = await setupDueToday('10:00');
+        await checkTaskReminders(await nowAt(0, '10:00'));
+        expect((await dueNotifs(parent.user.id)).length).toBe(1);
+
+        // Nouvelle heure 08:30, déjà passée à 10:00.
+        const res = await put(`/api/tasks/${task.id}`, { reminder_time: '08:30' });
+        expect(res.status).toBe(200);
+        expect((await dueClaims()).length).toBe(0); // purgé
+
+        // WHERE réel du scheduler : reminderDay == aujourd'hui && now >= dueAt
+        // → vrai dès le prochain tick, comme un rattrapage de boot.
+        await checkTaskReminders(await nowAt(0, '10:15'));
+        expect((await dueClaims()).length).toBe(1);
+        expect((await dueNotifs(parent.user.id)).length).toBe(2);
+        // Toujours pas de doublon ensuite.
+        await checkTaskReminders(await nowAt(0, '10:30'));
+        expect((await dueNotifs(parent.user.id)).length).toBe(2);
+    });
+
+    it('T4 : changement d\'offset déplaçant le jour cible ≠ aujourd\'hui → rien ne tire aujourd\'hui', async () => {
+        await addSub(parent.user.id, 'parent');
+        const member = await makeMember(parent.user.id);
+        const task = await createTask({
+            title: 'Offset',
+            due_date: await dbd(1),
+            assigned_to: [member],
+            reminder_offset_days: 1,
+            reminder_time: '18:00',
+        });
+        // Envoi J-1 (aujourd'hui) à 18:00 : claim logué sur aujourd'hui.
+        await checkTaskReminders(await nowAt(0, '18:00'));
+        expect((await dueClaims()).length).toBe(1);
+
+        // Nouvel offset 0 → jour cible = demain.
+        const res = await put(`/api/tasks/${task.id}`, { reminder_offset_days: 0 });
+        expect(res.status).toBe(200);
+        // La purge a visé le jour cible de la NOUVELLE config (demain) :
+        // le claim d'aujourd'hui est intact.
+        const due = await dueClaims();
+        expect(due.length).toBe(1);
+        expect(due[0].log_date).toBe(await dbd(0));
+
+        // Aujourd'hui, reminderDay ≠ today → rien ne tire.
+        await checkTaskReminders(await nowAt(0, '18:15'));
+        await checkTaskReminders(await nowAt(0, '23:45'));
+        expect((await dueNotifs(parent.user.id)).length).toBe(1);
+        expect((await dueClaims()).length).toBe(1);
+    });
+
+    it('T5 : enfant éditeur réarme pareillement (mêmes droits d\'édition)', async () => {
+        const child = await makeChild();
+        await addSub(parent.user.id, 'parent');
+        await addSub(child.user.id, 'child');
+        const childMember = await makeMember(child.user.id, 'Léo');
+        const task = await createTask({
+            title: 'Devoirs Léo',
+            due_date: await dbd(0),
+            assigned_to: [childMember],
+            reminder_offset_days: 0,
+            reminder_time: '10:00',
+        });
+        await checkTaskReminders(await nowAt(0, '10:00'));
+        expect((await dueNotifs(child.user.id)).length).toBe(1);
+
+        const res = await put(`/api/tasks/${task.id}`, { reminder_time: '14:00' }, child.token);
+        expect(res.status).toBe(200);
+        expect(res.body.data.reminder_time).toBe('14:00');
+        expect((await dueClaims()).length).toBe(0);
+
+        await checkTaskReminders(await nowAt(0, '14:00'));
+        expect((await dueClaims()).length).toBe(1);
+        expect((await dueNotifs(child.user.id)).length).toBe(2);
+    });
+
+    it('le réarmement ne purge jamais les claims overdue ni recap', async () => {
+        const { task } = await setupDueToday('10:00');
+        await query(
+            "INSERT INTO tasks_reminder_log (task_id, member_id, kind, log_date) VALUES ($1, NULL, 'overdue', $2::date)",
+            [task.id, await dbd(-1)]
+        );
+        await query(
+            "INSERT INTO tasks_reminder_log (task_id, member_id, kind, log_date) VALUES (NULL, $1, 'recap', $2::date)",
+            [parent.user.id, await dbd(0)]
+        );
+        await checkTaskReminders(await nowAt(0, '10:00')); // claim 'due' posé
+        expect((await dueClaims()).length).toBe(1);
+
+        const res = await put(`/api/tasks/${task.id}`, { reminder_time: '12:00' });
+        expect(res.status).toBe(200);
+        const kinds = (await claims()).map((c) => c.kind).sort();
+        expect(kinds).toEqual(['overdue', 'recap']); // seul le 'due' est purgé
+    });
+});

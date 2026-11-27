@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWebSocketUpdates } from '../hooks/useWebSocketUpdates';
 import { api } from '../lib/api';
+import { DEFAULT_EVENT_COLOR, memberColor, resolveEventColor } from '../lib/eventColor';
 import { apiBase } from '../lib/serverConfig';
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Edit2, Trash2, MapPin, Clock, CalendarPlus, Copy, Check, RefreshCw, Search, X, Cake } from 'lucide-react';
 import { Card, CardContent, Button, Dialog, Input, Textarea, Badge, Select, DatePicker } from '../components/ui';
@@ -202,12 +203,14 @@ const Calendar: React.FC = () => {
         family_member_ids: [] as string[],
         reminder_minutes: [] as number[],
         notes: '',
-        color: '#DC4A60',
+        color: DEFAULT_EVENT_COLOR,
         is_all_day: false,
         recurrence_frequency: 'none' as 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly',
         recurrence_interval: 1,
         recurrence_until: '',
     });
+    // B2: the color follows the assignee until the user picks one manually.
+    const [colorTouched, setColorTouched] = useState(false);
 
     const [recurrenceScopeAction, setRecurrenceScopeAction] = useState<{
         mode: 'edit' | 'delete';
@@ -373,13 +376,15 @@ const Calendar: React.FC = () => {
         }
 
         const day = formData.start_time.slice(0, 10);
-        const payload = formData.is_all_day
+        const basePayload = formData.is_all_day
             ? {
                 ...formData,
                 start_time: `${day}T00:00`,
                 end_time: `${day}T23:59`,
             }
             : formData;
+        // B2: submit the effective color (follows the assignee unless picked).
+        const payload = { ...basePayload, color: effectiveColor };
 
         try {
             if (editingAppointment?.subscription_id) {
@@ -569,7 +574,7 @@ const Calendar: React.FC = () => {
             family_member_ids: appointment.family_member_ids || [],
             reminder_minutes: reminderMinutesOf(appointment),
             notes: appointment.notes || '',
-            color: appointment.color || '#DC4A60',
+            color: appointment.color || DEFAULT_EVENT_COLOR,
             is_all_day: Boolean(appointment.is_all_day),
             recurrence_frequency: appointment.recurrence_frequency || 'none',
             recurrence_interval: appointment.recurrence_interval || 1,
@@ -577,6 +582,8 @@ const Calendar: React.FC = () => {
                 ? appointment.recurrence_until.slice(0, 10)
                 : '',
         });
+        // Editing keeps the appointment's own color (manual choice wins).
+        setColorTouched(true);
         setDialogOpen(true);
     };
 
@@ -600,6 +607,7 @@ const Calendar: React.FC = () => {
 
     const resetForm = () => {
         setEditingAppointment(null);
+        setColorTouched(false);
         setEndManuallySet(false);
         setAddToBudget(false);
         setBudgetAmount('');
@@ -614,7 +622,7 @@ const Calendar: React.FC = () => {
             family_member_ids: [],
             reminder_minutes: [],
             notes: '',
-            color: '#DC4A60',
+            color: DEFAULT_EVENT_COLOR,
             is_all_day: false,
             recurrence_frequency: 'none',
             recurrence_interval: 1,
@@ -623,6 +631,14 @@ const Calendar: React.FC = () => {
     };
 
     const isSubscribedEvent = Boolean(editingAppointment?.subscription_id);
+    // B2: effective color — manual pick wins, otherwise it follows the first
+    // assigned member (see lib/eventColor).
+    const effectiveColor = resolveEventColor({
+        color: formData.color,
+        colorTouched,
+        memberIds: formData.family_member_ids,
+        members: familyMembers,
+    });
     const startParts = splitDateTime(formData.start_time);
     const endParts = splitDateTime(formData.end_time);
     const selectedDate = startParts.date || format(new Date(), 'yyyy-MM-dd');
@@ -822,7 +838,7 @@ const Calendar: React.FC = () => {
                                         >
                                             <span
                                                 className="mt-1 h-4 w-4 flex-shrink-0 rounded-full border border-border"
-                                                style={{ backgroundColor: apt.color || '#DC4A60' }}
+                                                style={{ backgroundColor: apt.color || DEFAULT_EVENT_COLOR }}
                                             />
                                             <div className="min-w-0 flex-1">
                                                 <div className="font-semibold text-body">
@@ -945,7 +961,7 @@ const Calendar: React.FC = () => {
                                                 <span
                                                     key={apt.occurrence_id || apt.id}
                                                     className="h-1.5 w-1.5 rounded-full"
-                                                    style={{ backgroundColor: apt.color || '#DC4A60' }}
+                                                    style={{ backgroundColor: apt.color || DEFAULT_EVENT_COLOR }}
                                                 />
                                             ))}
                                             {dayAppointments.length > 4 && (
@@ -963,8 +979,8 @@ const Calendar: React.FC = () => {
                                                 }}
                                                 className="text-[10px] p-1 rounded truncate hover:shadow-sm transition-shadow"
                                                 style={{
-                                                    backgroundColor: `${apt.color || '#DC4A60'}20`,
-                                                    borderLeft: `3px solid ${apt.color || '#DC4A60'}`,
+                                                    backgroundColor: `${apt.color || DEFAULT_EVENT_COLOR}20`,
+                                                    borderLeft: `3px solid ${apt.color || DEFAULT_EVENT_COLOR}`,
                                                 }}
                                             >
                                                 <div className="font-medium truncate">
@@ -1006,7 +1022,7 @@ const Calendar: React.FC = () => {
                                 >
                                     <div
                                         className="w-1 h-full rounded-full"
-                                        style={{ backgroundColor: apt.color || '#DC4A60' }}
+                                        style={{ backgroundColor: apt.color || DEFAULT_EVENT_COLOR }}
                                     />
                                     <div className="flex-1 min-w-0">
                                         <h4 className="font-semibold text-body mb-1 break-words">
@@ -1131,28 +1147,6 @@ const Calendar: React.FC = () => {
                         placeholder={t('calendar:form.descriptionPlaceholder')}
                         rows={3}
                     />
-                    <div>
-                        <label className="mb-1.5 block text-label font-medium text-foreground">
-                            {t('calendar:form.color')}
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                            {APPOINTMENT_COLORS.map(({ name, color }) => (
-                                <button
-                                    key={color}
-                                    type="button"
-                                    title={name}
-                                    aria-label={name}
-                                    onClick={() => setFormData({ ...formData, color })}
-                                    className={`h-9 w-9 rounded-full border-2 transition-transform hover:scale-110 ${
-                                        formData.color === color
-                                            ? 'border-foreground ring-2 ring-offset-2 ring-foreground/30'
-                                            : 'border-border'
-                                    }`}
-                                    style={{ backgroundColor: color }}
-                                />
-                            ))}
-                        </div>
-                    </div>
                     <div className="rounded-input border border-border bg-surface-2/40 p-3">
                         <div className="mb-3 flex items-center justify-between gap-3">
                             <p className="text-caption font-medium text-foreground">{t('calendar:form.scheduling')}</p>
@@ -1398,12 +1392,17 @@ const Calendar: React.FC = () => {
                                             type="checkbox"
                                             checked={formData.family_member_ids.includes(member.id)}
                                             onChange={() => {
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    family_member_ids: prev.family_member_ids.includes(member.id)
+                                                setFormData((prev) => {
+                                                    const ids = prev.family_member_ids.includes(member.id)
                                                         ? prev.family_member_ids.filter((id) => id !== member.id)
-                                                        : [...prev.family_member_ids, member.id],
-                                                }));
+                                                        : [...prev.family_member_ids, member.id];
+                                                    return {
+                                                        ...prev,
+                                                        family_member_ids: ids,
+                                                        // B2: until a manual pick, the color follows the assignee.
+                                                        color: colorTouched ? prev.color : memberColor(ids, familyMembers),
+                                                    };
+                                                });
                                             }}
                                             className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                                         />
@@ -1416,6 +1415,30 @@ const Calendar: React.FC = () => {
                                 ))}
                             </div>
                         )}
+                    </div>
+                    {/* B2: color picker at the very bottom, right after the assignee —
+                        the effective color follows the assignee until a manual pick. */}
+                    <div>
+                        <label className="mb-1.5 block text-label font-medium text-foreground">
+                            {t('calendar:form.color')}
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                            {APPOINTMENT_COLORS.map(({ name, color }) => (
+                                <button
+                                    key={color}
+                                    type="button"
+                                    title={name}
+                                    aria-label={name}
+                                    onClick={() => { setFormData({ ...formData, color }); setColorTouched(true); }}
+                                    className={`h-9 w-9 rounded-full border-2 transition-transform hover:scale-110 ${
+                                        effectiveColor === color
+                                            ? 'border-foreground ring-2 ring-offset-2 ring-foreground/30'
+                                            : 'border-border'
+                                    }`}
+                                    style={{ backgroundColor: color }}
+                                />
+                            ))}
+                        </div>
                     </div>
                     <ReminderPicker
                         value={formData.reminder_minutes}
@@ -1490,7 +1513,7 @@ const Calendar: React.FC = () => {
                                 >
                                     <span
                                         className="mt-1 h-4 w-4 flex-shrink-0 rounded-full border border-border"
-                                        style={{ backgroundColor: apt.color || '#DC4A60' }}
+                                        style={{ backgroundColor: apt.color || DEFAULT_EVENT_COLOR }}
                                     />
                                     <div className="min-w-0 flex-1">
                                         <div className="font-semibold text-body">

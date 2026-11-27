@@ -269,7 +269,10 @@ const Calendar: React.FC = () => {
     // is saved without an explicit submit.
     const applySuggestion = (s: Appointment) => {
         setFormData((prev) => {
-            const ids = s.family_member_ids ?? [];
+            // family_member_ids is the canonical key; family_members_data is the
+            // enriched fallback for objects that only carry the member rows
+            // (legacy/derived shapes) — same ids either way.
+            const ids = s.family_member_ids ?? s.family_members_data?.map((m) => m.id) ?? [];
             return {
                 ...prev,
                 title: s.title,

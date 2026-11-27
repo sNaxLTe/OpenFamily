@@ -83,7 +83,8 @@
       "emptyTitle": "No recurring entries yet",
       "emptyText": "Create a recurring series with the + button to find it here, whatever the month.",
       "noMatch": "No series matches these filters."
-    }
+    },
+    "togglePoint": "Mark this occurrence as paid"
   },
   "empty": {
     "expenses": "No expenses this month",
@@ -125,7 +126,8 @@
     "generic": "Something went wrong, please try again.",
     "fieldsRequired": "Category, amount and date are required.",
     "paperlessIdInvalid": "Invalid Paperless document id.",
-    "reminderInvalid": "The reminder must be a number of days between 0 and 365."
+    "reminderInvalid": "The reminder must be a number of days between 0 and 365.",
+    "load": "Could not load the budget. Please try again later."
   },
   "confirm": {
     "deleteRecurring": "Delete this recurring entry?",
@@ -288,5 +290,7 @@
     "limitDeleted": "Limit deleted",
     "kakeiboNoteSaved": "Annual note saved",
     "paperlessLinked": "Paperless document linked"
-  }
+  },
+  "prevMonth": "Previous month",
+  "nextMonth": "Next month"
 }

@@ -164,5 +164,7 @@
       "nameRequired": "Name des Geschäfts ist erforderlich.",
       "saveItem": "Artikel konnte nicht verschoben werden."
     }
-  }
+  },
+  "confirmDeleteItem": "Diesen Artikel löschen?",
+  "confirmClearChecked": "Alle abgehakten Artikel entfernen?"
 }

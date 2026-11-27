@@ -164,5 +164,7 @@
       "nameRequired": "El nom de la botiga és obligatori.",
       "saveItem": "No s’ha pogut moure aquest article."
     }
-  }
+  },
+  "confirmDeleteItem": "Eliminar aquest article?",
+  "confirmClearChecked": "Buidar tots els articles marcats?"
 }

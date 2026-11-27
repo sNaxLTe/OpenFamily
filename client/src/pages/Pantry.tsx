@@ -274,7 +274,7 @@ const Pantry: React.FC = () => {
                     <Refrigerator className="h-7 w-7" />
                 </div>
                 <div className="flex-1">
-                    <h1 className="text-h1 text-foreground">{t('pantry:header.title')}</h1>
+                    <h2 className="text-h1 text-foreground">{t('pantry:header.title')}</h2>
                     <p className="text-body text-muted-foreground">{t('pantry:header.count', { count: items.length })}</p>
                 </div>
             </div>

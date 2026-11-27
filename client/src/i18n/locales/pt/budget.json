@@ -83,7 +83,8 @@
       "emptyTitle": "Ainda não há lançamentos recorrentes",
       "emptyText": "Crie uma série recorrente com o botão + para a encontrar aqui, em qualquer mês.",
       "noMatch": "Nenhuma série corresponde a estes filtros."
-    }
+    },
+    "togglePoint": "Marcar este pagamento"
   },
   "empty": {
     "expenses": "Nenhuma despesa este mês",
@@ -125,7 +126,8 @@
     "generic": "Ocorreu um erro, tente novamente.",
     "fieldsRequired": "Categoria, valor e data são obrigatórios.",
     "paperlessIdInvalid": "ID de documento do Paperless inválido.",
-    "reminderInvalid": "O lembrete deve ser um número de dias entre 0 e 365."
+    "reminderInvalid": "O lembrete deve ser um número de dias entre 0 e 365.",
+    "load": "Não foi possível carregar o orçamento. Tente novamente mais tarde."
   },
   "confirm": {
     "deleteRecurring": "Excluir este lançamento recorrente?",
@@ -288,5 +290,7 @@
     "limitDeleted": "Limite eliminado",
     "kakeiboNoteSaved": "Nota anual salva",
     "paperlessLinked": "Documento do Paperless vinculado"
-  }
+  },
+  "prevMonth": "Mês anterior",
+  "nextMonth": "Próximo mês"
 }

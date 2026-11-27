@@ -420,7 +420,7 @@ const Rewards: React.FC = () => {
                     <Card>
                         <CardContent className="p-10 text-center">
                             <span className="text-6xl" aria-hidden="true">🐷</span>
-                            <h1 className="mt-4 text-h1">{t('rewards:kid.notLinkedTitle')}</h1>
+                            <h2 className="mt-4 text-h1">{t('rewards:kid.notLinkedTitle')}</h2>
                             <p className="mt-2 text-body text-muted-foreground">{t('rewards:kid.notLinkedMessage')}</p>
                         </CardContent>
                     </Card>
@@ -446,7 +446,7 @@ const Rewards: React.FC = () => {
                 ) : null}
 
                 <div className="text-center">
-                    <h1 className="font-serif text-4xl tracking-tight">{t('rewards:kid.hello', { name: kidMember.name })}</h1>
+                    <h2 className="font-serif text-4xl tracking-tight">{t('rewards:kid.hello', { name: kidMember.name })}</h2>
                     <p className="mt-1 text-body text-muted-foreground">{t('rewards:kid.subtitle')}</p>
                 </div>
 
@@ -598,7 +598,7 @@ const Rewards: React.FC = () => {
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-h1 mb-1">{t('rewards:title')}</h1>
+                    <h2 className="text-h1 mb-1">{t('rewards:title')}</h2>
                     <p className="text-muted-foreground text-body">{t('rewards:subtitle')}</p>
                 </div>
                 {isParent && (

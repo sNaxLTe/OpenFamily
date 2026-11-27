@@ -473,6 +473,7 @@ const ShoppingList: React.FC = () => {
     };
 
     const deleteItem = async (id: string) => {
+        if (!confirm(t('shopping:confirmDeleteItem'))) return;
         setError('');
         try {
             await api.delete(`/api/shopping/${id}`);
@@ -537,6 +538,7 @@ const ShoppingList: React.FC = () => {
     };
 
     const clearCheckedItems = async () => {
+        if (!confirm(t('shopping:confirmClearChecked'))) return;
         setError('');
         try {
             await api.delete('/api/shopping/checked/clear');
@@ -741,9 +743,9 @@ const ShoppingList: React.FC = () => {
                         <ChevronLeft className="h-5 w-5" />
                     </Button>
                     <div className="flex-1">
-                        <h1 className="flex items-center gap-2 text-h2 font-semibold text-foreground">
+                        <h2 className="flex items-center gap-2 text-h2 font-semibold text-foreground">
                             <Store className="h-5 w-5 text-primary" /> {t('shopping:storeMode.title')}
-                        </h1>
+                        </h2>
                         <p className="text-caption text-muted-foreground">
                             {t('shopping:storeMode.cart', { done, total })} · {t('shopping:storeMode.remaining', { count: remaining })}
                         </p>
@@ -814,7 +816,7 @@ const ShoppingList: React.FC = () => {
                     <ShoppingBag className="h-7 w-7" />
                 </div>
                 <div className="flex-1">
-                    <h1 className="text-h1 text-foreground">{t('shopping:header.title')}</h1>
+                    <h2 className="text-h1 text-foreground">{t('shopping:header.title')}</h2>
                     <p className="text-body text-muted-foreground">{t('shopping:header.remaining', { count: pendingItems.length })}</p>
                 </div>
                 {visibleItems.length > 0 && (
@@ -951,7 +953,7 @@ const ShoppingList: React.FC = () => {
                                             key={key}
                                             type="button"
                                             onClick={() => applySuggestion(label, category)}
-                                            className="min-h-8 rounded-pill border border-border bg-card px-3 py-1 text-caption text-foreground transition-colors hover:border-primary hover:bg-primary-soft hover:text-primary"
+                                            className="min-h-11 rounded-pill border border-border bg-card px-3 py-1 text-caption text-foreground transition-colors hover:border-primary hover:bg-primary-soft hover:text-primary"
                                         >
                                             {label}
                                         </button>
@@ -1022,7 +1024,7 @@ const ShoppingList: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => toggleItem(item)}
-                                    className="-m-1 flex h-8 w-8 flex-shrink-0 items-center justify-center"
+                                    className="-m-2 flex h-8 w-8 p-2 flex-shrink-0 items-center justify-center"
                                 >
                                     <span className="flex h-6 w-6 items-center justify-center rounded-md border-2 border-input">
                                         {item.is_checked ? <Check className="h-3.5 w-3.5 text-primary" /> : null}
@@ -1043,7 +1045,7 @@ const ShoppingList: React.FC = () => {
                                                     // triggered by pressing the stepper itself.
                                                     onMouseDown={(e) => e.preventDefault()}
                                                     onClick={() => stepDraft(-1)}
-                                                    className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:border-primary hover:text-primary"
+                                                    className="flex -m-2 h-8 w-8 p-2 items-center justify-center rounded-md border border-border text-muted-foreground hover:border-primary hover:text-primary"
                                                 >
                                                     <Minus className="h-3 w-3" />
                                                 </button>
@@ -1073,7 +1075,7 @@ const ShoppingList: React.FC = () => {
                                                     aria-label={t('shopping:quantity.increase')}
                                                     onMouseDown={(e) => e.preventDefault()}
                                                     onClick={() => stepDraft(1)}
-                                                    className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:border-primary hover:text-primary"
+                                                    className="flex -m-2 h-8 w-8 p-2 items-center justify-center rounded-md border border-border text-muted-foreground hover:border-primary hover:text-primary"
                                                 >
                                                     <Plus className="h-3 w-3" />
                                                 </button>
@@ -1087,7 +1089,7 @@ const ShoppingList: React.FC = () => {
                                                     setEditingQuantityId(item.id);
                                                     setQuantityDraft(item.quantity ? String(Number(item.quantity)) : '');
                                                 }}
-                                                className="min-h-8 rounded-pill border border-dashed border-border px-2.5 py-1 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                                                className="min-h-11 rounded-pill border border-dashed border-border px-2.5 py-1 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
                                             >
                                                 {item.quantity
                                                     ? `${t('shopping:qty')}: ${formatQty(item.quantity)}${item.unit ? ` ${item.unit}` : ''}`
@@ -1137,7 +1139,7 @@ const ShoppingList: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => toggleItem(item)}
-                                                className="-m-1.5 flex h-8 w-8 flex-shrink-0 items-center justify-center"
+                                                className="-m-2 flex h-8 w-8 p-2 flex-shrink-0 items-center justify-center"
                                             >
                                                 <span className="flex h-5 w-5 items-center justify-center rounded border border-primary bg-primary">
                                                     <Check className="h-3 w-3 text-white" />

@@ -521,7 +521,7 @@ const Tasks: React.FC = () => {
             ) : null}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-h1 mb-1">{t('tasks:title')}</h1>
+                    <h2 className="text-h1 mb-1">{t('tasks:title')}</h2>
                     <p className="text-muted-foreground text-body">{t('tasks:subtitle')}</p>
                 </div>
                 <Button onClick={() => { resetForm(); setDialogOpen(true); }}>
@@ -663,7 +663,8 @@ const Tasks: React.FC = () => {
                                 <div className="flex items-start gap-4">
                                     <button
                                         onClick={() => handleToggleComplete(task)}
-                                        className="mt-1 flex-shrink-0"
+                                        aria-label={t('tasks:toggleTask')}
+                                        className="mt-1 flex-shrink-0 -m-3 p-3"
                                     >
                                         {task.is_completed ? (
                                             <CheckSquare className="h-5 w-5 text-emerald-600" />

@@ -48,7 +48,7 @@ const Switch: React.FC<{ checked: boolean; onChange?: () => void; label: string;
         disabled={disabled}
         onClick={onChange}
         className={cn(
-            'relative h-7 w-12 shrink-0 rounded-full transition-colors',
+            'relative -m-2 h-7 w-12 shrink-0 rounded-full p-2 transition-colors',
             checked ? 'bg-primary' : 'border border-border bg-surface-2',
             disabled && 'cursor-not-allowed opacity-50'
         )}

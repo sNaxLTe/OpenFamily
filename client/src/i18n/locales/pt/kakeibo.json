@@ -44,5 +44,8 @@
     "notesTitle": "Notas de fim de ano",
     "notesPlaceholder": "Balanço do ano: o que funcionou, o que muda no próximo ano…",
     "noData": "Sem dados para {{year}}."
+  },
+  "errors": {
+    "load": "Não foi possível carregar o Kakeibo. Tente novamente mais tarde."
   }
 }

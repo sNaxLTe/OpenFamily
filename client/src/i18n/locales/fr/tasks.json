@@ -115,5 +115,6 @@
     "overdueHint": "Chaque jour jusqu'à complétion",
     "recapNote": "Un récap de tes tâches du jour part chaque matin à 08:00, indépendamment de ce réglage.",
     "roundedTime": "Heure du rappel arrondie : {{from}} → {{to}}"
-  }
+  },
+  "toggleTask": "Cocher ou décocher la tâche"
 }

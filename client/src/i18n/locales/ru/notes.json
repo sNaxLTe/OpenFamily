@@ -31,5 +31,6 @@
     "minutes": "{{count}} мин назад",
     "hours": "{{count}} ч назад",
     "days": "{{count}} дн назад"
-  }
+  },
+  "confirmDelete": "Удалить заметку?"
 }

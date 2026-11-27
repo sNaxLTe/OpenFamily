@@ -31,5 +31,6 @@
     "minutes": "{{count}} 分钟前",
     "hours": "{{count}} 小时前",
     "days": "{{count}} 天前"
-  }
+  },
+  "confirmDelete": "删除此留言？"
 }

@@ -25,10 +25,10 @@ export const Button: React.FC<ButtonProps> = ({
     };
 
     const sizeClasses = {
-        sm: 'h-10 px-4 text-caption',
+        sm: 'h-11 px-4 text-caption',
         md: 'h-11 md:h-10 px-5 text-caption',
         lg: 'h-12 px-6 text-body',
-        icon: 'h-10 w-10',
+        icon: 'h-11 w-11',
     };
 
     return (

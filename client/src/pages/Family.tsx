@@ -413,7 +413,7 @@ const Family: React.FC = () => {
             ) : null}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-h1 mb-1">{t('family:title')}</h1>
+                    <h2 className="text-h1 mb-1">{t('family:title')}</h2>
                     <p className="text-muted-foreground text-body">{t('family:subtitle')}</p>
                 </div>
                 <Button onClick={() => { resetForm(); setDialogOpen(true); }}>

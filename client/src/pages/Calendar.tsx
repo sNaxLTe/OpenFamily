@@ -848,7 +848,7 @@ const Calendar: React.FC = () => {
             ) : null}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-h1 mb-1">{t('calendar:title')}</h1>
+                    <h2 className="text-h1 mb-1">{t('calendar:title')}</h2>
                     <p className="text-muted-foreground text-body">{t('calendar:subtitle')}</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -884,7 +884,7 @@ const Calendar: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setSearchQuery('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                className="absolute right-3 top-1/2 -m-3 -translate-y-1/2 p-3 text-muted-foreground hover:text-foreground"
                                 aria-label={t('calendar:search.clear')}
                             >
                                 <X className="h-4 w-4" />
@@ -1008,7 +1008,16 @@ const Calendar: React.FC = () => {
                             return (
                                 <div
                                     key={index}
+                                    role="button"
+                                    tabIndex={isCurrentMonth ? 0 : -1}
                                     onClick={() => isCurrentMonth && handleCalendarDayClick(day, dayAppointments)}
+                                    onKeyDown={(e) => {
+                                        if (isCurrentMonth && (e.key === 'Enter' || e.key === ' ')) {
+                                            e.preventDefault();
+                                            handleCalendarDayClick(day, dayAppointments);
+                                        }
+                                    }}
+                                    aria-label={t('calendar:openDay', { date: format(day, 'd MMMM', { locale: dateLocale() }) })}
                                     className={`
                                         min-h-[52px] sm:min-h-[100px] p-1 sm:p-2 border rounded-lg cursor-pointer transition-all
                                         ${isCurrentMonth ? 'bg-card hover:bg-nexus-background' : 'bg-surface-2 opacity-50'}

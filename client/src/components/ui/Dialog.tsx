@@ -1,6 +1,7 @@
 import React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils';
 import { useHistoryAwareOverlay } from '../../lib/useHistoryAwareOverlay';
 
@@ -29,6 +30,7 @@ export const Dialog: React.FC<DialogProps> = ({
     className,
     dismissible = true,
 }) => {
+    const { t } = useTranslation('common');
     // History-aware on every Dialog: back/swipe-back closes the dialog instead
     // of leaving the app (standalone PWA). With dismissible={false} the pop is
     // consumed silently instead (see useHistoryAwareOverlay).
@@ -60,9 +62,12 @@ export const Dialog: React.FC<DialogProps> = ({
                                 </DialogPrimitive.Description>
                             )}
                         </div>
-                        <DialogPrimitive.Close className="rounded-input p-1 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground">
+                        <DialogPrimitive.Close
+                            aria-label={t('common:actions.close')}
+                            className="rounded-input p-3 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+                        >
                             <X className="h-5 w-5" />
-                            <span className="sr-only">Fermer</span>
+                            <span className="sr-only">{t('common:actions.close')}</span>
                         </DialogPrimitive.Close>
                     </div>
                     <div className="px-5 py-4 md:px-6 md:py-5">{children}</div>

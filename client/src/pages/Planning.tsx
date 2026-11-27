@@ -565,7 +565,7 @@ const Planning: React.FC = () => {
 
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-h1">{t('planning:title')}</h1>
+                    <h2 className="text-h1">{t('planning:title')}</h2>
                     <p className="text-caption text-muted-foreground">
                         {t('planning:subtitle')}
                     </p>

@@ -200,7 +200,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                 <main className="mx-auto w-full max-w-[1760px] px-4 pb-28 pt-6 lg:px-8 lg:pb-32 lg:pt-8 2xl:px-10">
                     {isOffline && (
-                        <div className="mb-4 flex items-center gap-2 rounded-card border border-amber-300 bg-amber-50 px-4 py-2.5 text-caption text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
+                        <div role="status" aria-live="polite" className="mb-4 flex items-center gap-2 rounded-card border border-amber-300 bg-amber-50 px-4 py-2.5 text-caption text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
                             <WifiOff className="h-4 w-4 flex-shrink-0" />
                             {t('offline')}
                         </div>
@@ -222,6 +222,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             )}
 
             <div
+                role="dialog"
+                aria-modal="false"
+                aria-label={t('quickActions.title')}
                 className={cn(
                     'fixed inset-x-4 bottom-44 z-50 rounded-card border border-border bg-card p-4 shadow-surface-hover md:inset-x-auto md:bottom-44 md:right-8 md:w-72',
                     'transition-all duration-base ease-soft',

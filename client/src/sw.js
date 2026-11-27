@@ -111,7 +111,7 @@ sw.addEventListener('push', (event) => {
     const options = {
         body: payload.body ?? '',
         icon: '/icon-192.png',
-        badge: '/icon-72.png',
+        badge: '/icon-192.png',
         tag: payload.tag ?? 'openfamily',
         data: { url: payload.url ?? '/' },
         requireInteraction: false,

@@ -29,7 +29,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ className })
                 className
             )}
             role="group"
-            aria-label="Language"
+            aria-label={t('common:language')}
         >
             {SUPPORTED_LANGUAGES.map((lng) => (
                 <button

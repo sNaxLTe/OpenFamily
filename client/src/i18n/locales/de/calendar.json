@@ -170,5 +170,6 @@
     "age_other": "{{count}} Jahre alt",
     "notice": "Dieser Geburtstag stammt aus dem Geburtsdatum auf der Seite Familie.",
     "openFamily": "Seite Familie öffnen"
-  }
+  },
+  "openDay": "{{date}} öffnen"
 }

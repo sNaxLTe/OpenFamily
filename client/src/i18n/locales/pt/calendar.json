@@ -170,5 +170,6 @@
     "age_other": "{{count}} anos",
     "notice": "Este aniversário vem da data de nascimento informada na página Família.",
     "openFamily": "Abrir a página Família"
-  }
+  },
+  "openDay": "Abrir {{date}}"
 }

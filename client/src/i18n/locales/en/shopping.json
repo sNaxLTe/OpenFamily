@@ -164,5 +164,7 @@
       "nameRequired": "Store name is required.",
       "saveItem": "Could not move this item."
     }
-  }
+  },
+  "confirmDeleteItem": "Delete this item?",
+  "confirmClearChecked": "Clear all checked items?"
 }

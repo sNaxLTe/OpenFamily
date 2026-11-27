@@ -505,7 +505,7 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
                                                 onClick={() => void handleDeleteLimit(l.id)}
                                                 title={t('budget:annual.limits.delete')}
                                                 aria-label={t('budget:annual.limits.delete')}
-                                                className="shrink-0 rounded-lg p-1 hover:bg-danger/10 transition-colors"
+                                                className="shrink-0 rounded-lg -m-3 p-3 hover:bg-danger/10 transition-colors"
                                             >
                                                 <Trash2 className="h-3.5 w-3.5 text-danger/60" />
                                             </button>

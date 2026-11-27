@@ -79,7 +79,8 @@
       "emptyTitle": "暂无循环写入",
       "emptyText": "点击 + 按钮创建循环系列，无论哪个月都能在此找到。",
       "noMatch": "没有符合筛选条件的系列。"
-    }
+    },
+    "togglePoint": "标记此付款"
   },
   "empty": {
     "expenses": "本月暂无支出",
@@ -121,7 +122,8 @@
     "generic": "出错了，请重试。",
     "fieldsRequired": "类别、金额和日期为必填项。",
     "paperlessIdInvalid": "Paperless 文档 ID 无效。",
-    "reminderInvalid": "提醒必须是 0 到 365 之间的天数。"
+    "reminderInvalid": "提醒必须是 0 到 365 之间的天数。",
+    "load": "无法加载预算，请稍后重试。"
   },
   "confirm": {
     "deleteRecurring": "删除这条定期记录？",
@@ -284,5 +286,7 @@
     "limitDeleted": "已删除限额",
     "kakeiboNoteSaved": "年度备注已保存",
     "paperlessLinked": "已关联 Paperless 文档"
-  }
+  },
+  "prevMonth": "上个月",
+  "nextMonth": "下个月"
 }

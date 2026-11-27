@@ -83,7 +83,8 @@
       "emptyTitle": "Aucune écriture récurrente",
       "emptyText": "Créez une série récurrente avec le bouton + pour la retrouver ici, quel que soit le mois.",
       "noMatch": "Aucune série ne correspond à ces filtres."
-    }
+    },
+    "togglePoint": "Rapprocher cette occurrence"
   },
   "empty": {
     "expenses": "Aucune dépense ce mois",
@@ -125,7 +126,8 @@
     "generic": "Une erreur est survenue, veuillez réessayer.",
     "fieldsRequired": "Catégorie, montant et date sont requis.",
     "paperlessIdInvalid": "Identifiant de document Paperless invalide.",
-    "reminderInvalid": "Le rappel doit être un nombre de jours entre 0 et 365."
+    "reminderInvalid": "Le rappel doit être un nombre de jours entre 0 et 365.",
+    "load": "Impossible de charger le budget. Réessayez plus tard."
   },
   "confirm": {
     "deleteRecurring": "Supprimer cette écriture récurrente ?",
@@ -288,5 +290,7 @@
     "limitDeleted": "Limite supprimée",
     "kakeiboNoteSaved": "Note annuelle enregistrée",
     "paperlessLinked": "Document Paperless lié"
-  }
+  },
+  "prevMonth": "Mois précédent",
+  "nextMonth": "Mois suivant"
 }

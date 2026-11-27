@@ -553,7 +553,7 @@ const Recipes: React.FC = () => {
             ) : null}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-h1 mb-1">{t('recipes:title')}</h1>
+                    <h2 className="text-h1 mb-1">{t('recipes:title')}</h2>
                     <p className="text-muted-foreground text-body">{t('recipes:subtitle')}</p>
                 </div>
                 <div className="flex flex-wrap gap-3">

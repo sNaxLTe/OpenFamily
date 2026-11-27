@@ -165,6 +165,7 @@ const Budget: React.FC = () => {
     const [showEndedSeries, setShowEndedSeries] = useState(false);
     const [entries, setEntries] = useState<BudgetEntry[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
 
     const [stats, setStats] = useState<BudgetStatistics | null>(null);
     const [monthly, setMonthly] = useState<MonthlyStat[]>([]);
@@ -207,6 +208,7 @@ const Budget: React.FC = () => {
     );
 
     const loadAll = useCallback(async () => {
+        setLoadError(false);
         try {
             const [forecastRes, recurringRes, entriesRes, statsRes, monthlyRes, limitsRes] = await Promise.all([
                 api.get<{ success: boolean; data: Forecast }>(
@@ -244,6 +246,7 @@ const Budget: React.FC = () => {
             if (limitsRes.success) setLimits(limitsRes.data.map((l) => ({ ...l, monthly_limit: toNumber(l.monthly_limit) })));
         } catch (err) {
             console.error('Budget load error', err);
+            setLoadError(true);
         } finally {
             setLoading(false);
         }
@@ -638,10 +641,20 @@ const Budget: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="flex h-full items-center justify-center min-h-[50vh]">
+            <div className="flex h-full items-center justify-center min-h-[50vh]" role="status" aria-live="polite">
                 <div className="flex flex-col items-center gap-4">
                     <div className="spinner-brand" />
                     <p className="text-muted-foreground font-medium animate-pulse">{t('budget:loading')}</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (loadError) {
+        return (
+            <div className="mx-auto max-w-2xl pb-24 xl:max-w-6xl">
+                <div className="m-4 rounded-xl bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger" role="alert">
+                    {t('budget:errors.load')}
                 </div>
             </div>
         );
@@ -661,7 +674,8 @@ const Budget: React.FC = () => {
             <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-background/80 backdrop-blur-md z-10 border-b border-border">
                 <button
                     onClick={() => (view === 'month' ? navigateMonth(-1) : navigateYear(-1))}
-                    className="p-2 rounded-full hover:bg-surface-2 active:scale-95 transition-all"
+                    aria-label={t('budget:prevMonth')}
+                    className="-m-2 p-2 rounded-full hover:bg-surface-2 active:scale-95 transition-all"
                 >
                     <ChevronLeft className="w-5 h-5" />
                 </button>
@@ -672,7 +686,8 @@ const Budget: React.FC = () => {
                 </span>
                 <button
                     onClick={() => (view === 'month' ? navigateMonth(1) : navigateYear(1))}
-                    className="p-2 rounded-full hover:bg-surface-2 active:scale-95 transition-all"
+                    aria-label={t('budget:nextMonth')}
+                    className="-m-2 p-2 rounded-full hover:bg-surface-2 active:scale-95 transition-all"
                 >
                     <ChevronRight className="w-5 h-5" />
                 </button>
@@ -1277,7 +1292,7 @@ const Budget: React.FC = () => {
                                             setTransactionForm((f) => ({ ...f, paperless_document_id: null }));
                                             setPaperlessTitle('');
                                         }}
-                                        className="rounded-full p-0.5 hover:bg-danger/10"
+                                        className="rounded-full -m-3.5 p-3.5 hover:bg-danger/10"
                                     >
                                         <X className="h-3 w-3 text-muted-foreground" />
                                     </button>
@@ -1567,13 +1582,15 @@ const EntryRow: React.FC<{
                 <div className="flex items-center gap-1 flex-shrink-0">
                     <button
                         onClick={() => onEdit(entry)}
-                        className="p-1.5 rounded-lg hover:bg-surface-2 transition-colors"
+                        aria-label={t('common:actions.edit')}
+                        className="-m-3 p-3 rounded-lg hover:bg-surface-2 transition-colors"
                     >
                         <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
                     </button>
                     <button
                         onClick={() => onDelete(entry.id)}
-                        className="p-1.5 rounded-lg hover:bg-danger/10 transition-colors"
+                        aria-label={t('common:actions.delete')}
+                        className="-m-3 p-3 rounded-lg hover:bg-danger/10 transition-colors"
                     >
                         <Trash2 className="w-3.5 h-3.5 text-danger/60" />
                     </button>

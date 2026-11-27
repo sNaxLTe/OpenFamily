@@ -164,5 +164,7 @@
       "nameRequired": "商店名称为必填。",
       "saveItem": "无法移动此商品。"
     }
-  }
+  },
+  "confirmDeleteItem": "删除此条目？",
+  "confirmClearChecked": "清空所有已勾选？"
 }

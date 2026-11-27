@@ -44,5 +44,8 @@
     "notesTitle": "Jahresendnotizen",
     "notesPlaceholder": "Jahresrückblick: was lief gut, was ändert sich nächstes Jahr…",
     "noData": "Keine Daten für {{year}}."
+  },
+  "errors": {
+    "load": "Kakeibo konnte nicht geladen werden. Bitte später erneut versuchen."
   }
 }

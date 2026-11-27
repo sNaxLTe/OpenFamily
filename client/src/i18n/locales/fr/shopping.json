@@ -164,5 +164,7 @@
       "nameRequired": "Le nom du magasin est requis.",
       "saveItem": "Impossible de déplacer cet article."
     }
-  }
+  },
+  "confirmDeleteItem": "Supprimer cet article ?",
+  "confirmClearChecked": "Vider tous les articles cochés ?"
 }

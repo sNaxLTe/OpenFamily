@@ -23,6 +23,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 <input
                     id={inputId}
                     ref={ref}
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={error ? `${inputId}-error` : undefined}
                     className={cn(
                         'input-nexus',
                         error && 'border-destructive focus-visible:ring-destructive',
@@ -31,7 +33,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     {...props}
                 />
                 {error && (
-                    <p className="mt-1.5 text-micro text-destructive">{error}</p>
+                    <p id={`${inputId}-error`} className="mt-1.5 text-micro text-destructive">{error}</p>
                 )}
             </div>
         );

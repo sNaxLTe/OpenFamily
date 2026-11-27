@@ -44,5 +44,8 @@
     "notesTitle": "Notes de final d'any",
     "notesPlaceholder": "Balanç de l'any: què ha funcionat, què canviem el proper any…",
     "noData": "Sense dades per a {{year}}."
+  },
+  "errors": {
+    "load": "No s'ha pogut carregar el Kakeibo. Torna-ho a provar més tard."
   }
 }

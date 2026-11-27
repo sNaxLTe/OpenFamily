@@ -178,7 +178,7 @@ export const RecurringCard: React.FC<{
             <button
                 onClick={() => onTogglePoint(r)}
                 disabled={!canEdit || !r.occurrence_date}
-                className={`mt-0.5 flex-shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center
+                className={`mt-0.5 flex-shrink-0 -m-2 w-7 h-7 p-2 rounded-full border-2 flex items-center justify-center
                     transition-all active:scale-90 disabled:opacity-50
                     ${r.is_pointed ? 'bg-success/100 border-success' : 'border-border hover:border-success/50'}`}
                 title={r.is_pointed ? t('budget:recurring.markOff') : t('budget:recurring.markOn')}

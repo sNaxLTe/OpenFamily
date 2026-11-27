@@ -44,5 +44,8 @@
     "notesTitle": "年终备注",
     "notesPlaceholder": "年度总结：哪些做得好，明年要改什么…",
     "noData": "{{year}} 年暂无数据。"
+  },
+  "errors": {
+    "load": "无法加载 Kakeibo，请稍后重试。"
   }
 }

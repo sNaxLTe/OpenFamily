@@ -31,5 +31,6 @@
     "minutes": "fa {{count}} min",
     "hours": "fa {{count}} h",
     "days": "fa {{count}} dies"
-  }
+  },
+  "confirmDelete": "Eliminar aquesta nota?"
 }

@@ -43,6 +43,7 @@ const KakeiboView: React.FC<Props> = ({ month, year, canEdit, currency, category
     const { t } = useTranslation(['kakeibo', 'budget', 'common']);
     const [data, setData] = useState<KakeiboSummary | null>(null);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [editingIncome, setEditingIncome] = useState(false);
     const [incomeDraft, setIncomeDraft] = useState<Record<string, string>>({});
     const [editingGoal, setEditingGoal] = useState(false);
@@ -51,6 +52,7 @@ const KakeiboView: React.FC<Props> = ({ month, year, canEdit, currency, category
     const [savingNotes, setSavingNotes] = useState(false);
 
     const load = async () => {
+        setLoadError(false);
         try {
             const res = await api.get<{ success: boolean; data: KakeiboSummary }>(
                 `/api/kakeibo?month=${month}&year=${year}`
@@ -61,6 +63,7 @@ const KakeiboView: React.FC<Props> = ({ month, year, canEdit, currency, category
             }
         } catch (err) {
             console.error('Failed to load kakeibo:', err);
+            setLoadError(true);
         } finally {
             setLoading(false);
         }
@@ -76,10 +79,17 @@ const KakeiboView: React.FC<Props> = ({ month, year, canEdit, currency, category
         return Math.min(100, Math.round((data.totalExpenses / data.availableToSpend) * 100));
     }, [data]);
 
-    if (loading || !data) {
+    if (loading || (!data && !loadError)) {
         return (
-            <div className="flex items-center justify-center py-16">
+            <div className="flex items-center justify-center py-16" role="status" aria-live="polite">
                 <div className="spinner-brand" />
+            </div>
+        );
+    }
+    if (loadError || !data) {
+        return (
+            <div className="rounded-xl bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger" role="alert">
+                {t('kakeibo:errors.load')}
             </div>
         );
     }
@@ -151,7 +161,7 @@ const KakeiboView: React.FC<Props> = ({ month, year, canEdit, currency, category
                         <Wallet className="h-4 w-4 text-primary" /> {t('kakeibo:householdIncome')}
                     </h3>
                     {canEdit && !editingIncome && (
-                        <button onClick={startIncomeEdit} className="text-primary" aria-label={t('common:edit', { defaultValue: 'Edit' })}>
+                        <button onClick={startIncomeEdit} className="text-primary -m-3.5 p-3.5" aria-label={t('common:edit', { defaultValue: 'Edit' })}>
                             <Pencil className="h-4 w-4" />
                         </button>
                     )}
@@ -209,7 +219,7 @@ const KakeiboView: React.FC<Props> = ({ month, year, canEdit, currency, category
                         <Target className="h-4 w-4 text-primary" /> {t('kakeibo:savingsGoal')}
                     </h3>
                     {canEdit && !editingGoal && (
-                        <button onClick={() => { setGoalDraft(data.savingsGoal ? String(data.savingsGoal) : ''); setEditingGoal(true); }} className="text-primary">
+                        <button onClick={() => { setGoalDraft(data.savingsGoal ? String(data.savingsGoal) : ''); setEditingGoal(true); }} className="text-primary -m-3.5 p-3.5" aria-label={t('common:edit', { defaultValue: 'Edit' })}>
                             <Pencil className="h-4 w-4" />
                         </button>
                     )}

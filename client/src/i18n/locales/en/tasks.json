@@ -115,5 +115,6 @@
     "overdueHint": "Every day until completed",
     "recapNote": "A recap of your tasks for the day is sent every morning at 08:00, regardless of this setting.",
     "roundedTime": "Reminder time rounded: {{from}} → {{to}}"
-  }
+  },
+  "toggleTask": "Toggle task done"
 }

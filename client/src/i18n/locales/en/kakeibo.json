@@ -44,5 +44,8 @@
     "notesTitle": "End-of-year notes",
     "notesPlaceholder": "Year review: what worked, what changes next year…",
     "noData": "No data for {{year}}."
+  },
+  "errors": {
+    "load": "Could not load the Kakeibo. Please try again later."
   }
 }

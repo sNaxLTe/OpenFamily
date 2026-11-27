@@ -117,6 +117,7 @@ const FamilyNotes: React.FC<FamilyNotesProps> = ({ notes, variant = 'full', onCh
     };
 
     const handleDelete = async (id: string) => {
+        if (!confirm(t('notes:confirmDelete'))) return;
         try {
             await api.delete(`/api/notes/${id}`);
             showToast({ title: t('notes:deleted') });
@@ -150,7 +151,7 @@ const FamilyNotes: React.FC<FamilyNotesProps> = ({ notes, variant = 'full', onCh
                                     type="button"
                                     onClick={() => void handleDelete(note.id)}
                                     aria-label={t('notes:delete')}
-                                    className="absolute right-1.5 top-1.5 rounded-full p-1 opacity-0 transition-opacity hover:bg-black/10 focus-visible:opacity-100 group-hover:opacity-100 group-active:opacity-100"
+                                    className="absolute right-1.5 top-1.5 rounded-full -m-3 p-3 opacity-0 transition-opacity hover:bg-black/10 focus-visible:opacity-100 group-hover:opacity-100 group-active:opacity-100"
                                 >
                                     <X className="h-4 w-4" />
                                 </button>
@@ -231,7 +232,7 @@ const FamilyNotes: React.FC<FamilyNotesProps> = ({ notes, variant = 'full', onCh
                                         aria-label={t(`notes:colors.${c}`)}
                                         aria-pressed={color === c}
                                         className={cn(
-                                            'h-8 w-8 rounded-full transition-transform',
+                                            '-m-1.5 h-8 w-8 p-1.5 rounded-full transition-transform',
                                             SWATCH_CLASSES[c],
                                             color === c
                                                 ? 'scale-110 ring-2 ring-primary ring-offset-2 ring-offset-card'
@@ -252,7 +253,7 @@ const FamilyNotes: React.FC<FamilyNotesProps> = ({ notes, variant = 'full', onCh
                                         onClick={() => setExpiresIn(opt)}
                                         aria-pressed={expiresIn === opt}
                                         className={cn(
-                                            'rounded-full border px-3.5 py-1.5 text-caption transition-colors',
+                                            'rounded-full border -m-1 p-1 px-3.5 py-1.5 text-caption transition-colors',
                                             expiresIn === opt
                                                 ? 'border-primary bg-primary-soft font-medium text-primary'
                                                 : 'border-border text-muted-foreground hover:border-border-strong hover:text-foreground'

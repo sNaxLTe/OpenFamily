@@ -83,7 +83,8 @@
       "emptyTitle": "Noch keine wiederkehrenden Einträge",
       "emptyText": "Erstelle eine Serie über die Schaltfläche +, um sie hier zu finden – unabhängig vom Monat.",
       "noMatch": "Keine Serie entspricht diesen Filtern."
-    }
+    },
+    "togglePoint": "Diesen Termin als bezahlt markieren"
   },
   "empty": {
     "expenses": "Keine Ausgaben diesen Monat",
@@ -125,7 +126,8 @@
     "generic": "Etwas ist schiefgelaufen, bitte versuche es erneut.",
     "fieldsRequired": "Kategorie, Betrag und Datum sind erforderlich.",
     "paperlessIdInvalid": "Ungültige Paperless-Dokument-ID.",
-    "reminderInvalid": "Die Erinnerung muss eine Tageszahl zwischen 0 und 365 sein."
+    "reminderInvalid": "Die Erinnerung muss eine Tageszahl zwischen 0 und 365 sein.",
+    "load": "Budget konnte nicht geladen werden. Bitte später erneut versuchen."
   },
   "confirm": {
     "deleteRecurring": "Diesen wiederkehrenden Posten löschen?",
@@ -288,5 +290,7 @@
     "limitDeleted": "Limit gelöscht",
     "kakeiboNoteSaved": "Jahresnotiz gespeichert",
     "paperlessLinked": "Paperless-Dokument verknüpft"
-  }
+  },
+  "prevMonth": "Vorheriger Monat",
+  "nextMonth": "Nächster Monat"
 }

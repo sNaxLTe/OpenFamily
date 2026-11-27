@@ -31,5 +31,6 @@
     "minutes": "{{count}} min ago",
     "hours": "{{count}} h ago",
     "days": "{{count}} d ago"
-  }
+  },
+  "confirmDelete": "Delete this note?"
 }

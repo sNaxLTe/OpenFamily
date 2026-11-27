@@ -115,5 +115,6 @@
     "overdueHint": "Cada día hasta completarla",
     "recapNote": "Cada mañana a las 08:00 recibirás un resumen de tus tareas del día, independientemente de este ajuste.",
     "roundedTime": "Hora del recordatorio redondeada: {{from}} → {{to}}"
-  }
+  },
+  "toggleTask": "Marcar tarea"
 }

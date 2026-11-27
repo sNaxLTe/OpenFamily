@@ -537,7 +537,7 @@ const MealPlanning: React.FC = () => {
             ) : null}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-h1 mb-1">{t('meals:title')}</h1>
+                    <h2 className="text-h1 mb-1">{t('meals:title')}</h2>
                     <p className="text-muted-foreground text-body">{t('meals:subtitle')}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">

@@ -288,7 +288,7 @@ const Integrations: React.FC = () => {
     return (
         <div className="max-w-6xl space-y-8">
             <div>
-                <h1 className="font-serif text-display text-foreground">{t('integrations:title')}</h1>
+                <h2 className="font-serif text-display text-foreground">{t('integrations:title')}</h2>
                 <p className="text-caption text-muted-foreground mt-1">
                     {t('integrations:subtitle')}
                 </p>

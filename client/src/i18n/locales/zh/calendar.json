@@ -168,5 +168,6 @@
     "age_other": "{{count}} 岁",
     "notice": "这个生日来自“家庭”页面中填写的出生日期。",
     "openFamily": "打开“家庭”页面"
-  }
+  },
+  "openDay": "打开 {{date}}"
 }

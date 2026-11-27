@@ -83,7 +83,8 @@
       "emptyTitle": "Aún no hay movimientos recurrentes",
       "emptyText": "Crea una serie recurrente con el botón + para encontrarla aquí, sea cual sea el mes.",
       "noMatch": "Ninguna serie coincide con estos filtros."
-    }
+    },
+    "togglePoint": "Marcar este pago"
   },
   "empty": {
     "expenses": "Sin gastos este mes",
@@ -125,7 +126,8 @@
     "generic": "Se produjo un error, inténtalo de nuevo.",
     "fieldsRequired": "Categoría, importe y fecha son obligatorios.",
     "paperlessIdInvalid": "ID de documento de Paperless no válido.",
-    "reminderInvalid": "El recordatorio debe ser un número de días entre 0 y 365."
+    "reminderInvalid": "El recordatorio debe ser un número de días entre 0 y 365.",
+    "load": "No se pudo cargar el presupuesto. Inténtalo más tarde."
   },
   "confirm": {
     "deleteRecurring": "¿Eliminar este movimiento recurrente?",
@@ -288,5 +290,7 @@
     "limitDeleted": "Límite eliminada",
     "kakeiboNoteSaved": "Nota anual guardada",
     "paperlessLinked": "Documento de Paperless vinculado"
-  }
+  },
+  "prevMonth": "Mes anterior",
+  "nextMonth": "Mes siguiente"
 }

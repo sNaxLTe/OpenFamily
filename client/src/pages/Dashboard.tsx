@@ -78,7 +78,7 @@ const HomeCard: React.FC<{
             <button
                 type="button"
                 onClick={onOpen}
-                className="flex shrink-0 items-center gap-0.5 rounded-input px-1.5 py-1 text-micro font-medium text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                className="flex shrink-0 items-center gap-0.5 rounded-input -m-3 p-3 text-micro font-medium text-muted-foreground hover:bg-surface-2 hover:text-foreground"
             >
                 {allLabel}
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -325,21 +325,21 @@ const Dashboard: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => setAgendaView('day')}
-                        className={`px-2.5 py-1 text-caption rounded transition-colors ${agendaView === 'day' ? 'bg-primary-soft text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+                        className={`px-2.5 py-1 text-caption rounded transition-colors -m-2 p-2 ${agendaView === 'day' ? 'bg-primary-soft text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}
                     >
                         {t('dashboard:today.viewDay')}
                     </button>
                     <button
                         type="button"
                         onClick={() => setAgendaView('week')}
-                        className={`px-2.5 py-1 text-caption rounded transition-colors ${agendaView === 'week' ? 'bg-primary-soft text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+                        className={`px-2.5 py-1 text-caption rounded transition-colors -m-2 p-2 ${agendaView === 'week' ? 'bg-primary-soft text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}
                     >
                         {t('dashboard:today.viewWeek')}
                     </button>
                     <button
                         type="button"
                         onClick={() => setAgendaView('month')}
-                        className={`px-2.5 py-1 text-caption rounded transition-colors ${agendaView === 'month' ? 'bg-primary-soft text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+                        className={`px-2.5 py-1 text-caption rounded transition-colors -m-2 p-2 ${agendaView === 'month' ? 'bg-primary-soft text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`}
                     >
                         {t('dashboard:today.viewMonth')}
                     </button>
@@ -416,7 +416,7 @@ const Dashboard: React.FC = () => {
                 onClick={() => navigate('/shopping')}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && navigate('/shopping')}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/shopping'); } }}
             >
                 <div className="flex items-center justify-between mb-3">
                     <span className="text-micro uppercase tracking-[0.04em] text-muted-foreground flex items-center gap-2">
@@ -436,7 +436,7 @@ const Dashboard: React.FC = () => {
                     onClick={() => navigate('/budget')}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && navigate('/budget')}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/budget'); } }}
                 >
                     <div className="flex items-center justify-between mb-3">
                         <span className="text-micro uppercase tracking-[0.04em] text-muted-foreground flex items-center gap-2">
@@ -456,7 +456,7 @@ const Dashboard: React.FC = () => {
                 onClick={() => navigate('/tasks')}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && navigate('/tasks')}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/tasks'); } }}
             >
                 <div className="flex items-center justify-between mb-3">
                     <span className="text-micro uppercase tracking-[0.04em] text-muted-foreground flex items-center gap-2">
@@ -924,9 +924,9 @@ const Dashboard: React.FC = () => {
                     <p className="text-micro uppercase tracking-[0.16em] text-muted-foreground mb-2 first-letter:uppercase">
                         {today}
                     </p>
-                    <h1 className="font-serif text-display text-foreground">
+                    <h2 className="font-serif text-display text-foreground">
                         {t('dashboard:heading.before')}<em className="italic text-primary">{t('dashboard:heading.highlight')}</em>{t('dashboard:heading.after')}
-                    </h1>
+                    </h2>
                 </div>
                 <Button
                     variant="secondary"
@@ -1043,7 +1043,7 @@ const Dashboard: React.FC = () => {
                                             onClick={() => moveWidget(key, -1)}
                                             disabled={index === 0}
                                             title={t('dashboard:customize.moveUp')}
-                                            className="p-1 rounded hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                                            className="-m-2 p-2 rounded hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed"
                                         >
                                             <ArrowUp className="h-4 w-4 text-muted-foreground" />
                                         </button>
@@ -1052,7 +1052,7 @@ const Dashboard: React.FC = () => {
                                             onClick={() => moveWidget(key, 1)}
                                             disabled={index === prefs.order.length - 1}
                                             title={t('dashboard:customize.moveDown')}
-                                            className="p-1 rounded hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                                            className="-m-2 p-2 rounded hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed"
                                         >
                                             <ArrowDown className="h-4 w-4 text-muted-foreground" />
                                         </button>
@@ -1061,7 +1061,7 @@ const Dashboard: React.FC = () => {
                                             onClick={() => toggleWidget(key)}
                                             disabled={unavailable}
                                             title={hidden ? t('dashboard:customize.show') : t('dashboard:customize.hide')}
-                                            className="p-1 rounded hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                                            className="-m-2 p-2 rounded hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed"
                                         >
                                             {hidden
                                                 ? <EyeOff className="h-4 w-4 text-muted-foreground" />

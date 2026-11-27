@@ -33,6 +33,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     max,
     className,
 }) => {
+    const dpId = label?.toLowerCase().replace(/\s+/g, '-') || 'datepicker';
     if (type === 'datetime-local') {
         const { date, time } = parseDateTimeValue(value);
         // Local date — toISOString() would give the UTC day, which is wrong near
@@ -44,12 +45,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         return (
             <div className="w-full">
                 {label && (
-                    <label className="mb-1.5 block text-caption font-medium text-foreground">
+                    <label htmlFor={dpId} className="mb-1.5 block text-caption font-medium text-foreground">
                         {label}
                     </label>
                 )}
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <input
+                        id={dpId}
                         type="date"
                         value={date}
                         onChange={(e) => {
@@ -90,11 +92,12 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     return (
         <div className="w-full">
             {label && (
-                <label className="mb-1.5 block text-caption font-medium text-foreground">
+                <label htmlFor={dpId} className="mb-1.5 block text-caption font-medium text-foreground">
                     {label}
                 </label>
             )}
             <input
+                id={dpId}
                 type={type}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}

@@ -100,7 +100,7 @@ export const ReminderPicker: React.FC<ReminderPickerProps> = ({ value, onChange,
                                 onClick={() => onChange(value.filter((m) => m !== minutes))}
                                 aria-label={t('calendar:reminders.remove', { reminder: label(minutes) })}
                                 title={t('calendar:reminders.remove', { reminder: label(minutes) })}
-                                className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-primary/10"
+                                className="flex -m-2 h-7 w-7 p-2 items-center justify-center rounded-full hover:bg-primary/10"
                             >
                                 <X className="h-3.5 w-3.5" />
                             </button>
@@ -139,10 +139,10 @@ export const ReminderPicker: React.FC<ReminderPickerProps> = ({ value, onChange,
                         <span className="text-caption text-muted-foreground">{t('calendar:reminders.beforeSuffix')}</span>
                     </div>
                     <div className="flex gap-2">
-                        <button type="button" onClick={addCustom} className="rounded-input bg-primary px-3 py-1.5 text-caption font-medium text-white hover:opacity-90">
+                        <button type="button" onClick={addCustom} className="rounded-input bg-primary -m-2 px-3 p-2 py-1.5 text-caption font-medium text-white hover:opacity-90">
                             {t('calendar:reminders.addThis')}
                         </button>
-                        <button type="button" onClick={() => { setCustomOpen(false); setCustomError(''); }} className="rounded-input px-3 py-1.5 text-caption text-muted-foreground hover:bg-surface-2">
+                        <button type="button" onClick={() => { setCustomOpen(false); setCustomError(''); }} className="rounded-input -m-2 px-3 p-2 py-1.5 text-caption text-muted-foreground hover:bg-surface-2">
                             {t('common:actions.cancel')}
                         </button>
                     </div>

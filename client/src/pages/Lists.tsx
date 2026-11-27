@@ -391,7 +391,7 @@ const ListsHome: React.FC = () => {
             ) : null}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-h1 mb-1">{t('lists:title')}</h1>
+                    <h2 className="text-h1 mb-1">{t('lists:title')}</h2>
                     <p className="text-muted-foreground text-body">{t('lists:subtitle')}</p>
                 </div>
                 {isParent && (
@@ -774,7 +774,7 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
                 </button>
                 <span className="text-3xl" aria-hidden="true">{list?.icon ?? '📝'}</span>
                 <div className="min-w-0 flex-1">
-                    <h1 className="text-h1 truncate">{list?.name ?? '…'}</h1>
+                    <h2 className="text-h1 truncate">{list?.name ?? '…'}</h2>
                     <p className="text-micro text-muted-foreground">
                         {t('lists:counts.items', { count: items.length })}
                     </p>
@@ -792,7 +792,7 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
                         title={`${t('lists:list.showChecked')} — ${showChecked ? t('common:states.on') : t('common:states.off')}`}
                         onClick={toggleShowChecked}
                         className={cn(
-                            'relative h-7 w-12 shrink-0 rounded-full transition-colors',
+                            'relative -m-2 h-7 w-12 shrink-0 rounded-full p-2 transition-colors',
                             showChecked ? 'bg-primary' : 'border border-border bg-surface-2'
                         )}
                     >

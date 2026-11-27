@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import * as ToastPrimitive from '@radix-ui/react-toast';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ToastItem {
     id: string;
@@ -17,6 +18,7 @@ interface ToastContextType {
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export const AppToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { t } = useTranslation('common');
     const [toasts, setToasts] = useState<ToastItem[]>([]);
 
     const showToast = useCallback((toast: Omit<ToastItem, 'id'>) => {
@@ -66,8 +68,12 @@ export const AppToastProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                                 </ToastPrimitive.Action>
                             ) : null}
 
-                            <ToastPrimitive.Close className="rounded-input p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                            <ToastPrimitive.Close
+                                aria-label={t('common:actions.close')}
+                                className="rounded-input p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                            >
                                 <X className="h-4 w-4" />
+                                <span className="sr-only">{t('common:actions.close')}</span>
                             </ToastPrimitive.Close>
                         </div>
                     </ToastPrimitive.Root>

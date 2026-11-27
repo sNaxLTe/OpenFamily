@@ -48,7 +48,7 @@ function App() {
 
     if (loading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-background">
+            <div className="flex min-h-screen items-center justify-center bg-background" role="status" aria-live="polite" aria-busy="true">
                 <div className="flex flex-col items-center gap-3">
                     <div className="spinner-brand" />
                     <p className="text-caption text-muted-foreground">{t('states.loading')}</p>

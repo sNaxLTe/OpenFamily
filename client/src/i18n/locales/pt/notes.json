@@ -31,5 +31,6 @@
     "minutes": "há {{count}} min",
     "hours": "há {{count}} h",
     "days": "há {{count}} d"
-  }
+  },
+  "confirmDelete": "Excluir esta nota?"
 }

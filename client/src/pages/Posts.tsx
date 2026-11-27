@@ -298,9 +298,9 @@ const Posts: React.FC = () => {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="font-serif text-h1">
+                <h2 className="font-serif text-h1">
                     {t('posts.title')}
-                </h1>
+                </h2>
                 <p className="mt-1 text-body text-muted-foreground">
                     {t('posts.subtitle')}
                 </p>

@@ -164,5 +164,7 @@
       "nameRequired": "El nombre de la tienda es obligatorio.",
       "saveItem": "No se pudo mover este artículo."
     }
-  }
+  },
+  "confirmDeleteItem": "¿Eliminar este artículo?",
+  "confirmClearChecked": "¿Vaciar todos los artículos marcados?"
 }

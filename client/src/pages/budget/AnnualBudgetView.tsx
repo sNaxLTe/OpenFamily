@@ -279,7 +279,7 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
     ] : [];
 
     return (
-        <div className="px-4 pt-4 [&>*]:mb-3 [&>*]:break-inside-avoid xl:columns-2 xl:gap-6">
+        <div className="pt-4 [&>*]:mb-3 [&>*]:break-inside-avoid xl:columns-2 xl:gap-6">
 
             {!hasData && (
                 <p className="rounded-card border border-dashed border-border p-6 text-center text-sm text-muted-foreground">

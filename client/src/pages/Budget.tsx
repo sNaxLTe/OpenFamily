@@ -718,7 +718,7 @@ const Budget: React.FC = () => {
         <div className="mx-auto max-w-2xl pb-24 xl:max-w-6xl">
 
             {/* E1 tab bar: Budget / Récurrents / Kakeibo / Explorateur (4 tabs) */}
-            <div className="sticky top-0 z-10 border-b border-border bg-background/80 px-4 py-2 backdrop-blur-md">
+            <div className="sticky top-0 z-10 border-b border-border bg-background/80 py-2 backdrop-blur-md">
                 <div className="flex flex-wrap gap-1 rounded-input border border-border bg-surface-2 p-1" role="tablist" aria-label={t('budget:tabs.label')}>
                     <button
                         type="button"
@@ -796,7 +796,7 @@ const Budget: React.FC = () => {
                     </button>
                 </div>
             </div>
-            <div className="flex items-center justify-between px-4 py-1.5">
+            <div className="flex items-center justify-between py-1.5">
                 <button
                     onClick={() => (view === 'month' ? navigateMonth(-1) : navigateYear(-1))}
                     aria-label={t('budget:prevMonth')}
@@ -822,7 +822,7 @@ const Budget: React.FC = () => {
 
             {/* Report explorer (feature 10): read-only, its own range controls */}
             {mode === 'explorer' && (
-                <div className="px-4 pt-4">
+                <div className="pt-4">
                     <ReportExplorer currency={currency} categoryLabel={categoryLabel} />
                 </div>
             )}
@@ -831,7 +831,7 @@ const Budget: React.FC = () => {
                 active and ended — with next occurrence and pointing of the
                 current-month occurrence. Read-only for children, like the rest. */}
             {mode === 'recurring' && (
-                <div className="px-4 pt-4 space-y-3">
+                <div className="pt-4 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs bg-surface-2 text-muted-foreground px-2 py-1 rounded-full">
                             {t('budget:recurring.registry.activeCount', { number: activeSeriesCount })}
@@ -932,7 +932,7 @@ const Budget: React.FC = () => {
             )}
 
             {mode === 'kakeibo' && view === 'year' && (
-                <div className="px-4 pt-3 xl:mx-auto xl:max-w-3xl">
+                <div className="pt-3 xl:mx-auto xl:max-w-3xl">
                     <KakeiboAnnualView
                         year={currentYear}
                         canEdit={canEdit}
@@ -943,7 +943,7 @@ const Budget: React.FC = () => {
             )}
 
             {mode === 'kakeibo' && view === 'month' && (
-                <div className="px-4 pt-3 xl:mx-auto xl:max-w-3xl">
+                <div className="pt-3 xl:mx-auto xl:max-w-3xl">
                     <KakeiboView
                         month={currentMonth}
                         year={currentYear}
@@ -985,7 +985,7 @@ const Budget: React.FC = () => {
             )}
 
 
-            <div className="px-4 pt-4 [&>*]:mb-3 [&>*]:break-inside-avoid xl:columns-2 xl:gap-6" style={{ display: mode === 'budget' && !showAnnual ? undefined : 'none' }}>
+            <div className="pt-4 [&>*]:mb-3 [&>*]:break-inside-avoid xl:columns-2 xl:gap-6" style={{ display: mode === 'budget' && !showAnnual ? undefined : 'none' }}>
 
                 {/* Bannière lecture seule (enfant) */}
                 {!canEdit && (

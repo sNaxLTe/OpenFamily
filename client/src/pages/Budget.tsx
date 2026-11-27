@@ -13,6 +13,7 @@ import {
 import KakeiboView from './budget/KakeiboView';
 import KakeiboAnnualView from './budget/KakeiboAnnualView';
 import AnnualBudgetView from './budget/AnnualBudgetView';
+import QuickEntrySheet from './budget/QuickEntrySheet';
 import ReportExplorer from './budget/ReportExplorer';
 import PaperlessPicker, { PaperlessPrefill } from './budget/PaperlessPicker';
 import { Sheet, Field, CategorySelect, RecurringCard, type RecurringTransaction } from './budget/budgetParts';
@@ -23,7 +24,7 @@ import {
 import ChartCard from '../components/app/ChartCard';
 import { buildHero } from '../lib/budgetHero';
 import { format, parseISO } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { dateLocale } from '../i18n/format';
 
@@ -174,6 +175,9 @@ const Budget: React.FC = () => {
     const [limits, setLimits] = useState<BudgetLimit[]>([]);
 
     const [sheetTransaction, setSheetTransaction] = useState(false);
+    // E3: quick-entry sheet, opened by the /budget?new=1 deep link (FAB and home card).
+    const [sheetQuick, setSheetQuick] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
     const [sheetLimit, setSheetLimit] = useState(false);
     const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
     const [editingEntry, setEditingEntry] = useState<BudgetEntry | null>(null);
@@ -297,6 +301,38 @@ const Budget: React.FC = () => {
     }, [loadAll, loadSeries, mode]);
 
     useEffect(() => { void loadAll(); }, [loadAll]);
+
+    // E3: deep link /budget?new=1 opens the quick-entry sheet (parents only),
+    // then the param is cleaned so a refresh does not reopen it.
+    useEffect(() => {
+        if (searchParams.get('new') === '1') {
+            setSearchParams({}, { replace: true });
+            if (canEdit) setSheetQuick(true);
+        }
+    }, [searchParams, setSearchParams, canEdit]);
+
+    // E3: "plus d'options" of the quick sheet hands the draft to the full form.
+    const openFullFromQuick = (draft: { amount: string; category: string; date: string }) => {
+        setSheetQuick(false);
+        setEditingRecurring(null);
+        setEditingEntry(null);
+        setTransactionAddToCalendar(false);
+        setReminderDays('');
+        setPaperlessTitle('');
+        setTransactionForm({
+            description: '',
+            amount: draft.amount,
+            category: draft.category,
+            date: draft.date,
+            is_expense: true,
+            recurrence_frequency: 'none',
+            recurrence_interval: '1',
+            recurrence_until: '',
+            paperless_document_id: null,
+        });
+        setFormError('');
+        setSheetTransaction(true);
+    };
     // Load the registry only when its tab is opened (or refreshed by a WS push).
     useEffect(() => {
         if (mode === 'recurring') void loadSeries();
@@ -923,8 +959,11 @@ const Budget: React.FC = () => {
                 <div className="px-4 pt-4 flex justify-end">
                     <button
                         type="button"
-                        onClick={openNewTransaction}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white active:scale-95 transition-transform"
+                        // E3: on the Budget tab the FAB opens the quick entry
+                        // through the /budget?new=1 deep link; on Récurrents it
+                        // keeps opening the full form (series creation).
+                        onClick={() => (mode === 'budget' ? setSearchParams({ new: '1' }) : openNewTransaction())}
+                        className="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white active:scale-95 transition-transform"
                     >
                         <Plus className="w-4 h-4" />
                         {t('common:actions.add')}
@@ -1165,6 +1204,18 @@ const Budget: React.FC = () => {
                 </section>
 
             </div>
+
+            {/* E3: quick-entry sheet (/budget?new=1) */}
+            <QuickEntrySheet
+                open={sheetQuick}
+                onClose={() => {
+                    setSheetQuick(false);
+                    setSearchParams({}, { replace: true });
+                }}
+                currency={currency}
+                onSaved={refreshBudget}
+                onMoreOptions={openFullFromQuick}
+            />
 
             {/* Unified Budget entry sheet */}
             <Sheet

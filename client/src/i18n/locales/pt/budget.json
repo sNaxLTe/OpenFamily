@@ -45,12 +45,10 @@
     "none": "Nenhum limite definido"
   },
   "sections": {
-    "recurring": "Lançamentos recorrentes",
     "expenses": "Despesas",
     "income": "Receitas"
   },
   "recurring": {
-    "empty": "Nenhum lançamento recorrente neste mês",
     "markOn": "Marcar como conciliado",
     "markOff": "Desmarcar",
     "dayPrefix": "dia",
@@ -295,5 +293,10 @@
     "paperlessLinked": "Documento do Paperless vinculado"
   },
   "prevMonth": "Mês anterior",
-  "nextMonth": "Próximo mês"
+  "nextMonth": "Próximo mês",
+  "quick": {
+    "title": "Entrada rápida",
+    "moreOptions": "Mais opções",
+    "openFullForm": "Abrir o formulário completo"
+  }
 }

@@ -45,8 +45,10 @@ export const Sheet: React.FC<{
     open: boolean; onClose: () => void; title: string; children: React.ReactNode;
     /** Default true: outside tap + back/swipe-back close the sheet. false on editing sheets (unsaved input): outside tap ignored, back consumed silently; X and Escape still close. */
     dismissible?: boolean;
+    /** When set, focus lands on this element instead of the title at opening (e.g. the amount field of the quick-entry sheet). */
+    focusRef?: React.RefObject<HTMLElement | null>;
 }> = ({
-    open, onClose, title, children, dismissible = true
+    open, onClose, title, children, dismissible = true, focusRef
 }) => {
     const { t } = useTranslation('common');
     const titleRef = useRef<HTMLHeadingElement>(null);
@@ -70,7 +72,8 @@ export const Sheet: React.FC<{
             if (e.key === 'Escape') onCloseRef.current();
         };
         window.addEventListener('keydown', onKey);
-        titleRef.current?.focus();
+        if (focusRef?.current) focusRef.current.focus();
+        else titleRef.current?.focus();
         return () => window.removeEventListener('keydown', onKey);
     }, [open]);
 

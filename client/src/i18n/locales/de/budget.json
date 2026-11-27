@@ -45,12 +45,10 @@
     "none": "Kein Limit festgelegt"
   },
   "sections": {
-    "recurring": "Wiederkehrende Posten",
     "expenses": "Ausgaben",
     "income": "Einnahmen"
   },
   "recurring": {
-    "empty": "Keine wiederkehrenden Posten diesen Monat",
     "markOn": "Als abgehakt markieren",
     "markOff": "Haken entfernen",
     "dayPrefix": "Tag",
@@ -295,5 +293,10 @@
     "paperlessLinked": "Paperless-Dokument verknüpft"
   },
   "prevMonth": "Vorheriger Monat",
-  "nextMonth": "Nächster Monat"
+  "nextMonth": "Nächster Monat",
+  "quick": {
+    "title": "Schnelleingabe",
+    "moreOptions": "Weitere Optionen",
+    "openFullForm": "Vollständiges Formular öffnen"
+  }
 }

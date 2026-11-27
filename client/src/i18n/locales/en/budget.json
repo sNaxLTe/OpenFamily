@@ -45,12 +45,10 @@
     "none": "No limit set"
   },
   "sections": {
-    "recurring": "Recurring entries",
     "expenses": "Expenses",
     "income": "Income"
   },
   "recurring": {
-    "empty": "No recurring entries this month",
     "markOn": "Mark as reconciled",
     "markOff": "Unmark",
     "dayPrefix": "day",
@@ -295,5 +293,10 @@
     "paperlessLinked": "Paperless document linked"
   },
   "prevMonth": "Previous month",
-  "nextMonth": "Next month"
+  "nextMonth": "Next month",
+  "quick": {
+    "title": "Quick entry",
+    "moreOptions": "More options",
+    "openFullForm": "Open the full form"
+  }
 }

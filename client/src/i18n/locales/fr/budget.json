@@ -45,12 +45,10 @@
     "none": "Aucun plafond défini"
   },
   "sections": {
-    "recurring": "Écritures récurrentes",
     "expenses": "Dépenses",
     "income": "Revenus"
   },
   "recurring": {
-    "empty": "Aucune écriture récurrente ce mois",
     "markOn": "Marquer comme rapproché",
     "markOff": "Dépointer",
     "dayPrefix": "j.",
@@ -295,5 +293,10 @@
     "paperlessLinked": "Document Paperless lié"
   },
   "prevMonth": "Mois précédent",
-  "nextMonth": "Mois suivant"
+  "nextMonth": "Mois suivant",
+  "quick": {
+    "title": "Saisie rapide",
+    "moreOptions": "Plus d'options",
+    "openFullForm": "Ouvrir le formulaire complet"
+  }
 }

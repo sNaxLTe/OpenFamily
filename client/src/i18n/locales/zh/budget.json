@@ -45,12 +45,10 @@
     "none": "未设置限额"
   },
   "sections": {
-    "recurring": "定期收支",
     "expenses": "支出",
     "income": "收入"
   },
   "recurring": {
-    "empty": "本月没有定期收支",
     "markOn": "标记为已核对",
     "markOff": "取消标记",
     "dayPrefix": "每月",
@@ -291,5 +289,10 @@
     "paperlessLinked": "已关联 Paperless 文档"
   },
   "prevMonth": "上个月",
-  "nextMonth": "下个月"
+  "nextMonth": "下个月",
+  "quick": {
+    "title": "快速录入",
+    "moreOptions": "更多选项",
+    "openFullForm": "打开完整表单"
+  }
 }

@@ -49,12 +49,10 @@
     "none": "Лимит не задан"
   },
   "sections": {
-    "recurring": "Регулярные",
     "expenses": "Расходы",
     "income": "Доходы"
   },
   "recurring": {
-    "empty": "Нет регулярных списаний",
     "markOn": "Отметить списанным",
     "markOff": "Снять отметку",
     "dayPrefix": "день",
@@ -307,5 +305,10 @@
     "paperlessLinked": "Документ Paperless привязан"
   },
   "prevMonth": "Предыдущий месяц",
-  "nextMonth": "Следующий месяц"
+  "nextMonth": "Следующий месяц",
+  "quick": {
+    "title": "Быстрый ввод",
+    "moreOptions": "Ещё параметры",
+    "openFullForm": "Открыть полную форму"
+  }
 }

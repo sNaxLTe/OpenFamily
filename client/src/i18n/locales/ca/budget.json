@@ -45,12 +45,10 @@
     "none": "No s'ha definit cap límit"
   },
   "sections": {
-    "recurring": "Moviments recurrents",
     "expenses": "Despeses",
     "income": "Ingressos"
   },
   "recurring": {
-    "empty": "Aquest mes no hi ha moviments recurrents",
     "markOn": "Marca com a conciliat",
     "markOff": "Desmarca",
     "dayPrefix": "dia",
@@ -295,5 +293,10 @@
     "paperlessLinked": "Document de Paperless vinculat"
   },
   "prevMonth": "Mes anterior",
-  "nextMonth": "Mes següent"
+  "nextMonth": "Mes següent",
+  "quick": {
+    "title": "Entrada ràpida",
+    "moreOptions": "Més opcions",
+    "openFullForm": "Obre el formulari complet"
+  }
 }

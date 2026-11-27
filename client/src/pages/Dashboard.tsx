@@ -8,7 +8,7 @@ import { dateLocale, formatDateTime, formatTime, intlLocale, isoWeekdayAtOffset,
 import {
     ShoppingCart, CheckSquare, Calendar, Wallet, AlertCircle, ChevronRight, Clock,
     SlidersHorizontal, Eye, EyeOff, ArrowUp, ArrowDown, CalendarDays,
-    Cake, Refrigerator, UtensilsCrossed,
+    Cake, Refrigerator, UtensilsCrossed, Plus,
 } from 'lucide-react';
 import { addDays, differenceInCalendarDays, format, isSameDay, startOfWeek } from 'date-fns';
 import { Button } from '../components/ui/Button';
@@ -448,6 +448,25 @@ const Dashboard: React.FC = () => {
                         {formatCurrency(Number(stats?.thisMonthExpenses ?? 0), currency)}
                     </p>
                     <p className="text-caption text-muted-foreground mt-1">{t('dashboard:aside.budgetSubtitle')}</p>
+                </div>
+            )}
+
+            {/* E4: quick action "saisir une dépense" -> /budget?new=1 (sheet 4 champs) */}
+            {isModuleEnabled('budget') && (
+                <div
+                    className="rounded-card border border-primary/40 bg-primary/5 p-5 cursor-pointer hover:bg-primary/10 transition-colors"
+                    onClick={() => navigate('/budget?new=1')}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={t('dashboard:aside.addExpense')}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/budget?new=1'); } }}
+                >
+                    <div className="flex min-h-11 items-center justify-between gap-2">
+                        <span className="text-micro uppercase tracking-[0.04em] text-primary flex items-center gap-2 font-medium">
+                            <Plus className="h-4 w-4" /> {t('dashboard:aside.addExpense')}
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-primary" />
+                    </div>
                 </div>
             )}
 

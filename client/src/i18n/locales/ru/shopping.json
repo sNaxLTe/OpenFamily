@@ -174,5 +174,8 @@
     }
   },
   "confirmDeleteItem": "Удалить этот товар?",
-  "confirmClearChecked": "Очистить все отмеченные?"
+  "confirmClearChecked": "Очистить все отмеченные?",
+  "item": {
+    "toggleDetails": "Показать или скрыть детали для «{{name}}»"
+  }
 }

@@ -166,5 +166,8 @@
     }
   },
   "confirmDeleteItem": "删除此条目？",
-  "confirmClearChecked": "清空所有已勾选？"
+  "confirmClearChecked": "清空所有已勾选？",
+  "item": {
+    "toggleDetails": "显示或隐藏“{{name}}”的详情"
+  }
 }

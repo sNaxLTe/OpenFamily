@@ -1571,7 +1571,7 @@ const Calendar: React.FC = () => {
                         <div className="flex flex-wrap gap-2">
                             {(() => {
                                 const effectiveNorm = effectiveColor.trim().toLowerCase();
-                                const swatches = [...APPOINTMENT_COLORS];
+                                const swatches: Array<{ name: string; color: string }> = [...APPOINTMENT_COLORS];
                                 if (!swatches.some((s) => s.color.trim().toLowerCase() === effectiveNorm)) {
                                     // Couleur suivie hors palette (couleur de l'assigné) :
                                     // pastille dynamique pour rendre l'état actif visible.

@@ -166,5 +166,8 @@
     }
   },
   "confirmDeleteItem": "Supprimer cet article ?",
-  "confirmClearChecked": "Vider tous les articles cochés ?"
+  "confirmClearChecked": "Vider tous les articles cochés ?",
+  "item": {
+    "toggleDetails": "Afficher ou masquer les détails de « {{name}} »"
+  }
 }

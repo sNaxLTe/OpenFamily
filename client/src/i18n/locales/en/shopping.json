@@ -166,5 +166,8 @@
     }
   },
   "confirmDeleteItem": "Delete this item?",
-  "confirmClearChecked": "Clear all checked items?"
+  "confirmClearChecked": "Clear all checked items?",
+  "item": {
+    "toggleDetails": "Show or hide details for “{{name}}”"
+  }
 }

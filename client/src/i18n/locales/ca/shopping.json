@@ -166,5 +166,8 @@
     }
   },
   "confirmDeleteItem": "Eliminar aquest article?",
-  "confirmClearChecked": "Buidar tots els articles marcats?"
+  "confirmClearChecked": "Buidar tots els articles marcats?",
+  "item": {
+    "toggleDetails": "Mostra o amaga els detalls de «{{name}}»"
+  }
 }

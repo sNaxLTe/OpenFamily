@@ -166,5 +166,8 @@
     }
   },
   "confirmDeleteItem": "Diesen Artikel löschen?",
-  "confirmClearChecked": "Alle abgehakten Artikel entfernen?"
+  "confirmClearChecked": "Alle abgehakten Artikel entfernen?",
+  "item": {
+    "toggleDetails": "Details für „{{name}}“ ein-/ausblenden"
+  }
 }

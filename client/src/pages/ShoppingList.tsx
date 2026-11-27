@@ -6,7 +6,7 @@ import { api } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { cn, formatCurrency } from '../lib/utils';
 import { intlLocale } from '../i18n/format';
-import { Plus, Trash2, Check, ShoppingBag, Save, ListChecks, Store, ChevronLeft, Minus, MoreVertical, Pencil, X } from 'lucide-react';
+import { Plus, Trash2, Check, ShoppingBag, Save, ListChecks, Store, ChevronLeft, ChevronDown, Minus, MoreVertical, Pencil, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -272,6 +272,8 @@ const ShoppingList: React.FC = () => {
     // Which item's quantity is being edited inline, and the value being typed.
     const [editingQuantityId, setEditingQuantityId] = useState<string | null>(null);
     const [quantityDraft, setQuantityDraft] = useState('');
+    // D2: panneau de détails de l'item (catégorie/qteo/prix) replié par défaut.
+    const [expandedItems, setExpandedItems] = useState<ReadonlySet<string>>(new Set());
 
     useEffect(() => {
         void Promise.all([loadItems(), loadTemplates(), loadStores()]).finally(() => setLoading(false));
@@ -1016,7 +1018,9 @@ const ShoppingList: React.FC = () => {
                     </div>
                 ) : (
                     <>
-                        {pendingItems.map((item) => (
+                        {pendingItems.map((item) => {
+                            const expanded = expandedItems.has(item.id);
+                            return (
                             <div
                                 key={item.id}
                                 className="group flex items-center gap-4 rounded-card border border-border bg-card p-4 shadow-surface transition-all duration-fast ease-soft hover:border-border-strong"
@@ -1032,8 +1036,34 @@ const ShoppingList: React.FC = () => {
                                 </button>
 
                                 <div className="min-w-0 flex-1">
-                                    <p className="truncate text-body font-medium text-foreground">{item.name}</p>
-                                    <div className="mt-1 flex flex-wrap items-center gap-2 text-micro">
+                                    <div className="flex items-center gap-1">
+                                        <p className="truncate text-body font-medium text-foreground">{item.name}</p>
+                                        <button
+                                            type="button"
+                                            aria-expanded={expanded}
+                                            aria-controls={`item-details-${item.id}`}
+                                            aria-label={t('shopping:item.toggleDetails', { name: item.name })}
+                                            onClick={() => {
+                                                const willCollapse = expanded;
+                                                if (willCollapse && editingQuantityId === item.id) {
+                                                    // D2: pas de perte de saisie au repli — on valide
+                                                    // le brouillon comme le blur de l'input.
+                                                    void setItemQuantity(item, quantityDraft);
+                                                    setEditingQuantityId(null);
+                                                }
+                                                setExpandedItems((prev) => {
+                                                    const next = new Set(prev);
+                                                    if (willCollapse) next.delete(item.id); else next.add(item.id);
+                                                    return next;
+                                                });
+                                            }}
+                                            className="-m-3 p-3 text-muted-foreground hover:text-foreground"
+                                        >
+                                            <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? '' : '-rotate-90'}`} />
+                                        </button>
+                                    </div>
+                                    {expanded && (
+                                    <div id={`item-details-${item.id}`} className="mt-1 flex flex-wrap items-center gap-2 text-micro">
                                         <span className="rounded-pill bg-primary-soft px-2 py-0.5 text-primary">{categoryLabel(item.category)}</span>
 
                                         {editingQuantityId === item.id ? (
@@ -1099,6 +1129,7 @@ const ShoppingList: React.FC = () => {
 
                                         {item.price ? <span className="text-muted-foreground">{formatCurrency(Number(item.price), currency)}</span> : null}
                                     </div>
+                                    )}
                                 </div>
 
                                 <Button
@@ -1120,7 +1151,8 @@ const ShoppingList: React.FC = () => {
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             </div>
-                        ))}
+                            );
+                        })}
 
                         {completedItems.length > 0 ? (
                             <div className="rounded-card border border-dashed border-border bg-muted/20 p-4">

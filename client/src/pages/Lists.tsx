@@ -538,7 +538,8 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
     const [editCategory, setEditCategory] = useState('');
     const [editCategoryCustom, setEditCategoryCustom] = useState('');
     // Category rename sheet
-    const [renameCat, setRenameCat] = useState<string | null>(null);
+    // { from } plutôt que string|null brut : null = sheet fermé, { from: null } = seau « Sans catégorie ».
+    const [renameCat, setRenameCat] = useState<{ from: string | null } | null>(null);
     const [renameCatTo, setRenameCatTo] = useState('');
 
     const load = async () => {
@@ -724,7 +725,7 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
             return;
         }
         try {
-            await api.put(`/api/lists/${listId}/category`, { from: renameCat, to });
+            await api.put(`/api/lists/${listId}/category`, { from: renameCat.from, to });
             setRenameCat(null);
             showToast({ title: t('lists:list.renameCategory.toast', { to }) });
             await load();
@@ -879,7 +880,7 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
                                                     key: 'rename',
                                                     label: t('lists:list.categoryMenu.rename'),
                                                     icon: <Pencil className="h-4 w-4" />,
-                                                    onClick: () => { setRenameCat(group.name); setRenameCatTo(group.name ?? ''); },
+                                                    onClick: () => { setRenameCat({ from: group.name }); setRenameCatTo(group.name ?? ''); },
                                                 },
                                                 ...(group.name !== null ? [{
                                                     key: 'delete' as const,
@@ -1008,7 +1009,7 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
                 open={renameCat !== null}
                 dismissible={false}
                 onClose={() => setRenameCat(null)}
-                title={t('lists:list.renameCategory.title', { from: renameCat ?? t('lists:list.category.none') })}
+                title={t('lists:list.renameCategory.title', { from: renameCat?.from ?? t('lists:list.category.none') })}
             >
                 <form onSubmit={handleRenameCategory} className="space-y-4">
                     <Input

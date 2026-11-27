@@ -47,13 +47,13 @@ interface LayoutProps {
 
 const quickActions: { labelKey: string; href: string; icon: typeof Home; module?: string }[] = [
     { labelKey: 'quickActions.addShopping', href: '/shopping', icon: ShoppingCart },
-    { labelKey: 'quickActions.addTask', href: '/tasks', icon: CheckSquare },
+    { labelKey: 'quickActions.addTask', href: '/tasks?new=1', icon: CheckSquare },
     { labelKey: 'quickActions.addPost', href: '/posts', icon: MessageSquare },
-    { labelKey: 'quickActions.addAppointment', href: '/calendar', icon: CalendarIcon },
+    { labelKey: 'quickActions.addAppointment', href: '/calendar?new=1', icon: CalendarIcon },
     { labelKey: 'quickActions.addSchedule', href: '/planning', icon: CalendarDays, module: 'planning' },
     { labelKey: 'quickActions.addRecipe', href: '/recipes', icon: ChefHat, module: 'recipes' },
     { labelKey: 'quickActions.addMeal', href: '/meal-planning', icon: UtensilsCrossed, module: 'meals' },
-    { labelKey: 'quickActions.addExpense', href: '/budget', icon: Wallet, module: 'budget' },
+    { labelKey: 'quickActions.addExpense', href: '/budget?new=1', icon: Wallet, module: 'budget' },
     { labelKey: 'quickActions.addMember', href: '/family', icon: Users },
 ];
 

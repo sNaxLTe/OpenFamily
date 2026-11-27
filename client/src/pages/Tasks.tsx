@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { useWebSocketUpdates } from '../hooks/useWebSocketUpdates';
 import { useAuth } from '../contexts/AuthContext';
 import { useCategories } from '../hooks/useCategories';
@@ -231,6 +232,24 @@ const Tasks: React.FC = () => {
         loadStats();
     }, []);
     useWebSocketUpdates('tasks', () => { void loadTasks(); void loadStats(); });
+
+    // E6: deep link /tasks?new=1 (bouton + flottant « Ajouter une tâche ») opens
+    // the creation dialog directly, focus on the title. The param is purged
+    // with replace so back/refresh never reopens it. Same mechanics as
+    // /budget?new=1.
+    const [searchParams, setSearchParams] = useSearchParams();
+    useEffect(() => {
+        if (searchParams.get('new') !== '1') return;
+        setSearchParams({}, { replace: true });
+        if (!isParent) return;
+        resetForm();
+        setDialogOpen(true);
+        const t = setTimeout(() => {
+            document.querySelector<HTMLElement>('[role="dialog"] form input')?.focus();
+        }, 150);
+        return () => clearTimeout(t);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams, setSearchParams, isParent]);
 
     const loadTasks = async () => {
         try {

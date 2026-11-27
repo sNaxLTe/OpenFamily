@@ -10,7 +10,7 @@ import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Edit2, Trash
 import { Card, CardContent, Button, Dialog, Input, Textarea, Badge, Select, DatePicker } from '../components/ui';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths, addDays, startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { dateLocale, formatTime, orderIsoWeekdays, weekStartsOn } from '../i18n/format';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCategories } from '../hooks/useCategories';
 import ReminderPicker, { reminderMinutesOf } from '../components/app/ReminderPicker';
@@ -647,6 +647,23 @@ const Calendar: React.FC = () => {
         }));
         setDialogOpen(true);
     };
+
+    // E6: deep link /calendar?new=1 (bouton + flottant « Ajouter un rendez-vous »)
+    // opens the editor directly on the current day, focus on the title. The
+    // param is purged with replace so back/refresh never reopens it. Same
+    // mechanics as /budget?new=1.
+    const [searchParams, setSearchParams] = useSearchParams();
+    useEffect(() => {
+        if (searchParams.get('new') !== '1') return;
+        setSearchParams({}, { replace: true });
+        if (!(Boolean(user?.is_owner) || (user?.role ?? '').toLowerCase() !== 'enfant')) return;
+        openNewEventForDate(new Date());
+        const t = setTimeout(() => {
+            document.querySelector<HTMLElement>('[role="dialog"] input[role="combobox"]')?.focus();
+        }, 150);
+        return () => clearTimeout(t);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams, setSearchParams, user]);
 
     // Feature 7: a click on a day opens its detail panel directly, whether or
     // not the day has appointments — the "+" button is inside the panel.

@@ -7,6 +7,7 @@ import {
     Sun, Moon, CloudSun, CloudMoon, Cloud, CloudFog, CloudDrizzle, CloudRain, CloudSnow, CloudLightning,
 } from 'lucide-react';
 import { api } from '../lib/api';
+import { useHistoryAwareOverlay } from '../lib/useHistoryAwareOverlay';
 import { useWebSocketUpdates } from '../hooks/useWebSocketUpdates';
 import { useAuth } from '../contexts/AuthContext';
 import { formatTime, intlLocale, weekStartsOn } from '../i18n/format';
@@ -176,6 +177,15 @@ const Kiosk: React.FC = () => {
     // Per-device settings + weather + photo background
     const [settings, setSettings] = useState<KioskSettings>(loadKioskSettings);
     const [settingsOpen, setSettingsOpen] = useState(false);
+    // B1: settings overlay is protected — back/swipe-back consumed silently,
+    // backdrop tap no longer closes; X or Escape only.
+    useHistoryAwareOverlay(settingsOpen, () => setSettingsOpen(false), { closeOnPop: false });
+    useEffect(() => {
+        if (!settingsOpen) return;
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSettingsOpen(false); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [settingsOpen]);
     const [weather, setWeather] = useState<WeatherState | null>(null);
     const [photos, setPhotos] = useState<{ id: number; url: string }[]>([]);
     const photosRef = useRef(photos);
@@ -695,7 +705,7 @@ const Kiosk: React.FC = () => {
             {/* Settings overlay (per-device) */}
             {settingsOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSettingsOpen(false)} />
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
                     <div className="relative max-h-full w-full max-w-md overflow-y-auto rounded-card border border-border bg-card p-6 shadow-lg">
                         <div className="mb-5 flex items-center justify-between gap-3">
                             <h2 className="font-serif text-h2">{t('kiosk:displaySettings.title')}</h2>

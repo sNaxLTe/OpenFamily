@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     makeOverlayState,
     overlayStateId,
+    resolvePopAction,
     shouldCloseOnPop,
     shouldPopOnClose,
 } from './useHistoryAwareOverlay';
@@ -67,5 +68,52 @@ describe('useHistoryAwareOverlay — decision logic', () => {
 
     it('closing the lower overlay while the top is still open must not pop the top entry', () => {
         expect(shouldPopOnClose('A', makeOverlayState('B'))).toBe(false);
+    });
+});
+
+describe('resolvePopAction — closeOnPop option (B1: anti-accidental-close)', () => {
+    it('default (closeOnPop=true) keeps the historical behaviour: pop closes', () => {
+        expect(resolvePopAction('A', ROUTER, true)).toBe('close');
+        expect(resolvePopAction('A', makeOverlayState('B'), true)).toBe('close');
+        expect(resolvePopAction('A', makeOverlayState('A'), true)).toBe('none');
+    });
+
+    it('protected overlay (closeOnPop=false): a back landing away is CONSUMED, not closed', () => {
+        // Single protected overlay, user swipe-back lands on the router entry:
+        expect(resolvePopAction('A', ROUTER, false)).toBe('consume');
+        // The hook then re-pushes A's entry, so the next popstate sees the same
+        // situation and consumes again — the overlay never closes via back.
+        expect(resolvePopAction('A', makeOverlayState('A'), false)).toBe('none');
+    });
+
+    it('REGRESSION iOS swipe-back — stacked protected overlays: each back consumes, nothing closes', () => {
+        const stack: Array<Record<string, unknown>> = [ROUTER];
+        const push = (id: string) => stack.push(makeOverlayState(id));
+        const back = () => { stack.pop(); };
+        const current = () => stack[stack.length - 1];
+
+        push('A'); // editing sheet (protected)
+        push('B'); // picker on top (dismissible)
+
+        back(); // swipe-back pops B's entry, lands on A
+        expect(resolvePopAction('B', current(), true)).toBe('close');   // B closes (dismissible)
+        expect(resolvePopAction('A', current(), false)).toBe('none');    // A stays (its own entry)
+
+        back(); // second swipe-back would land on router
+        expect(resolvePopAction('A', ROUTER, false)).toBe('consume');    // A protected: consumed
+        // after the consume, the hook re-pushes A:
+        push('A');
+        expect(overlayStateId(current())).toBe('A');
+        // A can still be closed explicitly afterwards: its entry is on top → pop once, no cascade
+        expect(shouldPopOnClose('A', current())).toBe(true);
+    });
+
+    it('protected overlay alone + back: consume, and explicit close still pops exactly one entry', () => {
+        const stack: Array<Record<string, unknown>> = [ROUTER];
+        stack.push(makeOverlayState('A'));
+        stack.pop(); // the back
+        expect(resolvePopAction('A', ROUTER, false)).toBe('consume');
+        stack.push(makeOverlayState('A')); // hook re-push after consume
+        expect(shouldPopOnClose('A', stack[stack.length - 1])).toBe(true); // X close → single back
     });
 });

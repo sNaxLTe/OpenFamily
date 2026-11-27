@@ -6,6 +6,7 @@ import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../lib/api';
+import { useHistoryAwareOverlay } from '../../lib/useHistoryAwareOverlay';
 
 // The first minutes of a new family: a short guided setup, shown once to the
 // person who created the family and has not added anyone to it yet. Three
@@ -80,6 +81,23 @@ const WelcomeSetup: React.FC = () => {
         // Asked once per sign-in: the answer must not reopen the setup while it is being filled.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [eligible, userId]);
+
+    // B1: the setup wizard is an editing overlay — back/swipe-back is consumed
+    // silently (never closes mid-setup), the backdrop is full-screen anyway;
+    // "Passer"/"Suivant" or Escape close it. Hooks must run before the early
+    // return below.
+    useHistoryAwareOverlay(open && Boolean(userId), () => {
+        if (userId) markDone(userId);
+        setOpen(false);
+    }, { closeOnPop: false });
+    useEffect(() => {
+        if (!open) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && userId) { markDone(userId); setOpen(false); }
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [open, userId]);
 
     if (!open || !userId) return null;
 

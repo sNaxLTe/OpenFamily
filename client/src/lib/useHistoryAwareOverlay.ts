@@ -40,6 +40,32 @@ export const shouldCloseOnPop = (myId: string, landedOnState: unknown): boolean 
 export const shouldPopOnClose = (myId: string, currentState: unknown): boolean =>
     overlayStateId(currentState) === myId;
 
+export interface OverlayOptions {
+    /**
+     * Default true: a back/swipe-back popstate CLOSES the overlay.
+     * When false (editing overlays with unsaved input), the pop is CONSUMED
+     * silently — the overlay's history entry is immediately re-pushed — and
+     * the overlay stays open. Escape and the X / explicit buttons still close.
+     */
+    closeOnPop?: boolean;
+}
+
+/**
+ * What a popstate should do for overlay `myId` landing on `landedOnState`:
+ * - 'none'    the popped entry was not ours (another overlay's) — ignore;
+ * - 'close'   the pop was ours and the overlay is dismissible — close;
+ * - 'consume' the pop was ours but the overlay is protected (editing) —
+ *             re-push our entry, stay open.
+ */
+export const resolvePopAction = (
+    myId: string,
+    landedOnState: unknown,
+    closeOnPop: boolean
+): 'none' | 'close' | 'consume' => {
+    if (!shouldCloseOnPop(myId, landedOnState)) return 'none';
+    return closeOnPop ? 'close' : 'consume';
+};
+
 /**
  * Makes an overlay (bottom sheet, dialog) history-aware.
  *
@@ -53,17 +79,25 @@ export const shouldPopOnClose = (myId: string, currentState: unknown): boolean =
  * A back gesture closes only the TOPMOST overlay; the ones below stay open
  * until their own entry is popped. See shouldCloseOnPop / shouldPopOnClose.
  *
- * Reusable pattern: `useHistoryAwareOverlay(open, close)` on any overlay.
- * Wired to the budget Sheet (budgetParts.tsx — covers every sheet of the
- * Budget module, including the Paperless picker sheet) and to the Calendar
- * dialogs; extending it app-wide is a separate chantier.
+ * Reusable pattern: `useHistoryAwareOverlay(open, close, options?)` on any
+ * overlay. The Dialog and Sheet components wire it themselves, so every
+ * surface inherits it — pass `dismissible={false}` on an editing overlay
+ * (unsaved input) to also consume back/swipe-back silently instead of
+ * closing: the pop is swallowed by re-pushing our entry. Escape and explicit
+ * buttons (X, "Annuler", …) keep closing as usual.
  */
-export const useHistoryAwareOverlay = (open: boolean, close: () => void): void => {
-    // Stabilize `close` so the effect below does not re-run (and re-push) on
-    // every render while the overlay is open.
+export const useHistoryAwareOverlay = (
+    open: boolean,
+    close: () => void,
+    options?: OverlayOptions
+): void => {
+    // Stabilize `close` and `options` so the effect below does not re-run (and
+    // re-push) on every render while the overlay is open.
     const closeRef = useRef(close);
+    const optionsRef = useRef(options);
     useEffect(() => {
         closeRef.current = close;
+        optionsRef.current = options;
     });
 
     const idRef = useRef<string | null>(null);
@@ -74,8 +108,18 @@ export const useHistoryAwareOverlay = (open: boolean, close: () => void): void =
         idRef.current = id;
         history.pushState(makeOverlayState(id), '');
         const onPopState = () => {
-            if (idRef.current && shouldCloseOnPop(idRef.current, history.state)) {
+            if (!idRef.current) return;
+            const action = resolvePopAction(
+                idRef.current,
+                history.state,
+                optionsRef.current?.closeOnPop ?? true
+            );
+            if (action === 'close') {
                 closeRef.current();
+            } else if (action === 'consume') {
+                // Protected overlay (editing): swallow the back/swipe-back by
+                // restoring our entry — the overlay stays open.
+                history.pushState(makeOverlayState(idRef.current), '');
             }
         };
         window.addEventListener('popstate', onPopState);

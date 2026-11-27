@@ -66,13 +66,18 @@ const parseOptionalPositiveNumber = (value: string): number | undefined => {
     return Number.isFinite(parsed) ? parsed : Number.NaN;
 };
 
-/** History-aware bottom sheet (same pattern as the Lists module's Sheet). */
-const Sheet: React.FC<{ open: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({
-    open, onClose, title, children,
+/** History-aware bottom sheet (same pattern as the Lists module's Sheet).
+ *  dismissible=false on editing sheets: outside tap ignored, back/swipe-back
+ *  consumed silently; X and Escape still close. */
+const Sheet: React.FC<{
+    open: boolean; onClose: () => void; title: string; children: React.ReactNode;
+    dismissible?: boolean;
+}> = ({
+    open, onClose, title, children, dismissible = true,
 }) => {
     const { t } = useTranslation('common');
     const titleRef = useRef<HTMLHeadingElement>(null);
-    useHistoryAwareOverlay(open, onClose);
+    useHistoryAwareOverlay(open, onClose, { closeOnPop: dismissible });
     // onClose changes identity on every parent render: keep it in a ref and
     // depend only on `open`, so the effect runs ONCE when the sheet opens —
     // otherwise titleRef.focus() would re-fire on every keystroke and steal
@@ -88,7 +93,7 @@ const Sheet: React.FC<{ open: boolean; onClose: () => void; title: string; child
     }, [open]);
     if (!open) return null;
     return (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={dismissible ? onClose : undefined}>
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
             <div
                 role="dialog"
@@ -1220,6 +1225,7 @@ const ShoppingList: React.FC = () => {
             {/* Store sheet (create | edit) — parents only see the entry points */}
             <Sheet
                 open={storeSheet !== null}
+                dismissible={false}
                 onClose={() => setStoreSheet(null)}
                 title={storeSheet?.mode === 'edit' ? t('shopping:stores.editTitle') : t('shopping:stores.newTitle')}
             >
@@ -1254,6 +1260,7 @@ const ShoppingList: React.FC = () => {
                 ("Général" + existing stores, no inline creation). */}
             <Sheet
                 open={editingItem !== null}
+                dismissible={false}
                 onClose={() => setEditingItem(null)}
                 title={t('shopping:stores.editItemTitle')}
             >
@@ -1286,6 +1293,7 @@ const ShoppingList: React.FC = () => {
             {/* Template creation dialog */}
             <Dialog
                 open={templateDialogOpen}
+                dismissible={false}
                 onOpenChange={setTemplateDialogOpen}
                 title={t('shopping:dialog.title')}
                 description={t('shopping:dialog.description')}

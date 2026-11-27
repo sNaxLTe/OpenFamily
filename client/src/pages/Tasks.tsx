@@ -782,6 +782,7 @@ const Tasks: React.FC = () => {
             {/* Dialog */}
             <Dialog
                 open={dialogOpen}
+                dismissible={false}
                 onOpenChange={setDialogOpen}
                 title={editingTask ? t('tasks:dialog.editTitle') : t('tasks:dialog.createTitle')}
                 description={t('tasks:dialog.description')}

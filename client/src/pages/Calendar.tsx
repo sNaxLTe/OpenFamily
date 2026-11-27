@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { useWebSocketUpdates } from '../hooks/useWebSocketUpdates';
 import { api } from '../lib/api';
 import { apiBase } from '../lib/serverConfig';
-import { useHistoryAwareOverlay } from '../lib/useHistoryAwareOverlay';
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Edit2, Trash2, MapPin, Clock, CalendarPlus, Copy, Check, RefreshCw, Search, X, Cake } from 'lucide-react';
 import { Card, CardContent, Button, Dialog, Input, Textarea, Badge, Select, DatePicker } from '../components/ui';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths, addDays, startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
@@ -188,11 +187,11 @@ const Calendar: React.FC = () => {
     const [feedToken, setFeedToken] = useState<string | null>(null);
     const [feedCopied, setFeedCopied] = useState(false);
 
-    // History-aware dialogs: browser back / iOS swipe-back closes the dialog
-    // instead of leaving the app (standalone PWA). Scope of this chantier:
-    // the two Calendar dialogs only — see useHistoryAwareOverlay.
-    useHistoryAwareOverlay(dialogOpen, () => setDialogOpen(false));
-    useHistoryAwareOverlay(feedDialogOpen, () => setFeedDialogOpen(false));
+    // History-awareness now lives inside the Dialog component itself (every
+    // dialog pushes one history entry; back/swipe-back closes it instead of
+    // leaving the app in the standalone PWA). The editor below is
+    // dismissible={false}: unsaved form input is never lost to an outside tap
+    // or a back gesture — X / explicit buttons / Escape only.
 
     const [formData, setFormData] = useState({
         title: '',
@@ -1099,9 +1098,10 @@ const Calendar: React.FC = () => {
             {/* Dialog */}
             <Dialog
                 open={dialogOpen}
+                dismissible={false}
                 onOpenChange={(open) => {
                     setDialogOpen(open);
-                    // Closing the dialog (Cancel, X, overlay, Escape) must drop any
+                    // Closing the dialog (Cancel, X, Escape) must drop any
                     // stale editing state so the next open never reuses it.
                     if (!open) resetForm();
                 }}

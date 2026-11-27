@@ -1199,6 +1199,7 @@ const Budget: React.FC = () => {
             {/* Unified Budget entry sheet */}
             <Sheet
                 open={sheetTransaction}
+                dismissible={false}
                 onClose={() => setSheetTransaction(false)}
                 title={
                     editingRecurring || editingEntry
@@ -1463,6 +1464,7 @@ const Budget: React.FC = () => {
             {/* Sheet : plafond de catégorie */}
             <Sheet
                 open={sheetLimit}
+                dismissible={false}
                 onClose={() => setSheetLimit(false)}
                 title={t('budget:sheets.limit')}
             >

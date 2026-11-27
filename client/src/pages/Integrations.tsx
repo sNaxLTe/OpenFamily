@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { CheckCircle2, AlertCircle, RefreshCw, Unplug, Plug, X, Clock, CalendarDays, ExternalLink, House, KeyRound, MonitorSmartphone, Sparkles, Webhook, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
+import { useHistoryAwareOverlay } from '../lib/useHistoryAwareOverlay';
 import { intlLocale } from '../i18n/format';
 
 // What connects to OpenFamily from the other side: set up in another app or
@@ -203,6 +204,16 @@ const Integrations: React.FC = () => {
         setFormValues({});
         setTestStatus(null);
     };
+
+    // B1: the connect modal is an editing overlay — back/swipe-back is consumed
+    // silently and the backdrop tap no longer closes it; X or Escape only.
+    useHistoryAwareOverlay(Boolean(activeModal), closeModal, { closeOnPop: false });
+    useEffect(() => {
+        if (!activeModal) return;
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal(); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [activeModal]);
 
     const handleTest = async () => {
         if (!activeModal) return;
@@ -413,7 +424,7 @@ const Integrations: React.FC = () => {
                 const canSubmit = item.fields.filter((f) => !f.optional).every((f) => formValues[f.key]);
                 return (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeModal} />
+                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
                         <Card className="relative w-full max-w-md shadow-lg" hover={false}>
                             <CardHeader className="pb-4">
                                 <div className="flex items-start justify-between gap-3">

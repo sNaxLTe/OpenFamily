@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Bell, BellOff, CheckCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
+import { useHistoryAwareOverlay } from '../../lib/useHistoryAwareOverlay';
 import { useNotifications, AppNotification } from '../../hooks/useNotifications';
 import { useWebSocketUpdates } from '../../hooks/useWebSocketUpdates';
 import { Button } from './Button';
@@ -36,6 +37,16 @@ export const NotificationBell: React.FC = () => {
     const ref = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
+    // B1: the dropdown is protected — back/swipe-back is consumed silently and
+    // an outside tap no longer closes it; the bell button or Escape does.
+    useHistoryAwareOverlay(open, () => setOpen(false), { closeOnPop: false });
+    useEffect(() => {
+        if (!open) return;
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [open]);
+
     const timeAgo = (dateStr: string): string => {
         const diff = Date.now() - new Date(dateStr).getTime();
         const minutes = Math.floor(diff / 60000);
@@ -51,17 +62,6 @@ export const NotificationBell: React.FC = () => {
         void fetchUnreadCount();
         if (open) void fetchNotifications();
     });
-
-    // Close on outside click
-    useEffect(() => {
-        const handler = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                setOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, []);
 
     const handleOpen = () => {
         setOpen((o) => {

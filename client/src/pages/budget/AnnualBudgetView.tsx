@@ -527,6 +527,7 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
             {/* Sheet : plafond annuel */}
             <Sheet
                 open={sheetLimit}
+                dismissible={false}
                 onClose={() => setSheetLimit(false)}
                 title={t('budget:annual.limits.sheet')}
             >

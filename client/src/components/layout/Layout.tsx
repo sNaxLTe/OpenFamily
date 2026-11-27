@@ -22,6 +22,7 @@ import {
     MonitorPlay,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useHistoryAwareOverlay } from '../../lib/useHistoryAwareOverlay';
 import { Button } from '../ui/Button';
 import { NotificationBell } from '../ui/NotificationBell';
 import { DemoBanner } from '../app/DemoBanner';
@@ -68,6 +69,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     const visibleQuickActions = quickActions.filter((item) => !item.module || isModuleEnabled(item.module));
     const [quickActionsOpen, setQuickActionsOpen] = React.useState(false);
+    // B1: quick-actions overlay is protected — back/swipe-back consumed
+    // silently, backdrop tap no longer closes; the "+" button or Escape does.
+    useHistoryAwareOverlay(quickActionsOpen, () => setQuickActionsOpen(false), { closeOnPop: false });
+    React.useEffect(() => {
+        if (!quickActionsOpen) return;
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setQuickActionsOpen(false); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [quickActionsOpen]);
     const [isOffline, setIsOffline] = React.useState(!navigator.onLine);
 
     // The bottom bar's slots, kept per device in localStorage (key
@@ -131,10 +141,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return (
         <div className="min-h-screen bg-background font-sans text-foreground">
             {quickActionsOpen && (
-                <div
-                    className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
-                    onClick={() => setQuickActionsOpen(false)}
-                />
+                <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" />
             )}
 
             <div>

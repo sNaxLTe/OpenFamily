@@ -93,13 +93,18 @@ const togglePin = (userId: string | undefined, listId: string): string[] => {
 
 // ─── Small building blocks ────────────────────────────────────────────────────
 
-/** History-aware bottom sheet (same pattern as the Budget module's Sheet). */
-const Sheet: React.FC<{ open: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({
-    open, onClose, title, children,
+/** History-aware bottom sheet (same pattern as the Budget module's Sheet).
+ *  dismissible=false on editing sheets: outside tap ignored, back/swipe-back
+ *  consumed silently; X and Escape still close. */
+const Sheet: React.FC<{
+    open: boolean; onClose: () => void; title: string; children: React.ReactNode;
+    dismissible?: boolean;
+}> = ({
+    open, onClose, title, children, dismissible = true,
 }) => {
     const { t } = useTranslation('common');
     const titleRef = useRef<HTMLHeadingElement>(null);
-    useHistoryAwareOverlay(open, onClose);
+    useHistoryAwareOverlay(open, onClose, { closeOnPop: dismissible });
     // onClose changes identity on every parent render: keep it in a ref and
     // depend only on `open`, so this effect runs ONCE when the sheet opens.
     // Otherwise titleRef.focus() would re-fire on every keystroke and steal
@@ -115,7 +120,7 @@ const Sheet: React.FC<{ open: boolean; onClose: () => void; title: string; child
     }, [open]);
     if (!open) return null;
     return (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={dismissible ? onClose : undefined}>
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
             <div
                 role="dialog"
@@ -465,6 +470,7 @@ const ListsHome: React.FC = () => {
             {/* Create / rename / icon sheet */}
             <Sheet
                 open={sheet !== null}
+                dismissible={false}
                 onClose={() => setSheet(null)}
                 title={
                     sheet?.mode === 'create'
@@ -965,7 +971,7 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
             )}
 
             {/* Edit item sheet */}
-            <Sheet open={editItem !== null} onClose={() => setEditItem(null)} title={t('lists:list.editItem.title')}>
+            <Sheet open={editItem !== null} dismissible={false} onClose={() => setEditItem(null)} title={t('lists:list.editItem.title')}>
                 <form onSubmit={submitEditItem} className="space-y-4">
                     <Input
                         label={t('lists:list.editItem.textLabel')}
@@ -996,6 +1002,7 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
             {/* Rename category sheet */}
             <Sheet
                 open={renameCat !== null}
+                dismissible={false}
                 onClose={() => setRenameCat(null)}
                 title={t('lists:list.renameCategory.title', { from: renameCat ?? '' })}
             >

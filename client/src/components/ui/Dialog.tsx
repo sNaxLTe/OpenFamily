@@ -2,6 +2,7 @@ import React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useHistoryAwareOverlay } from '../../lib/useHistoryAwareOverlay';
 
 interface DialogProps {
     open: boolean;
@@ -10,6 +11,13 @@ interface DialogProps {
     description?: string;
     children: React.ReactNode;
     className?: string;
+    /**
+     * Default true: tap outside the dialog and back/swipe-back close it.
+     * Set false on EDITING dialogs (unsaved input): outside taps are ignored
+     * and back/swipe-back is consumed silently — only the X button or an
+     * explicit action button closes. Escape stays active (voluntary key).
+     */
+    dismissible?: boolean;
 }
 
 export const Dialog: React.FC<DialogProps> = ({
@@ -19,12 +27,21 @@ export const Dialog: React.FC<DialogProps> = ({
     description,
     children,
     className,
+    dismissible = true,
 }) => {
+    // History-aware on every Dialog: back/swipe-back closes the dialog instead
+    // of leaving the app (standalone PWA). With dismissible={false} the pop is
+    // consumed silently instead (see useHistoryAwareOverlay).
+    useHistoryAwareOverlay(open, () => onOpenChange(false), { closeOnPop: dismissible });
+
     return (
         <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
             <DialogPrimitive.Portal>
                 <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/35 backdrop-blur-sm animate-fade-in" />
                 <DialogPrimitive.Content
+                    onInteractOutside={dismissible ? undefined : (e) => e.preventDefault()}
+                    onPointerDownOutside={dismissible ? undefined : (e) => e.preventDefault()}
+                    onFocusOutside={dismissible ? undefined : (e) => e.preventDefault()}
                     className={cn(
                         'fixed inset-x-0 bottom-0 z-50 w-full border border-border bg-card shadow-surface-hover animate-slide-up',
                         'max-h-[90vh] overflow-y-auto rounded-t-[20px] p-0',

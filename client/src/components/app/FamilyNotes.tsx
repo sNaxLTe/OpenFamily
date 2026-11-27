@@ -205,7 +205,7 @@ const FamilyNotes: React.FC<FamilyNotesProps> = ({ notes, variant = 'full', onCh
             )}
 
             {!isKiosk && (
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen} title={t('notes:addTitle')}>
+                <Dialog open={dialogOpen} dismissible={false} onOpenChange={setDialogOpen} title={t('notes:addTitle')}>
                     <div className="space-y-5">
                         <div>
                             <Textarea

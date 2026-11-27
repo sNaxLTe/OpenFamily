@@ -41,16 +41,21 @@ export interface RecurringTransaction {
 // Form building blocks shared by the Budget page and its annual view, so both
 // render exactly the same sheets, fields and category pickers.
 
-export const Sheet: React.FC<{ open: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({
-    open, onClose, title, children
+export const Sheet: React.FC<{
+    open: boolean; onClose: () => void; title: string; children: React.ReactNode;
+    /** Default true: outside tap + back/swipe-back close the sheet. false on editing sheets (unsaved input): outside tap ignored, back consumed silently; X and Escape still close. */
+    dismissible?: boolean;
+}> = ({
+    open, onClose, title, children, dismissible = true
 }) => {
     const { t } = useTranslation('common');
     const titleRef = useRef<HTMLHeadingElement>(null);
 
     // History-aware: browser back / iOS swipe-back closes the sheet instead
     // of leaving the app (standalone PWA). Covers every sheet of the Budget
-    // module, since they all render through this component.
-    useHistoryAwareOverlay(open, onClose);
+    // module, since they all render through this component. dismissible=false
+    // consumes the back silently instead (editing sheets).
+    useHistoryAwareOverlay(open, onClose, { closeOnPop: dismissible });
 
     // Accessibility: Escape closes the sheet, and focus lands on the title
     // when it opens (screen readers announce the dialog through its label).
@@ -71,7 +76,7 @@ export const Sheet: React.FC<{ open: boolean; onClose: () => void; title: string
 
     if (!open) return null;
     return (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={dismissible ? onClose : undefined}>
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
             <div
                 role="dialog"

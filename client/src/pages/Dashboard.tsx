@@ -973,6 +973,7 @@ const Dashboard: React.FC = () => {
             {/* Personnalisation : ordre, visibilité, vue de l'agenda */}
             <Dialog
                 open={customizing}
+                dismissible={false}
                 onOpenChange={setCustomizing}
                 title={t('dashboard:customize.title')}
                 description={t('dashboard:customize.description')}

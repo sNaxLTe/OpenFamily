@@ -717,61 +717,8 @@ const Budget: React.FC = () => {
         // strip down the middle.
         <div className="mx-auto max-w-2xl pb-24 xl:max-w-6xl">
 
-            {/* Navigation mois / année (the explorer picks its own range) */}
-            {mode !== 'explorer' && (
-            <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-background/80 backdrop-blur-md z-10 border-b border-border">
-                <button
-                    onClick={() => (view === 'month' ? navigateMonth(-1) : navigateYear(-1))}
-                    aria-label={t('budget:prevMonth')}
-                    className="-m-2 p-2 rounded-full hover:bg-surface-2 active:scale-95 transition-all"
-                >
-                    <ChevronLeft className="w-5 h-5" />
-                </button>
-                <span className="text-lg font-semibold capitalize">
-                    {view === 'month'
-                        ? format(new Date(currentYear, currentMonth - 1), 'MMMM yyyy', { locale: dateLocale() })
-                        : `${currentYear}`}
-                </span>
-                <button
-                    onClick={() => (view === 'month' ? navigateMonth(1) : navigateYear(1))}
-                    aria-label={t('budget:nextMonth')}
-                    className="-m-2 p-2 rounded-full hover:bg-surface-2 active:scale-95 transition-all"
-                >
-                    <ChevronRight className="w-5 h-5" />
-                </button>
-            </div>
-            )}
-
-            {/* Toggle Mois / Année (feature 1 ; default month). Hidden for the
-                explorer (own range controls) and the recurring registry (as_of
-                is always today). */}
-            {mode !== 'explorer' && mode !== 'recurring' && (
-            <div className="px-4 pt-3">
-                <div className="flex gap-1 rounded-input border border-border bg-surface-2 p-1 max-w-xs">
-                    <button
-                        type="button"
-                        onClick={() => switchView('month')}
-                        className={`flex-1 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
-                            view === 'month' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                        {t('budget:view.month')}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => switchView('year')}
-                        className={`flex-1 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
-                            view === 'year' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                        {t('budget:view.year')}
-                    </button>
-                </div>
-            </div>
-            )}
-
             {/* E1 tab bar: Budget / Récurrents / Kakeibo / Explorateur (4 tabs) */}
-            <div className="px-4 pt-4">
+            <div className="sticky top-0 z-10 border-b border-border bg-background/80 px-4 py-2 backdrop-blur-md">
                 <div className="flex flex-wrap gap-1 rounded-input border border-border bg-surface-2 p-1" role="tablist" aria-label={t('budget:tabs.label')}>
                     <button
                         type="button"
@@ -819,6 +766,58 @@ const Budget: React.FC = () => {
                     </button>
                 </div>
             </div>
+
+
+            {/* Finding 2: dynamic lines (Mois/Année + month/year selector) only on the
+                tabs that use them (Budget, Kakeibo) — the tab bar above never moves. */}
+            {(mode === 'budget' || mode === 'kakeibo') && (
+            <>
+            {/* Toggle Mois / Année (feature 1 ; default month) */}
+            <div className="px-4 pt-2">
+                <div className="flex gap-1 rounded-input border border-border bg-surface-2 p-1 max-w-xs">
+                    <button
+                        type="button"
+                        onClick={() => switchView('month')}
+                        className={`flex-1 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
+                            view === 'month' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        {t('budget:view.month')}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => switchView('year')}
+                        className={`flex-1 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
+                            view === 'year' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        {t('budget:view.year')}
+                    </button>
+                </div>
+            </div>
+            <div className="flex items-center justify-between px-4 py-1.5">
+                <button
+                    onClick={() => (view === 'month' ? navigateMonth(-1) : navigateYear(-1))}
+                    aria-label={t('budget:prevMonth')}
+                    className="-m-2 p-2 rounded-full hover:bg-surface-2 active:scale-95 transition-all"
+                >
+                    <ChevronLeft className="w-5 h-5" />
+                </button>
+                <span className="text-lg font-semibold capitalize">
+                    {view === 'month'
+                        ? format(new Date(currentYear, currentMonth - 1), 'MMMM yyyy', { locale: dateLocale() })
+                        : `${currentYear}`}
+                </span>
+                <button
+                    onClick={() => (view === 'month' ? navigateMonth(1) : navigateYear(1))}
+                    aria-label={t('budget:nextMonth')}
+                    className="-m-2 p-2 rounded-full hover:bg-surface-2 active:scale-95 transition-all"
+                >
+                    <ChevronRight className="w-5 h-5" />
+                </button>
+            </div>
+            </>
+            )}
 
             {/* Report explorer (feature 10): read-only, its own range controls */}
             {mode === 'explorer' && (

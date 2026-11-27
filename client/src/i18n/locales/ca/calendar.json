@@ -17,6 +17,7 @@
   "form": {
     "title": "Títol",
     "titlePlaceholder": "p. ex., cita amb el metge",
+    "titleSuggestions": "Suggeriments de títols recents",
     "description": "Descripció (opcional)",
     "descriptionPlaceholder": "Més detalls…",
     "scheduling": "Programació",

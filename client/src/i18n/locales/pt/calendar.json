@@ -17,6 +17,7 @@
   "form": {
     "title": "Título",
     "titlePlaceholder": "ex: Consulta médica, Reunião escolar...",
+    "titleSuggestions": "Sugestões de títulos recentes",
     "description": "Descrição (opcional)",
     "descriptionPlaceholder": "Detalhes adicionais…",
     "scheduling": "Agendamento",

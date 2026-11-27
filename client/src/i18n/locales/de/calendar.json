@@ -17,6 +17,7 @@
   "form": {
     "title": "Titel",
     "titlePlaceholder": "z. B. Arzttermin",
+    "titleSuggestions": "Vorschläge aus kürzlichen Titeln",
     "description": "Beschreibung (optional)",
     "descriptionPlaceholder": "Weitere Details…",
     "scheduling": "Zeitplanung",

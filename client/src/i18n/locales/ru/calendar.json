@@ -17,6 +17,7 @@
   "form": {
     "title": "Название",
     "titlePlaceholder": "например, приём у врача",
+    "titleSuggestions": "Варианты из недавних названий",
     "description": "Описание (необязательно)",
     "descriptionPlaceholder": "Дополнительные сведения…",
     "scheduling": "Расписание",

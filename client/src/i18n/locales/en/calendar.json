@@ -17,6 +17,7 @@
   "form": {
     "title": "Title",
     "titlePlaceholder": "e.g. Doctor's appointment",
+    "titleSuggestions": "Recent title suggestions",
     "description": "Description (optional)",
     "descriptionPlaceholder": "Additional details…",
     "scheduling": "Scheduling",

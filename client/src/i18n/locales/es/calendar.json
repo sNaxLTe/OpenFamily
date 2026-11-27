@@ -17,6 +17,7 @@
   "form": {
     "title": "Título",
     "titlePlaceholder": "p. ej. Cita médica",
+    "titleSuggestions": "Sugerencias de títulos recientes",
     "description": "Descripción (opcional)",
     "color": "Color",
     "descriptionPlaceholder": "Detalles adicionales…",

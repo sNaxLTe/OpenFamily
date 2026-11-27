@@ -17,6 +17,7 @@
   "form": {
     "title": "Titre",
     "titlePlaceholder": "Ex : Rendez-vous médecin",
+    "titleSuggestions": "Suggestions de titres récents",
     "description": "Description (facultatif)",
     "descriptionPlaceholder": "Détails supplémentaires…",
     "scheduling": "Planification",

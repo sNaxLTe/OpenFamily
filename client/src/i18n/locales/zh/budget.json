@@ -31,7 +31,6 @@
     "title": "预测",
     "subtitle": "即将发生的定期项目：+{{income}} 收入 · -{{expenses}} 支出"
   },
-  "analytics": "分析与限额",
   "charts": {
     "expensesByCategory": "按类别统计支出",
     "noExpenses": "本月暂无支出",
@@ -129,11 +128,14 @@
     "deleteRecurring": "删除这条定期记录？",
     "deleteEntry": "删除这条记录？"
   },
-  "classic": "经典",
   "recurringTab": "循环事项",
   "view": {
     "month": "月",
     "year": "年"
+  },
+  "tabs": {
+    "label": "预算标签页",
+    "budget": "预算"
   },
   "annual": {
     "recap": {

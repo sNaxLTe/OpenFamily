@@ -31,7 +31,6 @@
     "title": "Previsió",
     "subtitle": "Propers moviments recurrents: +{{income}} d'ingressos · -{{expenses}} de despeses"
   },
-  "analytics": "Anàlisi i límits",
   "charts": {
     "expensesByCategory": "Despeses per categoria",
     "noExpenses": "Aquest mes no hi ha despeses",
@@ -133,11 +132,14 @@
     "deleteRecurring": "Vols suprimir aquest moviment recurrent?",
     "deleteEntry": "Vols suprimir aquest moviment?"
   },
-  "classic": "Clàssic",
   "recurringTab": "Recurrents",
   "view": {
     "month": "Mes",
     "year": "Any"
+  },
+  "tabs": {
+    "label": "Pestanyes del pressupost",
+    "budget": "Pressupost"
   },
   "annual": {
     "recap": {

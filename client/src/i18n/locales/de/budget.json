@@ -31,7 +31,6 @@
     "title": "Prognose",
     "subtitle": "Anstehend, wiederkehrend: +{{income}} Einnahmen · -{{expenses}} Ausgaben"
   },
-  "analytics": "Auswertung & Limits",
   "charts": {
     "expensesByCategory": "Ausgaben nach Kategorie",
     "noExpenses": "Keine Ausgaben diesen Monat",
@@ -133,11 +132,14 @@
     "deleteRecurring": "Diesen wiederkehrenden Posten löschen?",
     "deleteEntry": "Diesen Posten löschen?"
   },
-  "classic": "Klassisch",
   "recurringTab": "Wiederkehrend",
   "view": {
     "month": "Monat",
     "year": "Jahr"
+  },
+  "tabs": {
+    "label": "Budget-Reiter",
+    "budget": "Budget"
   },
   "annual": {
     "recap": {

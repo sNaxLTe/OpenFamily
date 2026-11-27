@@ -31,7 +31,6 @@
     "title": "Prévisionnel",
     "subtitle": "Récurrences à venir : +{{income}} revenus · -{{expenses}} dépenses"
   },
-  "analytics": "Analyse & plafonds",
   "charts": {
     "expensesByCategory": "Dépenses par catégorie",
     "noExpenses": "Aucune dépense ce mois",
@@ -133,11 +132,14 @@
     "deleteRecurring": "Supprimer cette écriture récurrente ?",
     "deleteEntry": "Supprimer cette entrée ?"
   },
-  "classic": "Classique",
   "recurringTab": "Récurrents",
   "view": {
     "month": "Mois",
     "year": "Année"
+  },
+  "tabs": {
+    "label": "Onglets du budget",
+    "budget": "Budget"
   },
   "annual": {
     "recap": {

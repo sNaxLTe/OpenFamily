@@ -35,7 +35,6 @@
     "title": "Прогноз",
     "subtitle": "Предстоящие регулярные: +{{income}} доходов · -{{expenses}} расходов"
   },
-  "analytics": "Аналитика и лимиты",
   "charts": {
     "expensesByCategory": "Расходы по категориям",
     "noExpenses": "В этом месяце расходов нет",
@@ -145,11 +144,14 @@
     "deleteRecurring": "Удалить это регулярное списание?",
     "deleteEntry": "Удалить эту запись?"
   },
-  "classic": "Классический",
   "recurringTab": "Повторяющиеся",
   "view": {
     "month": "Месяц",
     "year": "Год"
+  },
+  "tabs": {
+    "label": "Вкладки бюджета",
+    "budget": "Бюджет"
   },
   "annual": {
     "recap": {

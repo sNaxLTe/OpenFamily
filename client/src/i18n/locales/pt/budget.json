@@ -31,7 +31,6 @@
     "title": "Previsão",
     "subtitle": "Recorrentes futuros: +{{income}} receitas · -{{expenses}} despesas"
   },
-  "analytics": "Análises & Limites",
   "charts": {
     "expensesByCategory": "Despesas por categoria",
     "noExpenses": "Nenhuma despesa este mês",
@@ -133,11 +132,14 @@
     "deleteRecurring": "Excluir este lançamento recorrente?",
     "deleteEntry": "Tem certeza que deseja excluir este registro?"
   },
-  "classic": "Clássico",
   "recurringTab": "Recorrentes",
   "view": {
     "month": "Mês",
     "year": "Ano"
+  },
+  "tabs": {
+    "label": "Guias do orçamento",
+    "budget": "Orçamento"
   },
   "annual": {
     "recap": {

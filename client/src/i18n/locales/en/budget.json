@@ -31,7 +31,6 @@
     "title": "Forecast",
     "subtitle": "Upcoming recurring: +{{income}} income · -{{expenses}} expenses"
   },
-  "analytics": "Analytics & limits",
   "charts": {
     "expensesByCategory": "Expenses by category",
     "noExpenses": "No expenses this month",
@@ -133,11 +132,14 @@
     "deleteRecurring": "Delete this recurring entry?",
     "deleteEntry": "Delete this entry?"
   },
-  "classic": "Classic",
   "recurringTab": "Recurring",
   "view": {
     "month": "Month",
     "year": "Year"
+  },
+  "tabs": {
+    "label": "Budget tabs",
+    "budget": "Budget"
   },
   "annual": {
     "recap": {

@@ -115,14 +115,15 @@ const Budget: React.FC = () => {
     const currency = user?.currency || 'EUR';
     const canEdit = Boolean(user?.is_owner) || (user?.role ?? '').toLowerCase() !== 'enfant';
 
-    // Classic budget, analytics, kakeibo, report explorer (feature 10) or the
-    // recurring registry (post-version n°2). Persisted per browser.
-    type BudgetMode = 'classic' | 'analytics' | 'kakeibo' | 'explorer' | 'recurring';
+    // E1: four tabs — Budget (classic + analytics merged), Récurrents,
+    // Kakeibo, Explorateur. Persisted per browser; the old 'classic' and
+    // 'analytics' values both land on 'budget'.
+    type BudgetMode = 'budget' | 'kakeibo' | 'explorer' | 'recurring';
     const [mode, setMode] = useState<BudgetMode>(() => {
         const saved = safeGetItem('openfamily.budgetMode');
-        return saved === 'analytics' || saved === 'kakeibo' || saved === 'explorer' || saved === 'recurring'
+        return saved === 'kakeibo' || saved === 'explorer' || saved === 'recurring'
             ? saved
-            : 'classic';
+            : 'budget';
     });
     const switchMode = (next: BudgetMode) => {
         setMode(next);
@@ -145,7 +146,7 @@ const Budget: React.FC = () => {
         // annual view replaces them.
         if (next === 'year') {
             setMode((m) => {
-                const nextMode = m === 'analytics' || m === 'recurring' ? 'classic' : m;
+                const nextMode = m === 'recurring' ? 'budget' : m;
                 if (nextMode !== m) safeSetItem('openfamily.budgetMode', nextMode);
                 return nextMode;
             });
@@ -722,31 +723,35 @@ const Budget: React.FC = () => {
             </div>
             )}
 
-            {/* Budget view switch: classic, analytics, kakeibo, explorer, recurring */}
+            {/* E1 tab bar: Budget / Récurrents / Kakeibo / Explorateur (4 tabs) */}
             <div className="px-4 pt-4">
-                <div className="flex flex-wrap gap-1 rounded-input border border-border bg-surface-2 p-1">
+                <div className="flex flex-wrap gap-1 rounded-input border border-border bg-surface-2 p-1" role="tablist" aria-label={t('budget:tabs.label')}>
                     <button
                         type="button"
-                        onClick={() => switchMode('classic')}
+                        role="tab"
+                        aria-selected={mode === 'budget'}
+                        onClick={() => switchMode('budget')}
                         className={`flex-1 min-h-11 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
-                            mode === 'classic' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                            mode === 'budget' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
-                        {t('budget:classic')}
+                        {t('budget:tabs.budget')}
                     </button>
-                    {view === 'month' && (
-                        <button
-                            type="button"
-                            onClick={() => switchMode('analytics')}
-                            className={`flex-1 min-h-11 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
-                                mode === 'analytics' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                            }`}
-                        >
-                            {t('budget:analytics')}
-                        </button>
-                    )}
                     <button
                         type="button"
+                        role="tab"
+                        aria-selected={mode === 'recurring'}
+                        onClick={() => switchMode('recurring')}
+                        className={`flex-1 min-h-11 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
+                            mode === 'recurring' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        {t('budget:recurringTab')}
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={mode === 'kakeibo'}
                         onClick={() => switchMode('kakeibo')}
                         className={`flex-1 min-h-11 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
                             mode === 'kakeibo' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
@@ -756,21 +761,14 @@ const Budget: React.FC = () => {
                     </button>
                     <button
                         type="button"
+                        role="tab"
+                        aria-selected={mode === 'explorer'}
                         onClick={() => switchMode('explorer')}
                         className={`flex-1 min-h-11 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
                             mode === 'explorer' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
                         {t('budget:explorer.tab')}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => switchMode('recurring')}
-                        className={`flex-1 min-h-11 whitespace-nowrap rounded-input px-3 py-1.5 text-sm font-medium transition ${
-                            mode === 'recurring' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                        {t('budget:recurringTab')}
                     </button>
                 </div>
             </div>
@@ -920,7 +918,7 @@ const Budget: React.FC = () => {
                 />
             )}
 
-            {((mode === 'classic' && !showAnnual) || mode === 'recurring') && canEdit && (
+            {((mode === 'budget' && !showAnnual) || mode === 'recurring') && canEdit && (
                 <div className="px-4 pt-4 flex justify-end">
                     <button
                         type="button"
@@ -933,7 +931,7 @@ const Budget: React.FC = () => {
                 </div>
             )}
 
-            {mode === 'analytics' && view === 'month' && (
+            {mode === 'budget' && view === 'month' && !showAnnual && (
                 <div className="px-4 pt-4 [&>*]:mb-3 [&>*]:break-inside-avoid xl:columns-2 xl:gap-6">
                             {/* Répartition par catégorie */}
                             <ChartCard
@@ -1034,7 +1032,7 @@ const Budget: React.FC = () => {
                 </div>
             )}
 
-            <div className="px-4 pt-4 [&>*]:mb-3 [&>*]:break-inside-avoid xl:columns-2 xl:gap-6" style={{ display: mode === 'classic' && !showAnnual ? undefined : 'none' }}>
+            <div className="px-4 pt-4 [&>*]:mb-3 [&>*]:break-inside-avoid xl:columns-2 xl:gap-6" style={{ display: mode === 'budget' && !showAnnual ? undefined : 'none' }}>
 
                 {/* Bannière lecture seule (enfant) */}
                 {!canEdit && (

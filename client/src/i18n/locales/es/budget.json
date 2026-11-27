@@ -31,7 +31,6 @@
     "title": "Previsión",
     "subtitle": "Próximos recurrentes: +{{income}} ingresos · -{{expenses}} gastos"
   },
-  "analytics": "Análisis y límites",
   "charts": {
     "expensesByCategory": "Gastos por categoría",
     "noExpenses": "Sin gastos este mes",
@@ -133,11 +132,14 @@
     "deleteRecurring": "¿Eliminar este movimiento recurrente?",
     "deleteEntry": "¿Eliminar este movimiento?"
   },
-  "classic": "Clásico",
   "recurringTab": "Recurrentes",
   "view": {
     "month": "Mes",
     "year": "Año"
+  },
+  "tabs": {
+    "label": "Pestañas del presupuesto",
+    "budget": "Presupuesto"
   },
   "annual": {
     "recap": {

@@ -247,6 +247,22 @@ const Calendar: React.FC = () => {
     useEffect(() => {
         if (suggestionsVisible) setSuggestIndex(0);
     }, [suggestionsVisible]);
+    // B3: while the suggestion list is open, the FIRST Escape closes only the
+    // list — never the editor (data-loss n°1). Radix listens for Escape in the
+    // CAPTURE phase on `document`, which fires BEFORE any React (bubble)
+    // handler, so we must intercept in the capture phase on `window` (window
+    // capture runs before document capture) and stop the propagation there.
+    useEffect(() => {
+        if (!suggestionsVisible) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key !== 'Escape') return;
+            e.preventDefault();
+            e.stopPropagation();
+            setSuggestOpen(false);
+        };
+        window.addEventListener('keydown', onKey, true);
+        return () => window.removeEventListener('keydown', onKey, true);
+    }, [suggestionsVisible]);
 
     // Selecting a suggestion pre-fills times, reminders, assignee and color
     // (via B2's follow-the-assignee rule) — everything stays editable, nothing
@@ -278,13 +294,11 @@ const Calendar: React.FC = () => {
         } else if (e.key === 'Enter') {
             e.preventDefault();
             applySuggestion(titleSuggestions[suggestIndex]);
-        } else if (e.key === 'Escape') {
-            // Close only the dropdown; the dialog's own Escape still works when
-            // the dropdown is closed (stopPropagation keeps Radix from seeing it).
-            e.preventDefault();
-            e.stopPropagation();
-            setSuggestOpen(false);
         }
+        // Escape is NOT handled here: while the list is open it is intercepted
+        // in the capture phase on window (see effect above) and closes only the
+        // list; once the list is closed, Escape bubbles to Radix and closes the
+        // editor — that second Escape is the voluntary one.
     };
 
     const [recurrenceScopeAction, setRecurrenceScopeAction] = useState<{

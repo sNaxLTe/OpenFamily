@@ -100,6 +100,9 @@ export type BloodType = typeof BLOOD_TYPES[number];
 export const LIST_ICONS = [
     '📝', '🛒', '🎒', '✅', '🏠', '🚗', '🎁', '💊',
     '📚', '🧸', '🍽️', '🔧', '🌳', '🐶', '✈️', '💼',
+    '❄️', '🎬', '👨', '👩', '👦', '👧', '🪴', '🧺',
+    '🥐', '🍖', '🎄', '🍼', '🧴', '🛁', '⚽', '🎵',
+    '💻', '🏥', '🧹', '🍎',
 ] as const;
 
 export type ListIcon = typeof LIST_ICONS[number];

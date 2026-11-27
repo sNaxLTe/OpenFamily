@@ -231,4 +231,20 @@ export const annualMigrations: readonly Migration[] = [
             'CREATE INDEX IF NOT EXISTS idx_shopping_items_store ON shopping_items(store_id)',
         ],
     },
+    {
+        // D1: élargit le jeu d'icônes fixe des listes et magasins (LIST_ICONS de
+        // @openfamily/shared, passé de 16 à 36 emojis). Widening additif des deux
+        // CHECK: DROP + ADD avec le sur-ensemble — aucune valeur existante n'est
+        // retirée, les bases migrées par 0009/0010 continuent de fonctionner et
+        // les images officielles 1.9.0 ignorent simplement cette entrée.
+        // La liste en dur ci-dessous doit rester synchronisée avec LIST_ICONS
+        // (test de parité: server/test/listsModule.test.ts + shoppingStores.test.ts).
+        id: 'annual/0011-list-icons-extended',
+        statements: [
+            `ALTER TABLE lists DROP CONSTRAINT IF EXISTS lists_icon_check`,
+            `ALTER TABLE lists ADD CONSTRAINT lists_icon_check CHECK (icon IN ('📝','🛒','🎒','✅','🏠','🚗','🎁','💊','📚','🧸','🍽️','🔧','🌳','🐶','✈️','💼','❄️','🎬','👨','👩','👦','👧','🪴','🧺','🥐','🍖','🎄','🍼','🧴','🛁','⚽','🎵','💻','🏥','🧹','🍎'))`,
+            `ALTER TABLE shopping_stores DROP CONSTRAINT IF EXISTS shopping_stores_icon_check`,
+            `ALTER TABLE shopping_stores ADD CONSTRAINT shopping_stores_icon_check CHECK (icon IN ('📝','🛒','🎒','✅','🏠','🚗','🎁','💊','📚','🧸','🍽️','🔧','🌳','🐶','✈️','💼','❄️','🎬','👨','👩','👦','👧','🪴','🧺','🥐','🍖','🎄','🍼','🧴','🛁','⚽','🎵','💻','🏥','🧹','🍎'))`,
+        ],
+    },
 ];

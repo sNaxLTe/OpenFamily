@@ -774,7 +774,7 @@ const Budget: React.FC = () => {
             <>
             {/* Toggle Mois / Année (feature 1 ; default month) */}
             <div className="px-4 pt-2">
-                <div className="flex gap-1 rounded-input border border-border bg-surface-2 p-1 max-w-xs">
+                <div className="flex w-full gap-1 rounded-input border border-border bg-surface-2 p-1">
                     <button
                         type="button"
                         onClick={() => switchView('month')}
@@ -965,10 +965,12 @@ const Budget: React.FC = () => {
             )}
 
             {((mode === 'budget' && !showAnnual) || mode === 'recurring') && canEdit && (
-                <div className="px-4 pt-4 flex justify-end">
+                <div className="px-4 pt-4">
                     {/* F1: same Button component + format as Tasks' "Nouvelle tâche" */}
                     <Button
                         type="button"
+                        // G1①: pleine largeur, centré — même style que « Nouvelle tâche »
+                        className="w-full"
                         // E3: on the Budget tab the FAB opens the quick entry
                         // through the /budget?new=1 deep link; on Récurrents it
                         // keeps opening the full form (series creation).

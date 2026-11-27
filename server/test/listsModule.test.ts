@@ -367,4 +367,37 @@ describe('catégories en masse (parents)', () => {
         expect(items.find((i: any) => i.text === 'c').category).toBe('Sec');
         expect((await del(`/api/lists/${list.id}/category`, parent.token, { name: '' })).status).toBe(400);
     });
+
+    it('G2: PUT category avec from:null renomme le seau virtuel « Sans catégorie » (merge si le nom existe, jamais supprimable)', async () => {
+        const list = await createList();
+        await addItem(list.id, { text: 'a', category: null });
+        await addItem(list.id, { text: 'b', category: '   ' }); // → NULL
+        await addItem(list.id, { text: 'c', category: 'Frais' });
+
+        // renommage du seau NULL vers un nouveau nom : tous les items NULL partent
+        const res = await put(`/api/lists/${list.id}/category`, { from: null, to: 'Divers' });
+        expect(res.status).toBe(200);
+        expect(res.body.data.updated).toBe(2);
+        const items = (await get(`/api/lists/${list.id}/items`)).body.data.items;
+        expect(items.filter((i: any) => i.category === 'Divers').length).toBe(2);
+        expect(items.filter((i: any) => i.category === null).length).toBe(0);
+        expect(items.find((i: any) => i.text === 'c').category).toBe('Frais');
+
+        // renommage du seau NULL vers une catégorie EXISTANTE = merge, comme un
+        // renommage classique vers un nom existant (pas de table de catégories)
+        await addItem(list.id, { text: 'd', category: null });
+        const res2 = await put(`/api/lists/${list.id}/category`, { from: null, to: 'Frais' });
+        expect(res2.status).toBe(200);
+        expect(res2.body.data.updated).toBe(1);
+        const items2 = (await get(`/api/lists/${list.id}/items`)).body.data.items;
+        expect(items2.find((i: any) => i.text === 'd').category).toBe('Frais');
+
+        // le seau NULL ne se supprime PAS : DELETE name null/'' → 400
+        expect((await del(`/api/lists/${list.id}/category`, parent.token, { name: null })).status).toBe(400);
+        expect((await del(`/api/lists/${list.id}/category?name=`, parent.token)).status).toBe(400);
+
+        // from manquant → 400 ; enfant → 403 même sur le seau NULL
+        expect((await put(`/api/lists/${list.id}/category`, { to: 'X' })).status).toBe(400);
+        expect((await put(`/api/lists/${list.id}/category`, { from: null, to: 'X' }, child.token)).status).toBe(403);
+    });
 });

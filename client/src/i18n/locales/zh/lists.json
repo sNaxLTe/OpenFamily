@@ -55,7 +55,8 @@
     "renameCategory": {
       "title": "重命名「{{from}}」",
       "toLabel": "新名称",
-      "submit": "重命名"
+      "submit": "重命名",
+      "toast": "分类已重命名为“{{to}}”"
     },
     "deleteCategoryConfirm": "删除分类「{{name}}」？其条目将归入「无分类」。",
     "itemMenu": {

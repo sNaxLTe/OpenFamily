@@ -55,7 +55,8 @@
     "renameCategory": {
       "title": "Renomear «{{from}}»",
       "toLabel": "Novo nome",
-      "submit": "Renomear"
+      "submit": "Renomear",
+      "toast": "Categoria renomeada para «{{to}}»"
     },
     "deleteCategoryConfirm": "Eliminar a categoria «{{name}}»? Os itens passam para «Sem categoria».",
     "itemMenu": {

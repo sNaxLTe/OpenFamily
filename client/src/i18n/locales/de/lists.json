@@ -55,7 +55,8 @@
     "renameCategory": {
       "title": "„{{from}}“ umbenennen",
       "toLabel": "Neuer Name",
-      "submit": "Umbenennen"
+      "submit": "Umbenennen",
+      "toast": "Kategorie umbenannt in „{{to}}“"
     },
     "deleteCategoryConfirm": "Kategorie „{{name}}“ löschen? Ihre Einträge landen in „Ohne Kategorie“.",
     "itemMenu": {

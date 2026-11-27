@@ -55,7 +55,8 @@
     "renameCategory": {
       "title": "Reanomenar «{{from}}»",
       "toLabel": "Nou nom",
-      "submit": "Reanomenar"
+      "submit": "Reanomenar",
+      "toast": "Categoria reanomenada a «{{to}}»"
     },
     "deleteCategoryConfirm": "Eliminar la categoria «{{name}}»? Els seus articles passen a «Sense categoria».",
     "itemMenu": {

@@ -276,20 +276,31 @@ router.put('/:id/category', requireParent, async (req: AuthRequest, res) => {
     try {
         const list = await familyList(req.params.id, req.userId!);
         if (!list) return res.status(404).json({ success: false, error: 'List not found' });
-        const from = parseCategory(req.body?.from);
+        const rawFrom = req.body?.from;
+        const from = parseCategory(rawFrom);
         const to = parseCategory(req.body?.to);
-        // A rename needs a real source and a real target (empty → NULL is the
-        // DELETE route's job).
-        if (!from.ok || from.category === null || from.category === undefined) {
+        // G2: an explicit `from: null` targets the virtual "Sans catégorie"
+        // bucket (category IS NULL). A missing/empty `from` stays invalid
+        // (NULL-as-target is the DELETE route's job).
+        const fromIsNullBucket = rawFrom === null;
+        if (!from.ok || (!fromIsNullBucket && (from.category === null || from.category === undefined))) {
             return res.status(400).json({ success: false, error: 'Invalid from' });
         }
         if (!to.ok || to.category === null || to.category === undefined) {
             return res.status(400).json({ success: false, error: 'Invalid to' });
         }
-        const result = await query(
-            'UPDATE list_items SET category = $3 WHERE list_id = $1 AND category = $2 RETURNING id',
-            [list.id, from.category, to.category]
-        );
+        // Renaming onto an existing category name MERGES into it (categories
+        // are derived from items, there is no separate category table) — same
+        // behavior whether the source is a real category or the NULL bucket.
+        const result = fromIsNullBucket
+            ? await query(
+                'UPDATE list_items SET category = $2 WHERE list_id = $1 AND category IS NULL RETURNING id',
+                [list.id, to.category]
+            )
+            : await query(
+                'UPDATE list_items SET category = $3 WHERE list_id = $1 AND category = $2 RETURNING id',
+                [list.id, from.category, to.category]
+            );
         broadcast(req.userId!, { type: 'update', entity: 'lists', action: 'updated' });
         res.json({ success: true, data: { updated: result.rows.length } });
     } catch (error) {

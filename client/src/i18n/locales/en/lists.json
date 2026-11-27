@@ -55,7 +55,8 @@
     "renameCategory": {
       "title": "Rename \"{{from}}\"",
       "toLabel": "New name",
-      "submit": "Rename"
+      "submit": "Rename",
+      "toast": "Category renamed to “{{to}}”"
     },
     "deleteCategoryConfirm": "Delete the category \"{{name}}\"? Its items move to \"No category\".",
     "itemMenu": {

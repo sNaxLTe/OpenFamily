@@ -726,6 +726,7 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
         try {
             await api.put(`/api/lists/${listId}/category`, { from: renameCat, to });
             setRenameCat(null);
+            showToast({ title: t('lists:list.renameCategory.toast', { to }) });
             await load();
         } catch (err) {
             console.error('Failed to rename category:', err);
@@ -866,10 +867,13 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
                                 <span className="text-micro text-muted-foreground shrink-0">
                                     {count.unchecked}/{count.total}
                                 </span>
-                                {isParent && group.name !== null && (
+                                {/* G2: menu « … » sur TOUTES les lignes, y compris le seau
+                                    virtuel « Sans catégorie » (aligne padding/hauteur/chevron).
+                                    Le seau NULL n'a qu'un « Renommer » — jamais « Supprimer ». */}
+                                {isParent && (
                                     <span onClick={(e) => e.stopPropagation()}>
                                         <Menu
-                                            label={`${group.name} — ${t('lists:list.categoryMenu.rename')}`}
+                                            label={`${group.name ?? t('lists:list.category.none')} — ${t('lists:list.categoryMenu.rename')}`}
                                             items={[
                                                 {
                                                     key: 'rename',
@@ -877,13 +881,13 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
                                                     icon: <Pencil className="h-4 w-4" />,
                                                     onClick: () => { setRenameCat(group.name); setRenameCatTo(group.name ?? ''); },
                                                 },
-                                                {
-                                                    key: 'delete',
+                                                ...(group.name !== null ? [{
+                                                    key: 'delete' as const,
                                                     label: t('lists:list.categoryMenu.delete'),
                                                     icon: <Trash2 className="h-4 w-4" />,
-                                                    danger: true,
+                                                    danger: true as const,
                                                     onClick: () => { void handleDeleteCategory(group.name!); },
-                                                },
+                                                }] : []),
                                             ]}
                                         />
                                     </span>
@@ -1004,7 +1008,7 @@ const ListDetail: React.FC<{ listId: string }> = ({ listId }) => {
                 open={renameCat !== null}
                 dismissible={false}
                 onClose={() => setRenameCat(null)}
-                title={t('lists:list.renameCategory.title', { from: renameCat ?? '' })}
+                title={t('lists:list.renameCategory.title', { from: renameCat ?? t('lists:list.category.none') })}
             >
                 <form onSubmit={handleRenameCategory} className="space-y-4">
                     <Input

@@ -244,10 +244,15 @@ const Tasks: React.FC = () => {
         if (!isParent) return;
         resetForm();
         setDialogOpen(true);
-        const t = setTimeout(() => {
-            document.querySelector<HTMLElement>('[role="dialog"] form input')?.focus();
-        }, 150);
-        return () => clearTimeout(t);
+        // Poll briefly until the dialog is mounted, then focus the title.
+        // No cleanup: purging the param re-runs this effect and would cancel
+        // a pending timer; the dialog-exists guard makes late fires no-ops.
+        let n = 0;
+        const iv = setInterval(() => {
+            const el = document.querySelector<HTMLElement>('[role="dialog"] form input');
+            if (el) { el.focus(); clearInterval(iv); }
+            else if (++n > 10) clearInterval(iv);
+        }, 100);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams, setSearchParams, isParent]);
 

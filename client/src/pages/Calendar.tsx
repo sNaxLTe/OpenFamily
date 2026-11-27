@@ -658,10 +658,15 @@ const Calendar: React.FC = () => {
         setSearchParams({}, { replace: true });
         if (!(Boolean(user?.is_owner) || (user?.role ?? '').toLowerCase() !== 'enfant')) return;
         openNewEventForDate(new Date());
-        const t = setTimeout(() => {
-            document.querySelector<HTMLElement>('[role="dialog"] input[role="combobox"]')?.focus();
-        }, 150);
-        return () => clearTimeout(t);
+        // Poll briefly until the editor is mounted, then focus the title.
+        // No cleanup: purging the param re-runs this effect and would cancel
+        // a pending timer; the dialog-exists guard makes late fires no-ops.
+        let n = 0;
+        const iv = setInterval(() => {
+            const el = document.querySelector<HTMLElement>('[role="dialog"] input[role="combobox"]');
+            if (el) { el.focus(); clearInterval(iv); }
+            else if (++n > 10) clearInterval(iv);
+        }, 100);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams, setSearchParams, user]);
 

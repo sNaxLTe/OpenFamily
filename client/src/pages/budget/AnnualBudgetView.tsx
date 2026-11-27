@@ -17,6 +17,7 @@ import ChartCard from '../../components/app/ChartCard';
 import { useToast } from '../../components/ui';
 import { CategorySelect, Field, Sheet } from './budgetParts';
 import ForecastCard from './ForecastCard';
+import { yearDelta } from '../../lib/budgetHero';
 
 // Annual view of the classic Budget tab (feature 1): year recap, 12-month
 // chart with the recurring / one-off split, the annual recurring block
@@ -263,10 +264,8 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
     }
 
     const hasData = annual !== null && (annual.totalIncome !== 0 || annual.totalExpenses !== 0);
-    const prevDelta = annual ? annual.balance - annual.previousYear.balance : 0;
-    // Spec: the "vs N-1" card is hidden when the previous year has no data at all.
-    const hasPreviousYear = annual !== null &&
-        (annual.previousYear.totalIncome !== 0 || annual.previousYear.totalExpenses !== 0);
+    // E2: "vs N-1" is the hero of the annual view; hidden when N-1 has no data.
+    const vsPrev = yearDelta(annual);
 
     const recapItems: Array<{ label: string; value: string; icon: React.ReactNode; tone: string }> = annual ? [
         { label: t('budget:annual.recap.income'), value: cur(annual.totalIncome), icon: <TrendingUp className="w-4 h-4 text-success" />, tone: 'text-foreground' },
@@ -276,12 +275,7 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
         { label: t('budget:annual.recap.monthlyAverage'), value: cur(annual.monthlyAverage), icon: <Wallet className="w-4 h-4 text-muted-foreground" />, tone: 'text-foreground' },
         { label: t('budget:annual.recap.bestMonth'), value: annual.bestMonth ? `${monthName(annual.bestMonth.month)} · ${cur(annual.bestMonth.balance)}` : '—', icon: <TrendingUp className="w-4 h-4 text-success" />, tone: 'text-success' },
         { label: t('budget:annual.recap.worstMonth'), value: annual.worstMonth ? `${monthName(annual.worstMonth.month)} · ${cur(annual.worstMonth.balance)}` : '—', icon: <TrendingDown className="w-4 h-4 text-danger" />, tone: 'text-danger' },
-        ...(hasPreviousYear ? [{
-            label: t('budget:annual.recap.vsPrevious', { year: year - 1 }),
-            value: `${prevDelta >= 0 ? '+' : ''}${cur(prevDelta)}`,
-            icon: prevDelta >= 0 ? <TrendingUp className="w-4 h-4 text-success" /> : <TrendingDown className="w-4 h-4 text-danger" />,
-            tone: prevDelta >= 0 ? 'text-success' : 'text-danger',
-        }] : []),
+        { label: t('budget:annual.recap.committed'), value: cur(annualCommitted), icon: <RefreshCw className="w-4 h-4 text-danger" />, tone: 'text-foreground' },
     ] : [];
 
     return (
@@ -293,7 +287,24 @@ const AnnualBudgetView: React.FC<Props> = ({ year, currency, canEdit, categoryLa
                 </p>
             )}
 
-            {/* ── Recap cards ─────────────────────────────────────────────── */}
+            {/* ── E2 hero: vs N-1 en tête d'écran ────────────────────────── */}
+            {annual && vsPrev.hasPreviousYear && (
+                <div className={`rounded-card p-5 ${vsPrev.delta >= 0 ? 'bg-success/10' : 'bg-danger/10'}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                        {vsPrev.delta >= 0
+                            ? <TrendingUp className="w-4 h-4 text-success" />
+                            : <TrendingDown className="w-4 h-4 text-danger" />}
+                        <span className="text-sm font-medium text-muted-foreground">
+                            {t('budget:annual.recap.vsPrevious', { year: year - 1 })}
+                        </span>
+                    </div>
+                    <p className={`text-4xl font-bold tracking-tight ${vsPrev.delta >= 0 ? 'text-success' : 'text-danger'}`}>
+                        {vsPrev.delta >= 0 ? '+' : ''}{cur(vsPrev.delta)}
+                    </p>
+                </div>
+            )}
+
+            {/* ── Recap cards (8) ─────────────────────────────────────────── */}
             {annual && (
                 <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
                     {recapItems.map((item) => (

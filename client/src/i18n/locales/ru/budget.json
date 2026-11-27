@@ -162,6 +162,7 @@
       "monthlyAverage": "В среднем за месяц",
       "bestMonth": "Лучший месяц",
       "worstMonth": "Худший месяц",
+      "committed": "Запланировано на год",
       "vsPrevious": "К {{year}}"
     },
     "noData": "Нет данных за {{year}}.",

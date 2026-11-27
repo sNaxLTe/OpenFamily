@@ -150,6 +150,7 @@
       "monthlyAverage": "Mitjana mensual",
       "bestMonth": "Millor mes",
       "worstMonth": "Pitjor mes",
+      "committed": "Compromès de l'any",
       "vsPrevious": "Vs {{year}}"
     },
     "noData": "Sense dades per a {{year}}.",

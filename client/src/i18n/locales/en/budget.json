@@ -150,6 +150,7 @@
       "monthlyAverage": "Monthly average",
       "bestMonth": "Best month",
       "worstMonth": "Worst month",
+      "committed": "Committed for the year",
       "vsPrevious": "Vs {{year}}"
     },
     "noData": "No data for {{year}}.",

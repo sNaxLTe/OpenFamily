@@ -21,6 +21,7 @@ import {
     ResponsiveContainer, Legend,
 } from 'recharts';
 import ChartCard from '../components/app/ChartCard';
+import { buildHero } from '../lib/budgetHero';
 import { format, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -661,8 +662,8 @@ const Budget: React.FC = () => {
         );
     }
 
-    const balancePositive = (forecast?.currentBalance ?? 0) >= 0;
-    const forecastPositive = (forecast?.forecastBalance ?? 0) >= 0;
+    // E2: one hero = balance + forecast merged (pure helper, unit-tested).
+    const hero = buildHero(forecast);
 
     return (
         // One column on a phone. On a wide screen the sections are set in two
@@ -931,106 +932,6 @@ const Budget: React.FC = () => {
                 </div>
             )}
 
-            {mode === 'budget' && view === 'month' && !showAnnual && (
-                <div className="px-4 pt-4 [&>*]:mb-3 [&>*]:break-inside-avoid xl:columns-2 xl:gap-6">
-                            {/* Répartition par catégorie */}
-                            <ChartCard
-                                title={t('budget:charts.expensesByCategory')}
-                                subtitle={format(new Date(currentYear, currentMonth - 1), 'MMMM yyyy', { locale: dateLocale() })}
-                            >
-                                {stats && stats.byCategory.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height={240}>
-                                        <PieChart>
-                                            <Pie
-                                                data={stats.byCategory}
-                                                dataKey="category_total"
-                                                nameKey="category"
-                                                cx="50%"
-                                                cy="50%"
-                                                outerRadius={80}
-                                                label={(e: any) => categoryLabel(e.category)}
-                                            >
-                                                {stats.byCategory.map((_, i) => (
-                                                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip formatter={(v: number) => formatCurrency(v, currency)} />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <p className="text-sm text-muted-foreground text-center py-8">{t('budget:charts.noExpenses')}</p>
-                                )}
-                            </ChartCard>
-
-                            {/* Évolution mensuelle */}
-                            <ChartCard title={t('budget:charts.yearEvolution')} subtitle={`${currentYear}`}>
-                                <ResponsiveContainer width="100%" height={240}>
-                                    <BarChart data={monthly.map((m) => ({
-                                        month: format(new Date(currentYear, m.month - 1), 'MMM', { locale: dateLocale() }),
-                                        expenses: m.totalExpenses,
-                                        income: m.totalIncome,
-                                    }))}>
-                                        <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                                        <YAxis tick={{ fontSize: 11 }} width={40} />
-                                        <Tooltip formatter={(v: number) => formatCurrency(v, currency)} />
-                                        <Legend wrapperStyle={{ fontSize: 12 }} />
-                                        <Bar dataKey="income" name={t('budget:charts.income')} fill="#10b981" radius={[4, 4, 0, 0]} />
-                                        <Bar dataKey="expenses" name={t('budget:charts.expenses')} fill="#ef4444" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </ChartCard>
-
-                            {/* Plafonds par catégorie */}
-                            <ChartCard
-                                title={t('budget:limits.title')}
-                                subtitle={t('budget:limits.subtitle')}
-                                action={canEdit ? (
-                                    <button
-                                        onClick={() => openLimitSheet()}
-                                        className="flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-medium text-primary transition-transform active:scale-95"
-                                    >
-                                        <Plus className="h-4 w-4 shrink-0" /> {t('budget:limits.define')}
-                                    </button>
-                                ) : undefined}
-                            >
-                                {limits.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground text-center py-6">
-                                        {t('budget:limits.none')}
-                                    </p>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {limits.map((l) => {
-                                            const spent = spentByCategory[l.category] || 0;
-                                            const ratio = l.monthly_limit > 0 ? Math.min(spent / l.monthly_limit, 1) : 0;
-                                            const over = spent >= l.monthly_limit && l.monthly_limit > 0;
-                                            const warn = ratio >= 0.8 && !over;
-                                            return (
-                                                <button
-                                                    key={l.id}
-                                                    onClick={() => canEdit && openLimitSheet(l.category)}
-                                                    className="w-full text-left"
-                                                    disabled={!canEdit}
-                                                >
-                                                    <div className="flex items-center justify-between text-sm mb-1">
-                                                        <span className="font-medium">{categoryLabel(l.category)}</span>
-                                                        <span className={over ? 'text-danger font-semibold' : warn ? 'text-warning' : 'text-muted-foreground'}>
-                                                            {formatCurrency(spent, currency)} / {formatCurrency(l.monthly_limit, currency)}
-                                                        </span>
-                                                    </div>
-                                                    <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
-                                                        <div
-                                                            className={`h-full rounded-full transition-all ${over ? 'bg-danger/100' : warn ? 'bg-warning/100' : 'bg-success/100'}`}
-                                                            style={{ width: `${ratio * 100}%` }}
-                                                        />
-                                                    </div>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </ChartCard>
-                </div>
-            )}
 
             <div className="px-4 pt-4 [&>*]:mb-3 [&>*]:break-inside-avoid xl:columns-2 xl:gap-6" style={{ display: mode === 'budget' && !showAnnual ? undefined : 'none' }}>
 
@@ -1061,83 +962,139 @@ const Budget: React.FC = () => {
                 )}
 
 
-                <div className={`rounded-card p-5 ${balancePositive ? 'bg-success/10' : 'bg-danger/10'}`}>
+                {/* E2 hero: solde + prévision fusionnés en UNE carte (buildHero) */}
+                <div className={`rounded-card p-5 ${hero.balancePositive ? 'bg-success/10' : 'bg-danger/10'}`}>
                     <div className="flex items-center gap-2 mb-1">
-                        <Wallet className={`w-4 h-4 ${balancePositive ? 'text-success' : 'text-danger'}`} />
+                        <Wallet className={`w-4 h-4 ${hero.balancePositive ? 'text-success' : 'text-danger'}`} />
                         <span className="text-sm font-medium text-muted-foreground">{t('budget:balance.current')}</span>
                     </div>
-                    <p className={`text-4xl font-bold tracking-tight ${balancePositive ? 'text-success' : 'text-danger'}`}>
-                        {formatCurrency(forecast?.currentBalance ?? 0, currency)}
+                    <p className={`text-4xl font-bold tracking-tight ${hero.balancePositive ? 'text-success' : 'text-danger'}`}>
+                        {formatCurrency(hero.balance, currency)}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
                         {t('budget:balance.opening', {
-                            amount: formatCurrency(forecast?.openingBalance ?? 0, currency),
+                            amount: formatCurrency(hero.opening, currency),
                         })}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    {hero.forecast !== null && (
+                        <div className={`mt-3 flex items-center gap-2 rounded-input border px-3 py-2 ${hero.forecastPositive ? 'border-info/20 bg-info/5' : 'border-peach/20 bg-peach/5'}`}>
+                            <Eye className={`w-4 h-4 shrink-0 ${hero.forecastPositive ? 'text-info' : 'text-peach'}`} />
+                            <span className="text-xs font-medium text-muted-foreground">{t('budget:forecast.title')}</span>
+                            <span className={`ml-auto text-lg font-bold ${hero.forecastPositive ? 'text-info' : 'text-peach'}`}>
+                                {formatCurrency(hero.forecast, currency)}
+                            </span>
+                        </div>
+                    )}
+                    {hero.forecast !== null && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {t('budget:forecast.subtitle', {
+                                income: formatCurrency(hero.upcomingIncome, currency),
+                                expenses: formatCurrency(hero.upcomingExpenses, currency),
+                            })}
+                        </p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
                         {t('budget:balance.pointed', { count: pointedCount })}
                         {' '}· {t('budget:balance.expenses', { count: expenses.length })}
                     </p>
                 </div>
 
-                {/* Prévisionnel */}
-                {forecast && (
-                    forecast.upcomingRecurringExpenses > 0 ||
-                    forecast.upcomingRecurringIncome > 0
-                ) && (
-                    <div className={`rounded-card p-4 border-2 ${forecastPositive ? 'border-info/20 bg-info/5' : 'border-peach/20 bg-peach/5'}`}>
-                        <div className="flex items-center gap-2 mb-1">
-                            <Eye className={`w-4 h-4 ${forecastPositive ? 'text-info' : 'text-peach'}`} />
-                            <span className="text-sm font-medium text-muted-foreground">{t('budget:forecast.title')}</span>
-                        </div>
-                        <p className={`text-3xl font-bold ${forecastPositive ? 'text-info' : 'text-peach'}`}>
-                            {formatCurrency(forecast.forecastBalance, currency)}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            {t('budget:forecast.subtitle', {
-                                income: formatCurrency(forecast.upcomingRecurringIncome, currency),
-                                expenses: formatCurrency(forecast.upcomingRecurringExpenses, currency),
-                            })}
-                        </p>
-                    </div>
-                )}
+                    {/* Répartition par catégorie */}
+                    <ChartCard
+                        title={t('budget:charts.expensesByCategory')}
+                        subtitle={format(new Date(currentYear, currentMonth - 1), 'MMMM yyyy', { locale: dateLocale() })}
+                    >
+                        {stats && stats.byCategory.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={240}>
+                                <PieChart>
+                                    <Pie
+                                        data={stats.byCategory}
+                                        dataKey="category_total"
+                                        nameKey="category"
+                                        cx="50%"
+                                        cy="50%"
+                                        outerRadius={80}
+                                        label={(e: any) => categoryLabel(e.category)}
+                                    >
+                                        {stats.byCategory.map((_, i) => (
+                                            <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip formatter={(v: number) => formatCurrency(v, currency)} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <p className="text-sm text-muted-foreground text-center py-8">{t('budget:charts.noExpenses')}</p>
+                        )}
+                    </ChartCard>
 
-                {/* Prélèvements récurrents */}
-                <section>
-                    <div className="flex items-center justify-between mb-2 mt-4">
-                        <div className="flex items-center gap-2">
-                            <RefreshCw className="w-4 h-4 text-muted-foreground" />
-                            <h2 className="font-semibold text-base">{t('budget:sections.recurring')}</h2>
-                            {recurring.length > 0 && (
-                                <span className="text-xs bg-surface-2 text-muted-foreground px-2 py-0.5 rounded-full">
-                                    {pointedCount}/{recurring.length}
-                                </span>
-                            )}
-                        </div>
-                    </div>
+                    {/* Évolution mensuelle */}
+                    <ChartCard title={t('budget:charts.yearEvolution')} subtitle={`${currentYear}`}>
+                        <ResponsiveContainer width="100%" height={240}>
+                            <BarChart data={monthly.map((m) => ({
+                                month: format(new Date(currentYear, m.month - 1), 'MMM', { locale: dateLocale() }),
+                                expenses: m.totalExpenses,
+                                income: m.totalIncome,
+                            }))}>
+                                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                                <YAxis tick={{ fontSize: 11 }} width={40} />
+                                <Tooltip formatter={(v: number) => formatCurrency(v, currency)} />
+                                <Legend wrapperStyle={{ fontSize: 12 }} />
+                                <Bar dataKey="income" name={t('budget:charts.income')} fill="#10b981" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="expenses" name={t('budget:charts.expenses')} fill="#ef4444" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </ChartCard>
 
-                    {recurring.length === 0 ? (
-                        <div className="rounded-card border border-dashed border-border p-6 text-center">
-                            <RefreshCw className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-40" />
-                            <p className="text-sm text-muted-foreground">{t('budget:recurring.empty')}</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-2">
-                            {recurring.map((r) => (
-                                <RecurringCard
-                                    key={r.occurrence_id ?? `${r.id}:${r.occurrence_date ?? r.debit_day}`}
-                                    r={r}
-                                    currency={currency}
-                                    canEdit={canEdit}
-                                    categoryLabel={categoryLabel}
-                                    onTogglePoint={handleTogglePoint}
-                                    onEdit={openEditRecurring}
-                                    onDelete={handleDeleteRecurring}
-                                />
-                            ))}
-                        </div>
+                    {/* Plafonds par catégorie */}
+                    <ChartCard
+                        title={t('budget:limits.title')}
+                        subtitle={t('budget:limits.subtitle')}
+                        action={canEdit ? (
+                            <button
+                                onClick={() => openLimitSheet()}
+                                className="flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-medium text-primary transition-transform active:scale-95"
+                            >
+                                <Plus className="h-4 w-4 shrink-0" /> {t('budget:limits.define')}
+                            </button>
+                        ) : undefined}
+                    >
+                        {limits.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-6">
+                                {t('budget:limits.none')}
+                            </p>
+                        ) : (
+                            <div className="space-y-3">
+                                {limits.map((l) => {
+                                    const spent = spentByCategory[l.category] || 0;
+                                    const ratio = l.monthly_limit > 0 ? Math.min(spent / l.monthly_limit, 1) : 0;
+                                    const over = spent >= l.monthly_limit && l.monthly_limit > 0;
+                                    const warn = ratio >= 0.8 && !over;
+                                    return (
+                                        <button
+                                            key={l.id}
+                                            onClick={() => canEdit && openLimitSheet(l.category)}
+                                            className="w-full text-left"
+                                            disabled={!canEdit}
+                                        >
+                                            <div className="flex items-center justify-between text-sm mb-1">
+                                                <span className="font-medium">{categoryLabel(l.category)}</span>
+                                                <span className={over ? 'text-danger font-semibold' : warn ? 'text-warning' : 'text-muted-foreground'}>
+                                                    {formatCurrency(spent, currency)} / {formatCurrency(l.monthly_limit, currency)}
+                                                </span>
+                                            </div>
+                                            <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
+                                                <div
+                                                    className={`h-full rounded-full transition-all ${over ? 'bg-danger/100' : warn ? 'bg-warning/100' : 'bg-success/100'}`}
+                                                    style={{ width: `${ratio * 100}%` }}
+                                                />
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                     )}
-                </section>
+                </ChartCard>
 
                 {/* Dépenses ponctuelles */}
                 <section>

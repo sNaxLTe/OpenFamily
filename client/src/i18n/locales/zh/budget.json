@@ -146,6 +146,7 @@
       "monthlyAverage": "月均",
       "bestMonth": "最佳月份",
       "worstMonth": "最差月份",
+      "committed": "年度已承诺",
       "vsPrevious": "对比{{year}}"
     },
     "noData": "{{year}} 年暂无数据。",

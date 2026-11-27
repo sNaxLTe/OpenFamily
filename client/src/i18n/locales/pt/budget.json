@@ -150,6 +150,7 @@
       "monthlyAverage": "Média mensal",
       "bestMonth": "Melhor mês",
       "worstMonth": "Pior mês",
+      "committed": "Comprometido no ano",
       "vsPrevious": "Vs {{year}}"
     },
     "noData": "Sem dados para {{year}}.",

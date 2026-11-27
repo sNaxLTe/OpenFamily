@@ -150,6 +150,7 @@
       "monthlyAverage": "Ø pro Monat",
       "bestMonth": "Bester Monat",
       "worstMonth": "Schlechtester Monat",
+      "committed": "Für das Jahr gebunden",
       "vsPrevious": "Vs {{year}}"
     },
     "noData": "Keine Daten für {{year}}.",

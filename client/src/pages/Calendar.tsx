@@ -1561,27 +1561,42 @@ const Calendar: React.FC = () => {
                         )}
                     </div>
                     {/* B2: color picker at the very bottom, right after the assignee —
-                        the effective color follows the assignee until a manual pick. */}
+                        the effective color follows the assignee until a manual pick.
+                        Comparison is case-insensitive, and if the followed color is
+                        outside the palette an extra swatch shows it as active. */}
                     <div>
                         <label className="mb-1.5 block text-label font-medium text-foreground">
                             {t('calendar:form.color')}
                         </label>
                         <div className="flex flex-wrap gap-2">
-                            {APPOINTMENT_COLORS.map(({ name, color }) => (
-                                <button
-                                    key={color}
-                                    type="button"
-                                    title={name}
-                                    aria-label={name}
-                                    onClick={() => { setFormData({ ...formData, color }); setColorTouched(true); }}
-                                    className={`h-9 w-9 rounded-full border-2 transition-transform hover:scale-110 ${
-                                        effectiveColor === color
-                                            ? 'border-foreground ring-2 ring-offset-2 ring-foreground/30'
-                                            : 'border-border'
-                                    }`}
-                                    style={{ backgroundColor: color }}
-                                />
-                            ))}
+                            {(() => {
+                                const effectiveNorm = effectiveColor.trim().toLowerCase();
+                                const swatches = [...APPOINTMENT_COLORS];
+                                if (!swatches.some((s) => s.color.trim().toLowerCase() === effectiveNorm)) {
+                                    // Couleur suivie hors palette (couleur de l'assigné) :
+                                    // pastille dynamique pour rendre l'état actif visible.
+                                    swatches.push({ name: effectiveColor, color: effectiveColor });
+                                }
+                                return swatches.map(({ name, color }) => {
+                                    const active = effectiveNorm === color.trim().toLowerCase();
+                                    return (
+                                        <button
+                                            key={color}
+                                            type="button"
+                                            title={name}
+                                            aria-label={name}
+                                            aria-pressed={active}
+                                            onClick={() => { setFormData({ ...formData, color }); setColorTouched(true); }}
+                                            className={`h-9 w-9 rounded-full border-2 transition-transform hover:scale-110 ${
+                                                active
+                                                    ? 'border-foreground ring-2 ring-offset-2 ring-foreground/30'
+                                                    : 'border-border'
+                                            }`}
+                                            style={{ backgroundColor: color }}
+                                        />
+                                    );
+                                });
+                            })()}
                         </div>
                     </div>
                     <ReminderPicker

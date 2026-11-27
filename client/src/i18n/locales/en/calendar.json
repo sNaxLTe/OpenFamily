@@ -7,7 +7,7 @@
   "upcoming": {
     "title": "Upcoming appointments",
     "empty": "No upcoming appointments",
-    "window": "Next 30 days"
+    "window": "Next 60 days"
   },
   "dialog": {
     "editTitle": "Edit appointment",

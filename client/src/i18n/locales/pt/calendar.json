@@ -7,7 +7,7 @@
   "upcoming": {
     "title": "Próximos compromissos",
     "empty": "Nenhum compromisso agendado",
-    "window": "Próximos 30 dias"
+    "window": "Próximos 60 dias"
   },
   "dialog": {
     "editTitle": "Editar compromisso",

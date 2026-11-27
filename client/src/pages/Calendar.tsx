@@ -173,7 +173,7 @@ const Calendar: React.FC = () => {
     const [budgetIsExpense, setBudgetIsExpense] = useState(true);
     const [currentDate, setCurrentDate] = useState(new Date());
     const [appointments, setAppointments] = useState<Appointment[]>([]);
-    // Feature 8: the "upcoming" list reads a rolling 30-day window from today,
+    // Feature 8: the "upcoming" list reads a rolling 60-day window from today (G3),
     // separate from the month grid's own query.
     const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
     const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
@@ -301,12 +301,12 @@ const Calendar: React.FC = () => {
         }
     };
 
-    // Feature 8: upcoming appointments over a rolling 30-day window from today
+    // Feature 8: upcoming appointments over a rolling 60-day window from today (G3)
     // (the API accepts any date range; only the bounds change).
     const loadUpcomingAppointments = async () => {
         try {
             const start = format(new Date(), "yyyy-MM-dd'T'00:00:00");
-            const end = format(addDays(new Date(), 30), "yyyy-MM-dd'T'23:59:59");
+            const end = format(addDays(new Date(), 60), "yyyy-MM-dd'T'23:59:59");
             const response = await api.get<{ success: boolean; data: Appointment[] }>(
                 `/api/appointments?start_date=${start}&end_date=${end}`
             );

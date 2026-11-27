@@ -7,7 +7,7 @@
   "upcoming": {
     "title": "Anstehende Termine",
     "empty": "Keine anstehenden Termine",
-    "window": "Nächste 30 Tage"
+    "window": "Nächste 60 Tage"
   },
   "dialog": {
     "editTitle": "Termin bearbeiten",

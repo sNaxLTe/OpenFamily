@@ -7,7 +7,7 @@
   "upcoming": {
     "title": "Próximos eventos",
     "empty": "No hay próximos eventos",
-    "window": "Próximos 30 días"
+    "window": "Próximos 60 días"
   },
   "dialog": {
     "editTitle": "Editar evento",

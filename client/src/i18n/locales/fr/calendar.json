@@ -7,7 +7,7 @@
   "upcoming": {
     "title": "Rendez-vous à venir",
     "empty": "Aucun rendez-vous à venir",
-    "window": "30 prochains jours"
+    "window": "60 prochains jours"
   },
   "dialog": {
     "editTitle": "Modifier le rendez-vous",

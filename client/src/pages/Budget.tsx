@@ -773,7 +773,8 @@ const Budget: React.FC = () => {
             {(mode === 'budget' || mode === 'kakeibo') && (
             <>
             {/* Toggle Mois / Année (feature 1 ; default month) */}
-            <div className="px-4 pt-2">
+            {/* G1: px-4 retiré — le <main> du Layout padde déjà (sinon double padding, 326px au lieu de 358px) */}
+            <div className="pt-2">
                 <div className="flex w-full gap-1 rounded-input border border-border bg-surface-2 p-1">
                     <button
                         type="button"
@@ -965,7 +966,8 @@ const Budget: React.FC = () => {
             )}
 
             {((mode === 'budget' && !showAnnual) || mode === 'recurring') && canEdit && (
-                <div className="px-4 pt-4">
+                // G1: px-4 retiré — le <main> du Layout padde déjà (FAB pleine largeur = 358px comme « Nouvelle tâche »)
+                <div className="pt-4">
                     {/* F1: same Button component + format as Tasks' "Nouvelle tâche" */}
                     <Button
                         type="button"

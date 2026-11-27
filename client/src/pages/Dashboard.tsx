@@ -526,6 +526,22 @@ const Dashboard: React.FC = () => {
                         </button>
                     );
                 })}
+            {/* E4: quick action "saisir une dépense" — the stats widget is visible
+                by default (unlike the quick aside), so this is 1 tap from home. */}
+            {isModuleEnabled('budget') && (
+                <button
+                    type="button"
+                    onClick={() => navigate('/budget?new=1')}
+                    aria-label={t('dashboard:aside.addExpense')}
+                    className="col-span-2 flex min-h-11 items-center justify-between gap-2 border-t border-border px-4 py-3 text-left transition-colors hover:bg-surface-2 active:scale-[0.99] sm:px-5"
+                >
+                    <span className="flex items-center gap-2 text-sm font-medium text-primary">
+                        <Plus className="h-4 w-4" />
+                        {t('dashboard:aside.addExpense')}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-primary" />
+                </button>
+            )}
         </div>
     );
 

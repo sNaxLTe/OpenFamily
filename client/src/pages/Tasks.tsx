@@ -557,31 +557,31 @@ const Tasks: React.FC = () => {
             {/* Statistics */}
             {stats && (
                 <div className="grid grid-cols-2 md:grid-cols-4 overflow-hidden rounded-card border border-border bg-card">
-                    <div className="flex items-center justify-between gap-2 p-4 border-b border-r border-border md:border-b-0">
+                    <div className="flex items-center justify-between gap-2 p-3 border-b border-r border-border md:border-b-0">
                         <div>
-                            <p className="text-label text-muted-foreground mb-1">{t('tasks:stats.total')}</p>
-                            <p className="font-serif text-3xl tracking-tight">{stats.total}</p>
+                            <p className="text-micro text-muted-foreground mb-0.5">{t('tasks:stats.total')}</p>
+                            <p className="font-serif text-2xl tracking-tight">{stats.total}</p>
                         </div>
-                        <CheckSquare className="h-7 w-7 text-muted-foreground" />
+                        <CheckSquare className="h-5 w-5 text-muted-foreground" />
                     </div>
-                    <div className="flex items-center justify-between gap-2 p-4 border-b border-border md:border-b-0 md:border-r">
+                    <div className="flex items-center justify-between gap-2 p-3 border-b border-border md:border-b-0 md:border-r">
                         <div>
-                            <p className="text-label text-muted-foreground mb-1">{t('tasks:stats.completed')}</p>
-                            <p className="font-serif text-3xl tracking-tight text-success">{stats.completed}</p>
+                            <p className="text-micro text-muted-foreground mb-0.5">{t('tasks:stats.completed')}</p>
+                            <p className="font-serif text-2xl tracking-tight text-success">{stats.completed}</p>
                         </div>
-                        <TrendingUp className="h-7 w-7 text-success" />
+                        <TrendingUp className="h-5 w-5 text-success" />
                     </div>
-                    <div className="flex items-center justify-between gap-2 p-4 border-r border-border">
+                    <div className="flex items-center justify-between gap-2 p-3 border-r border-border">
                         <div>
-                            <p className="text-label text-muted-foreground mb-1">{t('tasks:stats.pending')}</p>
-                            <p className="font-serif text-3xl tracking-tight">{stats.pending}</p>
+                            <p className="text-micro text-muted-foreground mb-0.5">{t('tasks:stats.pending')}</p>
+                            <p className="font-serif text-2xl tracking-tight">{stats.pending}</p>
                         </div>
-                        <Square className="h-7 w-7 text-muted-foreground" />
+                        <Square className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div className="flex items-center justify-between gap-2 p-4">
                         <div>
-                            <p className="text-label text-muted-foreground mb-1">{t('tasks:stats.completionRate')}</p>
-                            <p className="font-serif text-3xl tracking-tight text-primary">{stats.completionRate}%</p>
+                            <p className="text-micro text-muted-foreground mb-0.5">{t('tasks:stats.completionRate')}</p>
+                            <p className="font-serif text-2xl tracking-tight text-primary">{stats.completionRate}%</p>
                         </div>
                     </div>
                 </div>
@@ -589,11 +589,11 @@ const Tasks: React.FC = () => {
 
             {/* Filters */}
             <Card>
-                <CardContent className="p-4">
-                    <div className="flex flex-wrap items-center gap-4">
+                <CardContent className="p-3">
+                    <div className="flex flex-wrap items-center gap-2">
                         <div className="flex items-center gap-2">
                             <Filter className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-body-sm font-medium">{t('tasks:filters.label')}</span>
+                            <span className="text-caption font-medium">{t('tasks:filters.label')}</span>
                         </div>
                         <Select
                             value={filterStatus}
@@ -603,7 +603,7 @@ const Tasks: React.FC = () => {
                                 { value: 'pending', label: t('tasks:filters.statusPending') },
                                 { value: 'completed', label: t('tasks:filters.statusCompleted') },
                             ]}
-                            className="w-40"
+                            className="w-36"
                         />
                         <Select
                             value={filterPriority}
@@ -612,7 +612,7 @@ const Tasks: React.FC = () => {
                                 { value: '', label: t('tasks:filters.allPriorities') },
                                 ...PRIORITIES,
                             ]}
-                            className="w-48"
+                            className="w-40"
                         />
                         <Select
                             value={filterMember}
@@ -622,7 +622,7 @@ const Tasks: React.FC = () => {
                                 { value: '__unassigned__', label: t('tasks:filters.unassigned') },
                                 ...familyMembers.map((m) => ({ value: m.id, label: m.name })),
                             ]}
-                            className="w-48"
+                            className="w-40"
                         />
                         <Select
                             value={filterFrequency}
@@ -631,7 +631,7 @@ const Tasks: React.FC = () => {
                                 { value: '', label: t('tasks:filters.allFrequencies') },
                                 ...FREQUENCIES,
                             ]}
-                            className="w-48"
+                            className="w-40"
                         />
                         <Select
                             value={filterCategory}
@@ -641,7 +641,7 @@ const Tasks: React.FC = () => {
                                 { value: NO_CATEGORY, label: t('tasks:filters.noCategory') },
                                 ...TASK_CATEGORIES,
                             ]}
-                            className="w-48"
+                            className="w-40"
                         />
                         {(filterPriority || filterStatus !== 'all' || filterMember || filterFrequency || filterCategory) && (
                             <Button

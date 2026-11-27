@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useWebSocketUpdates } from '../hooks/useWebSocketUpdates';
 import { api } from '../lib/api';
 import { friendlyApiError } from '../lib/friendlyError';
-import { useToast } from '../components/ui';
+import { Button, useToast } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/utils';
 import {
@@ -966,17 +966,17 @@ const Budget: React.FC = () => {
 
             {((mode === 'budget' && !showAnnual) || mode === 'recurring') && canEdit && (
                 <div className="px-4 pt-4 flex justify-end">
-                    <button
+                    {/* F1: same Button component + format as Tasks' "Nouvelle tâche" */}
+                    <Button
                         type="button"
                         // E3: on the Budget tab the FAB opens the quick entry
                         // through the /budget?new=1 deep link; on Récurrents it
                         // keeps opening the full form (series creation).
                         onClick={() => (mode === 'budget' ? setSearchParams({ new: '1' }) : openNewTransaction())}
-                        className="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white active:scale-95 transition-transform"
                     >
-                        <Plus className="w-4 h-4" />
+                        <Plus className="w-4 h-4 mr-2" />
                         {t('common:actions.add')}
-                    </button>
+                    </Button>
                 </div>
             )}
 
@@ -1596,8 +1596,10 @@ const EntryRow: React.FC<{
                     <FileText className="w-3.5 h-3.5" />
                 </a>
             )}
+            {/* F3: edit/delete franchement espacés (donnée financière) ;
+                -m-3 p-3 = zone de tap ~62px, aria-labels distincts conservés */}
             {canEdit && (
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-3 flex-shrink-0 border-l border-border pl-3 ml-1">
                     <button
                         onClick={() => onEdit(entry)}
                         aria-label={t('common:actions.edit')}

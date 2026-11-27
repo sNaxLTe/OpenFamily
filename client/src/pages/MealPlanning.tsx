@@ -535,12 +535,13 @@ const MealPlanning: React.FC = () => {
                     {error}
                 </div>
             ) : null}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* F5①: partie haute centrée */}
+            <div className="flex flex-col items-center gap-3 text-center">
                 <div>
                     <h2 className="text-h1 mb-1">{t('meals:title')}</h2>
                     <p className="text-muted-foreground text-body">{t('meals:subtitle')}</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-2">
                     <Button
                         variant="secondary"
                         size="sm"
@@ -606,7 +607,7 @@ const MealPlanning: React.FC = () => {
                                                 key={mealType}
                                                 role="button"
                                                 tabIndex={0}
-                                                className={`flex min-h-[44px] cursor-pointer items-center gap-3 rounded-lg border bg-gradient-to-br px-3 py-1.5 ${getMealTypeColor(mealType)}`}
+                                                className={`flex min-h-[44px] cursor-pointer items-center justify-between gap-3 rounded-lg border bg-gradient-to-br px-3 py-1.5 ${getMealTypeColor(mealType)}`}
                                                 onClick={() => (meal ? handleEdit(meal) : handleAddMeal(day, mealType))}
                                                 onKeyDown={(e) => {
                                                     if (e.key === 'Enter') meal ? handleEdit(meal) : handleAddMeal(day, mealType);
@@ -617,7 +618,7 @@ const MealPlanning: React.FC = () => {
                                                 </span>
                                                 {meal ? (
                                                     <>
-                                                        <span className="min-w-0 flex-1 break-words text-body-sm font-medium">
+                                                        <span className="min-w-0 flex-1 break-words text-center text-body-sm font-medium">
                                                             {meal.recipe?.name || meal.custom_meal}
                                                         </span>
                                                         <button
@@ -628,13 +629,13 @@ const MealPlanning: React.FC = () => {
                                                                 e.stopPropagation();
                                                                 handleDelete(meal.id);
                                                             }}
-                                                            className="-mr-1.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded hover:bg-card/70"
+                                                            className="-m-3 p-3 flex flex-shrink-0 items-center justify-center rounded hover:bg-card/70"
                                                         >
                                                             <Trash2 className="h-3.5 w-3.5 text-red-500" />
                                                         </button>
                                                     </>
                                                 ) : (
-                                                    <Plus className="ml-auto h-4 w-4 opacity-40" />
+                                                    <Plus className="mx-auto h-4 w-4 opacity-40" />
                                                 )}
                                             </div>
                                         );
@@ -682,31 +683,33 @@ const MealPlanning: React.FC = () => {
                                                 }
                                             >
                                                 {meal ? (
-                                                    <div className="space-y-1">
-                                                        <div className="font-medium text-body-sm line-clamp-2">
+                                                    <div className="flex h-full min-h-[64px] flex-col">
+                                                        <div className="flex flex-1 items-center justify-center px-1 text-center font-medium text-body-sm line-clamp-2">
                                                             {meal.recipe?.name || meal.custom_meal}
                                                         </div>
                                                         {meal.notes && (
-                                                            <div className="text-[10px] text-muted-foreground line-clamp-1">
+                                                            <div className="text-center text-[10px] text-muted-foreground line-clamp-1">
                                                                 {meal.notes}
                                                             </div>
                                                         )}
-                                                        <div className="flex gap-1 mt-2">
+                                                        <div className="mt-auto flex items-center justify-end gap-1 pt-1">
                                                             <button
+                                                                aria-label={t('common:actions.edit')}
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     handleEdit(meal);
                                                                 }}
-                                                                className="p-1 hover:bg-card/70 rounded"
+                                                                className="-m-3 p-3 hover:bg-card/70 rounded"
                                                             >
                                                                 <Edit2 className="h-3 w-3" />
                                                             </button>
                                                             <button
+                                                                aria-label={t('common:actions.delete')}
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     handleDelete(meal.id);
                                                                 }}
-                                                                className="p-1 hover:bg-card/70 rounded"
+                                                                className="-m-3 p-3 hover:bg-card/70 rounded"
                                                             >
                                                                 <Trash2 className="h-3 w-3 text-red-500" />
                                                             </button>

@@ -226,15 +226,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 aria-modal="false"
                 aria-label={t('quickActions.title')}
                 className={cn(
-                    'fixed inset-x-4 bottom-44 z-50 rounded-card border border-border bg-card p-4 shadow-surface-hover md:inset-x-auto md:bottom-44 md:right-8 md:w-72',
+                    'fixed inset-x-4 bottom-44 z-50 rounded-card border border-border bg-card p-4 shadow-surface-hover md:inset-x-auto md:bottom-44 md:right-8 md:w-80',
                     'transition-all duration-base ease-soft',
                     quickActionsOpen
                         ? 'pointer-events-auto translate-y-0 opacity-100'
                         : 'pointer-events-none translate-y-3 opacity-0'
                 )}
             >
-                <p className="mb-3 text-caption font-semibold text-foreground">{t('quickActions.title')}</p>
-                <div className="grid grid-cols-1 gap-2">
+                {/* F2: titre centré, actions en grille 2 colonnes, icône grande
+                    avec le libellé en petit dessous, cibles >= 44px */}
+                <p className="mb-3 text-center text-caption font-semibold text-foreground">{t('quickActions.title')}</p>
+                <div className="grid grid-cols-2 gap-2">
                     {visibleQuickActions.map((action) => {
                         const Icon = action.icon;
                         return (
@@ -242,10 +244,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 key={action.labelKey}
                                 to={action.href}
                                 onClick={() => setQuickActionsOpen(false)}
-                                className="flex items-center gap-2 rounded-input px-3 py-2 text-caption text-foreground hover:bg-surface-2"
+                                className="flex min-h-11 flex-col items-center justify-center gap-1 rounded-input px-2 py-2 text-center text-foreground hover:bg-surface-2"
                             >
-                                <Icon className="h-4 w-4 text-primary" />
-                                <span>{t(action.labelKey)}</span>
+                                <Icon className="h-6 w-6 text-primary" />
+                                <span className="text-[11px] leading-tight">{t(action.labelKey)}</span>
                             </Link>
                         );
                     })}

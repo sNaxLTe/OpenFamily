@@ -12,7 +12,8 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Dialog, useToast } from '../components/ui';
 import { useCategories } from '../hooks/useCategories';
-import { SHOPPING_CATALOG } from '../lib/shoppingCatalog';
+import { matchPrefixSuggestions } from '../lib/comboboxSuggestions';
+import { useComboboxSuggestions } from '../lib/useComboboxSuggestions';
 import { friendlyApiError } from '../lib/friendlyError';
 import { useHistoryAwareOverlay } from '../lib/useHistoryAwareOverlay';
 import { LIST_ICONS, SHOPPING_STORE_NAME_MAX } from '@openfamily/shared';
@@ -32,6 +33,7 @@ interface ShoppingItem {
     notes?: string;
     /** Shopping store tab (annual/0010) : null/undefined = onglet « Général ». */
     store_id?: string | null;
+    created_at?: string;
 }
 
 /** A shopping store = one tab on the Shopping page (annual/0010). */
@@ -662,38 +664,31 @@ const ShoppingList: React.FC = () => {
     const pendingItems = useMemo(() => visibleItems.filter((item) => !item.is_checked), [visibleItems]);
     const completedItems = useMemo(() => visibleItems.filter((item) => item.is_checked), [visibleItems]);
 
-    /**
-     * Ready-made items to add in one tap. Filtered by what has been typed, and
-     * hiding anything already on the list so a suggestion never produces a
-     * duplicate line.
-     */
-    const suggestions = useMemo(() => {
-        const typed = newItem.name.trim().toLowerCase();
-        const onList = new Set(items.map((item) => item.name.trim().toLowerCase()));
-
-        const matches = SHOPPING_CATALOG
-            .map((entry) => ({
-                ...entry,
-                label: t(`shopping:catalog.${entry.key}`, { defaultValue: entry.key }),
-            }))
-            .filter(({ label }) => {
-                const lower = label.toLowerCase();
-                if (onList.has(lower)) return false;
-                return typed === '' || lower.includes(typed);
-            });
-
-        return matches.slice(0, typed === '' ? 8 : 6);
-    }, [newItem.name, items, t]);
-
-    const applySuggestion = (label: string, category: string) => {
-        setNewItem((prev) => ({
-            ...prev,
-            name: label,
-            // A family that renamed or removed the suggested category keeps
-            // whatever is already selected rather than getting an invalid one.
-            category: categories.includes(category) ? category : prev.category,
-        }));
-    };
+    // D3a: while typing the item name, debounced prefix suggestions over every
+    // item the family ever created (all lists/stores — GET /api/shopping already
+    // returns them all, most recent first), deduped by name so the first hit is
+    // the LAST KNOWN category/price. Zero endpoint, zero migration.
+    const itemCombo = useComboboxSuggestions<ShoppingItem>({
+        query: newItem.name,
+        listId: 'item-suggestions',
+        compute: (q) => matchPrefixSuggestions({
+            query: q,
+            items,
+            getText: (item) => item.name,
+            compare: (a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')),
+            limit: 6,
+        }),
+        onSelect: (item) => {
+            setNewItem((prev) => ({
+                ...prev,
+                name: item.name,
+                // A family that renamed or removed the suggested category keeps
+                // whatever is already selected rather than getting an invalid one.
+                category: categories.includes(item.category) ? item.category : prev.category,
+                price: item.price != null ? String(item.price) : prev.price,
+            }));
+        },
+    });
 
     // Store mode: group every item by category (aisle), keeping checked ones for context.
     const itemsByAisle = useMemo(() => {
@@ -934,35 +929,44 @@ const ShoppingList: React.FC = () => {
                     {/* From xl up this card is a narrow column: the fields go back
                         to the two columns they have on a phone. */}
                     <form onSubmit={addItem} className="grid grid-cols-2 gap-3 md:grid-cols-12 md:gap-4 xl:grid-cols-2 xl:gap-3">
-                        <div className="col-span-2 md:col-span-12 xl:col-span-2">
+                        {/* D3a: combobox — debounced prefix suggestions from the
+                            family's existing items (all lists); a pick pre-fills
+                            name/category/last price, everything stays editable. */}
+                        <div className="relative col-span-2 md:col-span-12 xl:col-span-2">
                             <Input
                                 label={t('common:labels.name')}
                                 type="text"
                                 value={newItem.name}
-                                onChange={(e) => setNewItem((prev) => ({ ...prev, name: e.target.value }))}
+                                onChange={(e) => { setNewItem((prev) => ({ ...prev, name: e.target.value })); itemCombo.openList(); }}
+                                onFocus={itemCombo.onFocus}
+                                onBlur={itemCombo.onBlur}
+                                onKeyDown={itemCombo.onKeyDown}
+                                {...itemCombo.inputAria}
+                                autoComplete="off"
                                 placeholder={t('shopping:add.namePlaceholder')}
                             />
-                        </div>
-
-                        {suggestions.length > 0 && (
-                            <div className="col-span-2 md:col-span-12 xl:col-span-2">
-                                <p className="mb-1.5 text-micro font-medium uppercase tracking-wide text-muted-foreground">
-                                    {t('shopping:add.suggestions')}
-                                </p>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {suggestions.map(({ key, label, category }) => (
-                                        <button
-                                            key={key}
-                                            type="button"
-                                            onClick={() => applySuggestion(label, category)}
-                                            className="min-h-11 rounded-pill border border-border bg-card px-3 py-1 text-caption text-foreground transition-colors hover:border-primary hover:bg-primary-soft hover:text-primary"
+                            {itemCombo.visible && (
+                                <ul
+                                    id={itemCombo.listId}
+                                    role="listbox"
+                                    aria-label={t('shopping:add.itemSuggestions')}
+                                    className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-card border border-border bg-card shadow-surface-hover"
+                                >
+                                    {itemCombo.suggestions.map((item, i) => (
+                                        <li
+                                            key={item.id}
+                                            {...itemCombo.getOptionProps(i)}
+                                            className={`flex min-h-11 cursor-pointer items-center gap-2 px-3 text-body-sm ${i === itemCombo.activeIndex ? 'bg-surface-2' : ''}`}
                                         >
-                                            {label}
-                                        </button>
+                                            <span className="truncate">{item.name}</span>
+                                            <span className="ml-auto shrink-0 text-micro text-muted-foreground">
+                                                {categoryLabel(item.category)}
+                                            </span>
+                                        </li>
                                     ))}
-                                </div>
-                            </div>
-                        )}
+                                </ul>
+                            )}
+                        </div>
                         <div className="col-span-2 md:col-span-4 xl:col-span-2">
                             <label className="mb-1.5 block text-caption font-medium text-foreground">{t('shopping:add.category')}</label>
                             <select
@@ -977,27 +981,43 @@ const ShoppingList: React.FC = () => {
                                 ))}
                             </select>
                         </div>
+                        {/* D3b: compact line — label and field on the SAME row, so the
+                            row's visual height drops to the field's own height. The
+                            input keeps input-nexus's min-height 44px: the tap target
+                            is unchanged, no invisible padding needed. */}
                         <div className="md:col-span-2 xl:col-span-1">
-                            <Input
-                                label={t('shopping:qty')}
-                                type="number"
-                                min="0"
-                                step="0.1"
-                                value={newItem.quantity}
-                                onChange={(e) => setNewItem((prev) => ({ ...prev, quantity: e.target.value }))}
-                                placeholder={t('shopping:add.qtyPlaceholder')}
-                            />
+                            <div className="flex items-center gap-2">
+                                <label htmlFor="add-item-quantity" className="shrink-0 text-caption font-medium text-foreground">
+                                    {t('shopping:qty')}
+                                </label>
+                                <input
+                                    id="add-item-quantity"
+                                    type="number"
+                                    min="0"
+                                    step="0.1"
+                                    value={newItem.quantity}
+                                    onChange={(e) => setNewItem((prev) => ({ ...prev, quantity: e.target.value }))}
+                                    placeholder={t('shopping:add.qtyPlaceholder')}
+                                    className="input-nexus min-h-11 w-full min-w-0 flex-1 px-3 py-0 text-caption"
+                                />
+                            </div>
                         </div>
                         <div className="md:col-span-2 xl:col-span-1">
-                            <Input
-                                label={t('common:labels.price')}
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={newItem.price}
-                                onChange={(e) => setNewItem((prev) => ({ ...prev, price: e.target.value }))}
-                                placeholder={t('shopping:add.pricePlaceholder')}
-                            />
+                            <div className="flex items-center gap-2">
+                                <label htmlFor="add-item-price" className="shrink-0 text-caption font-medium text-foreground">
+                                    {t('common:labels.price')}
+                                </label>
+                                <input
+                                    id="add-item-price"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={newItem.price}
+                                    onChange={(e) => setNewItem((prev) => ({ ...prev, price: e.target.value }))}
+                                    placeholder={t('shopping:add.pricePlaceholder')}
+                                    className="input-nexus min-h-11 w-full min-w-0 flex-1 px-3 py-0 text-caption"
+                                />
+                            </div>
                         </div>
                         <div className="col-span-2 flex items-end justify-end md:col-span-4 xl:col-span-2">
                             <Button type="submit" className="w-full md:w-auto xl:w-full">

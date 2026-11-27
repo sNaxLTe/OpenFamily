@@ -1,8 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWebSocketUpdates } from '../hooks/useWebSocketUpdates';
 import { api } from '../lib/api';
 import { DEFAULT_EVENT_COLOR, memberColor, resolveEventColor } from '../lib/eventColor';
+import { matchPrefixSuggestions } from '../lib/comboboxSuggestions';
+import { useComboboxSuggestions } from '../lib/useComboboxSuggestions';
 import { apiBase } from '../lib/serverConfig';
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Edit2, Trash2, MapPin, Clock, CalendarPlus, Copy, Check, RefreshCw, Search, X, Cake } from 'lucide-react';
 import { Card, CardContent, Button, Dialog, Input, Textarea, Badge, Select, DatePicker } from '../components/ui';
@@ -212,58 +214,6 @@ const Calendar: React.FC = () => {
     // B2: the color follows the assignee until the user picks one manually.
     const [colorTouched, setColorTouched] = useState(false);
 
-    // B3: title autocompletion (debounced, prefix match on recent appointments).
-    const [titleFocused, setTitleFocused] = useState(false);
-    const [debouncedTitle, setDebouncedTitle] = useState('');
-    const [suggestOpen, setSuggestOpen] = useState(false);
-    const [suggestIndex, setSuggestIndex] = useState(0);
-    useEffect(() => {
-        const t = setTimeout(() => setDebouncedTitle(formData.title), 150);
-        return () => clearTimeout(t);
-    }, [formData.title]);
-    // Recent history is enough: last 12 months + future, deduped by title,
-    // most recent first, max 6. The appointment being edited is excluded.
-    const titleSuggestions = useMemo(() => {
-        const q = debouncedTitle.trim().toLowerCase();
-        if (q.length < 2) return [];
-        const cutoff = new Date();
-        cutoff.setFullYear(cutoff.getFullYear() - 1);
-        const seen = new Set<string>();
-        return allAppointments
-            .filter((a) => a.id !== editingAppointment?.id
-                && a.title
-                && a.title.toLowerCase().startsWith(q)
-                && (!a.start_time || new Date(a.start_time) >= cutoff))
-            .sort((a, b) => (b.start_time || '').localeCompare(a.start_time || ''))
-            .filter((a) => {
-                const k = a.title.toLowerCase();
-                if (seen.has(k)) return false;
-                seen.add(k);
-                return true;
-            })
-            .slice(0, 6);
-    }, [debouncedTitle, allAppointments, editingAppointment?.id]);
-    const suggestionsVisible = suggestOpen && titleFocused && titleSuggestions.length > 0;
-    useEffect(() => {
-        if (suggestionsVisible) setSuggestIndex(0);
-    }, [suggestionsVisible]);
-    // B3: while the suggestion list is open, the FIRST Escape closes only the
-    // list — never the editor (data-loss n°1). Radix listens for Escape in the
-    // CAPTURE phase on `document`, which fires BEFORE any React (bubble)
-    // handler, so we must intercept in the capture phase on `window` (window
-    // capture runs before document capture) and stop the propagation there.
-    useEffect(() => {
-        if (!suggestionsVisible) return;
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key !== 'Escape') return;
-            e.preventDefault();
-            e.stopPropagation();
-            setSuggestOpen(false);
-        };
-        window.addEventListener('keydown', onKey, true);
-        return () => window.removeEventListener('keydown', onKey, true);
-    }, [suggestionsVisible]);
-
     // Selecting a suggestion pre-fills times, reminders, assignee and color
     // (via B2's follow-the-assignee rule) — everything stays editable, nothing
     // is saved without an explicit submit.
@@ -283,26 +233,31 @@ const Calendar: React.FC = () => {
                 color: colorTouched ? prev.color : memberColor(ids, familyMembers),
             };
         });
-        setSuggestOpen(false);
     };
 
-    const handleTitleKeyDown = (e: React.KeyboardEvent) => {
-        if (!suggestionsVisible) return;
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            setSuggestIndex((i) => Math.min(i + 1, titleSuggestions.length - 1));
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            setSuggestIndex((i) => Math.max(i - 1, 0));
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            applySuggestion(titleSuggestions[suggestIndex]);
-        }
-        // Escape is NOT handled here: while the list is open it is intercepted
-        // in the capture phase on window (see effect above) and closes only the
-        // list; once the list is closed, Escape bubbles to Radix and closes the
-        // editor — that second Escape is the voluntary one.
-    };
+    // B3: title autocompletion on the shared combobox hook — debounced prefix
+    // match over recent appointments (last 12 months + future, deduped by
+    // title, most recent first, max 6); the appointment being edited is
+    // excluded. The hook also owns the first-Escape-closes-only-the-list rule.
+    const titleCombo = useComboboxSuggestions<Appointment>({
+        query: formData.title,
+        listId: 'title-suggestions',
+        compute: (q) => matchPrefixSuggestions({
+            query: q,
+            items: allAppointments,
+            getText: (a) => a.title ?? '',
+            filter: (a) => {
+                if (a.id === editingAppointment?.id || !a.title) return false;
+                if (!a.start_time) return true;
+                const cutoff = new Date();
+                cutoff.setFullYear(cutoff.getFullYear() - 1);
+                return new Date(a.start_time) >= cutoff;
+            },
+            compare: (a, b) => (b.start_time || '').localeCompare(a.start_time || ''),
+            limit: 6,
+        }),
+        onSelect: applySuggestion,
+    });
 
     const [recurrenceScopeAction, setRecurrenceScopeAction] = useState<{
         mode: 'edit' | 'delete';
@@ -1242,34 +1197,26 @@ const Calendar: React.FC = () => {
                         <Input
                             label={t('calendar:form.title')}
                             value={formData.title}
-                            onChange={(e) => { setFormData({ ...formData, title: e.target.value }); setSuggestOpen(true); }}
-                            onFocus={() => { setTitleFocused(true); setSuggestOpen(true); }}
-                            onBlur={() => { setTitleFocused(false); setSuggestOpen(false); }}
-                            onKeyDown={handleTitleKeyDown}
-                            role="combobox"
-                            aria-expanded={suggestionsVisible}
-                            aria-controls="title-suggestions"
-                            aria-autocomplete="list"
-                            aria-activedescendant={suggestionsVisible ? `ts-opt-${suggestIndex}` : undefined}
+                            onChange={(e) => { setFormData({ ...formData, title: e.target.value }); titleCombo.openList(); }}
+                            onFocus={titleCombo.onFocus}
+                            onBlur={titleCombo.onBlur}
+                            onKeyDown={titleCombo.onKeyDown}
+                            {...titleCombo.inputAria}
                             required
                             placeholder={t('calendar:form.titlePlaceholder')}
                         />
-                        {suggestionsVisible && (
+                        {titleCombo.visible && (
                             <ul
-                                id="title-suggestions"
+                                id={titleCombo.listId}
                                 role="listbox"
                                 aria-label={t('calendar:form.titleSuggestions')}
                                 className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-card border border-border bg-card shadow-surface-hover"
                             >
-                                {titleSuggestions.map((s, i) => (
+                                {titleCombo.suggestions.map((s, i) => (
                                     <li
                                         key={s.id}
-                                        id={`ts-opt-${i}`}
-                                        role="option"
-                                        aria-selected={i === suggestIndex}
-                                        className={`flex min-h-11 cursor-pointer items-center gap-2 px-3 text-body-sm ${i === suggestIndex ? 'bg-surface-2' : ''}`}
-                                        onMouseDown={(e) => { e.preventDefault(); applySuggestion(s); }}
-                                        onMouseEnter={() => setSuggestIndex(i)}
+                                        {...titleCombo.getOptionProps(i)}
+                                        className={`flex min-h-11 cursor-pointer items-center gap-2 px-3 text-body-sm ${i === titleCombo.activeIndex ? 'bg-surface-2' : ''}`}
                                     >
                                         <span
                                             className="h-2.5 w-2.5 shrink-0 rounded-full"

@@ -29,4 +29,10 @@ describe('resolveEventColor (B2 — la couleur suit l\'assigné jusqu\'au choix 
     it('touched: the manual pick wins over the assignee', () => {
         expect(resolveEventColor({ color: '#22C55E', colorTouched: true, memberIds: ['axel'], members })).toBe('#22C55E');
     });
+    it('choix manuel puis changement d\'assigné (colorTouched remis à false): la couleur suit le nouvel assigné', () => {
+        // A manual pick happened earlier (color='#22C55E'), then the assignee
+        // changed → the component resets colorTouched=false → the new assignee wins.
+        expect(resolveEventColor({ color: '#22C55E', colorTouched: false, memberIds: ['debo'], members })).toBe('#EC4899');
+        expect(resolveEventColor({ color: '#22C55E', colorTouched: false, memberIds: [], members })).toBe(DEFAULT_EVENT_COLOR);
+    });
 });

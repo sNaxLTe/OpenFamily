@@ -674,8 +674,10 @@ const Calendar: React.FC = () => {
                 ? appointment.recurrence_until.slice(0, 10)
                 : '',
         });
-        // Editing keeps the appointment's own color (manual choice wins).
-        setColorTouched(true);
+        // B2 (arbitrage Axel): à l'ouverture — création OU édition — la couleur
+        // suit l'assigné (colorTouched=false). Conséquence assumée: sauvegarder
+        // une édition sans toucher au sélecteur réécrit la couleur de l'assigné.
+        setColorTouched(false);
         setDialogOpen(true);
     };
 
@@ -1531,6 +1533,9 @@ const Calendar: React.FC = () => {
                                             type="checkbox"
                                             checked={formData.family_member_ids.includes(member.id)}
                                             onChange={() => {
+                                                // B2 (arbitrage Axel): tout changement d'assignation
+                                                // (cocher OU décocher) annule un choix manuel de couleur
+                                                // et la couleur suit le nouvel état.
                                                 setFormData((prev) => {
                                                     const ids = prev.family_member_ids.includes(member.id)
                                                         ? prev.family_member_ids.filter((id) => id !== member.id)
@@ -1538,10 +1543,10 @@ const Calendar: React.FC = () => {
                                                     return {
                                                         ...prev,
                                                         family_member_ids: ids,
-                                                        // B2: until a manual pick, the color follows the assignee.
-                                                        color: colorTouched ? prev.color : memberColor(ids, familyMembers),
+                                                        color: memberColor(ids, familyMembers),
                                                     };
                                                 });
+                                                setColorTouched(false);
                                             }}
                                             className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                                         />

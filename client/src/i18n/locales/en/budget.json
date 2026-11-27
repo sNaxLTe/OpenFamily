@@ -90,7 +90,8 @@
   "sheets": {
     "new": "Add entry",
     "edit": "Edit entry",
-    "limit": "Monthly limit"
+    "limit": "Monthly limit",
+    "secondary": "Additional details"
   },
   "toggle": {
     "expense": "Expense",
@@ -293,10 +294,5 @@
     "paperlessLinked": "Paperless document linked"
   },
   "prevMonth": "Previous month",
-  "nextMonth": "Next month",
-  "quick": {
-    "title": "Quick entry",
-    "moreOptions": "More options",
-    "openFullForm": "Open the full form"
-  }
+  "nextMonth": "Next month"
 }

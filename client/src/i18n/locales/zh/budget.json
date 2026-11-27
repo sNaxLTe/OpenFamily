@@ -86,7 +86,8 @@
   "sheets": {
     "new": "添加记录",
     "edit": "编辑记录",
-    "limit": "每月限额"
+    "limit": "每月限额",
+    "secondary": "更多详情"
   },
   "toggle": {
     "expense": "支出",
@@ -289,10 +290,5 @@
     "paperlessLinked": "已关联 Paperless 文档"
   },
   "prevMonth": "上个月",
-  "nextMonth": "下个月",
-  "quick": {
-    "title": "快速录入",
-    "moreOptions": "更多选项",
-    "openFullForm": "打开完整表单"
-  }
+  "nextMonth": "下个月"
 }

@@ -114,11 +114,16 @@ export const Field: React.FC<{
     min?: string;
     max?: string;
     step?: string;
-}> = ({ label, type = 'text', value, onChange, placeholder, required, min, max, step }) => (
+    /** Forwarded to the <input> (e.g. focus the amount at sheet opening). */
+    inputRef?: React.Ref<HTMLInputElement>;
+    inputMode?: 'decimal' | 'numeric' | 'text';
+}> = ({ label, type = 'text', value, onChange, placeholder, required, min, max, step, inputRef, inputMode }) => (
     <div>
         <label className="block text-sm font-medium text-foreground mb-1">{label}</label>
         <input
+            ref={inputRef}
             type={type}
+            inputMode={inputMode}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}

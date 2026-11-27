@@ -90,7 +90,8 @@
   "sheets": {
     "new": "Ajouter une écriture",
     "edit": "Modifier l’écriture",
-    "limit": "Plafond mensuel"
+    "limit": "Plafond mensuel",
+    "secondary": "Informations complémentaires"
   },
   "toggle": {
     "expense": "Dépense",
@@ -293,10 +294,5 @@
     "paperlessLinked": "Document Paperless lié"
   },
   "prevMonth": "Mois précédent",
-  "nextMonth": "Mois suivant",
-  "quick": {
-    "title": "Saisie rapide",
-    "moreOptions": "Plus d'options",
-    "openFullForm": "Ouvrir le formulaire complet"
-  }
+  "nextMonth": "Mois suivant"
 }

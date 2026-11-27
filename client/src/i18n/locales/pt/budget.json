@@ -90,7 +90,8 @@
   "sheets": {
     "new": "Adicionar lançamento",
     "edit": "Editar lançamento",
-    "limit": "Limite mensal"
+    "limit": "Limite mensal",
+    "secondary": "Detalhes adicionais"
   },
   "toggle": {
     "expense": "Despesa",
@@ -293,10 +294,5 @@
     "paperlessLinked": "Documento do Paperless vinculado"
   },
   "prevMonth": "Mês anterior",
-  "nextMonth": "Próximo mês",
-  "quick": {
-    "title": "Entrada rápida",
-    "moreOptions": "Mais opções",
-    "openFullForm": "Abrir o formulário completo"
-  }
+  "nextMonth": "Próximo mês"
 }

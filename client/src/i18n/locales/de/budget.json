@@ -90,7 +90,8 @@
   "sheets": {
     "new": "Posten hinzufügen",
     "edit": "Posten bearbeiten",
-    "limit": "Monatliches Limit"
+    "limit": "Monatliches Limit",
+    "secondary": "Weitere Angaben"
   },
   "toggle": {
     "expense": "Ausgabe",
@@ -293,10 +294,5 @@
     "paperlessLinked": "Paperless-Dokument verknüpft"
   },
   "prevMonth": "Vorheriger Monat",
-  "nextMonth": "Nächster Monat",
-  "quick": {
-    "title": "Schnelleingabe",
-    "moreOptions": "Weitere Optionen",
-    "openFullForm": "Vollständiges Formular öffnen"
-  }
+  "nextMonth": "Nächster Monat"
 }

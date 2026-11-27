@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useWebSocketUpdates } from '../hooks/useWebSocketUpdates';
 import { api } from '../lib/api';
 import { friendlyApiError } from '../lib/friendlyError';
@@ -13,7 +13,6 @@ import {
 import KakeiboView from './budget/KakeiboView';
 import KakeiboAnnualView from './budget/KakeiboAnnualView';
 import AnnualBudgetView from './budget/AnnualBudgetView';
-import QuickEntrySheet from './budget/QuickEntrySheet';
 import ReportExplorer from './budget/ReportExplorer';
 import PaperlessPicker, { PaperlessPrefill } from './budget/PaperlessPicker';
 import { Sheet, Field, CategorySelect, RecurringCard, type RecurringTransaction } from './budget/budgetParts';
@@ -22,7 +21,7 @@ import {
     ResponsiveContainer, Legend,
 } from 'recharts';
 import ChartCard from '../components/app/ChartCard';
-import { buildHero } from '../lib/budgetHero';
+import { buildHero, mostFrequentCategory } from '../lib/budgetHero';
 import { format, parseISO } from 'date-fns';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -175,9 +174,10 @@ const Budget: React.FC = () => {
     const [limits, setLimits] = useState<BudgetLimit[]>([]);
 
     const [sheetTransaction, setSheetTransaction] = useState(false);
-    // E3: quick-entry sheet, opened by the /budget?new=1 deep link (FAB and home card).
-    const [sheetQuick, setSheetQuick] = useState(false);
+    // E3 (finding 1): /budget?new=1 opens the FULL transaction sheet directly,
+    // amount focused. The param is purged so back/refresh never reopens it.
     const [searchParams, setSearchParams] = useSearchParams();
+    const amountInputRef = useRef<HTMLInputElement>(null);
     const [sheetLimit, setSheetLimit] = useState(false);
     const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
     const [editingEntry, setEditingEntry] = useState<BudgetEntry | null>(null);
@@ -302,18 +302,11 @@ const Budget: React.FC = () => {
 
     useEffect(() => { void loadAll(); }, [loadAll]);
 
-    // E3: deep link /budget?new=1 opens the quick-entry sheet (parents only),
-    // then the param is cleaned so a refresh does not reopen it.
-    useEffect(() => {
-        if (searchParams.get('new') === '1') {
-            setSearchParams({}, { replace: true });
-            if (canEdit) setSheetQuick(true);
-        }
-    }, [searchParams, setSearchParams, canEdit]);
-
-    // E3: "plus d'options" of the quick sheet hands the draft to the full form.
-    const openFullFromQuick = (draft: { amount: string; category: string; date: string }) => {
-        setSheetQuick(false);
+    // E3 (finding 1): quick entry = the full form opened directly, with the
+    // P1 defaults: empty amount focused, category = most frequent of the
+    // whole history (GET /api/budget/entries without range = all entries),
+    // date = today. Parents only, like the FAB.
+    const openQuickEntry = useCallback(() => {
         setEditingRecurring(null);
         setEditingEntry(null);
         setTransactionAddToCalendar(false);
@@ -321,9 +314,9 @@ const Budget: React.FC = () => {
         setPaperlessTitle('');
         setTransactionForm({
             description: '',
-            amount: draft.amount,
-            category: draft.category,
-            date: draft.date,
+            amount: '',
+            category: 'Autre',
+            date: format(new Date(), 'yyyy-MM-dd'),
             is_expense: true,
             recurrence_frequency: 'none',
             recurrence_interval: '1',
@@ -332,7 +325,24 @@ const Budget: React.FC = () => {
         });
         setFormError('');
         setSheetTransaction(true);
-    };
+        // The sheet focuses `focusRef` at opening; the category default is
+        // fetched async (whole history) and applied when it lands.
+        api.get<{ success: boolean; data: { category: string; is_expense?: boolean }[] }>('/api/budget/entries')
+            .then((r) => {
+                if (r.success) {
+                    setTransactionForm((f) => ({ ...f, category: mostFrequentCategory(r.data, f.category) }));
+                }
+            })
+            .catch(() => { /* keep fallback */ });
+    }, []);
+
+    // Deep link /budget?new=1 (FAB + home card) -> full form directly; the
+    // param is purged with replace so back/refresh never reopens it.
+    useEffect(() => {
+        if (searchParams.get('new') !== '1') return;
+        setSearchParams({}, { replace: true });
+        if (canEdit) openQuickEntry();
+    }, [searchParams, setSearchParams, canEdit, openQuickEntry]);
     // Load the registry only when its tab is opened (or refreshed by a WS push).
     useEffect(() => {
         if (mode === 'recurring') void loadSeries();
@@ -1205,22 +1215,11 @@ const Budget: React.FC = () => {
 
             </div>
 
-            {/* E3: quick-entry sheet (/budget?new=1) */}
-            <QuickEntrySheet
-                open={sheetQuick}
-                onClose={() => {
-                    setSheetQuick(false);
-                    setSearchParams({}, { replace: true });
-                }}
-                currency={currency}
-                onSaved={refreshBudget}
-                onMoreOptions={openFullFromQuick}
-            />
-
             {/* Unified Budget entry sheet */}
             <Sheet
                 open={sheetTransaction}
                 dismissible={false}
+                focusRef={amountInputRef}
                 onClose={() => setSheetTransaction(false)}
                 title={
                     editingRecurring || editingEntry
@@ -1234,6 +1233,41 @@ const Budget: React.FC = () => {
                             {formError}
                         </div>
                     )}
+
+                    <div>
+                        <label htmlFor="tx-amount" className="block text-sm font-medium text-foreground mb-1">
+                            {t('budget:fields.amount', { currency })}
+                        </label>
+                        <input
+                            id="tx-amount"
+                            ref={amountInputRef}
+                            type="text"
+                            inputMode="decimal"
+                            autoComplete="off"
+                            value={transactionForm.amount}
+                            onChange={(e) => setTransactionForm((f) => ({ ...f, amount: e.target.value }))}
+                            placeholder="0.00"
+                            required
+                            className="w-full px-3 py-2.5 rounded-xl border border-border bg-surface-1 text-foreground text-2xl font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
+                        />
+                    </div>
+
+                    <CategorySelect
+                        value={transactionForm.category}
+                        onChange={(v) => setTransactionForm((f) => ({ ...f, category: v }))}
+                    />
+
+                    <Field
+                        label={
+                            transactionForm.recurrence_frequency === 'none'
+                                ? t('budget:fields.date')
+                                : t('budget:fields.startDate')
+                        }
+                        type="date"
+                        value={transactionForm.date}
+                        onChange={(v) => setTransactionForm((f) => ({ ...f, date: v }))}
+                        required
+                    />
 
                     <div>
                         <label className="block text-sm font-medium text-foreground mb-1">
@@ -1265,210 +1299,189 @@ const Budget: React.FC = () => {
                         </div>
                     </div>
 
-                    <Field
-                        label={t('budget:fields.description')}
-                        value={transactionForm.description}
-                        onChange={(v) => setTransactionForm((f) => ({ ...f, description: v }))}
-                        placeholder={t('budget:fields.descriptionPlaceholder')}
-                    />
-
-                    {/* Feature 13: prefill from a Paperless document (one-time entries
-                        only; hidden when the server has no Paperless configured) */}
-                    {!editingRecurring && paperlessAvailable && (
-                        <div className="flex flex-wrap items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setSheetPaperless(true)}
-                                className="flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-medium text-primary active:scale-95 transition-transform"
-                            >
-                                <FileText className="h-4 w-4" />
-                                {t('budget:paperless.fromPaperless')}
-                            </button>
-                            {transactionForm.paperless_document_id !== null && (
-                                <span className="flex items-center gap-1 rounded-full bg-surface-2 px-2 py-1 text-xs text-foreground">
-                                    <FileText className="h-3 w-3 shrink-0 text-primary" />
-                                    <span className="max-w-[10rem] truncate">
-                                        {paperlessTitle || `#${transactionForm.paperless_document_id}`}
-                                    </span>
-                                    <button
-                                        type="button"
-                                        aria-label={t('budget:paperless.unlink')}
-                                        title={t('budget:paperless.unlink')}
-                                        onClick={() => {
-                                            setTransactionForm((f) => ({ ...f, paperless_document_id: null }));
-                                            setPaperlessTitle('');
-                                        }}
-                                        className="rounded-full -m-3.5 p-3.5 hover:bg-danger/10"
-                                    >
-                                        <X className="h-3 w-3 text-muted-foreground" />
-                                    </button>
-                                </span>
-                            )}
-                        </div>
-                    )}
-
-                    <Field
-                        label={t('budget:fields.amount', { currency })}
-                        type="number"
-                        value={transactionForm.amount}
-                        onChange={(v) => setTransactionForm((f) => ({ ...f, amount: v }))}
-                        placeholder="0.00"
-                        step="0.01"
-                        min="0.01"
-                        required
-                    />
-
-                    <CategorySelect
-                        value={transactionForm.category}
-                        onChange={(v) => setTransactionForm((f) => ({ ...f, category: v }))}
-                    />
-
-                    <Field
-                        label={
-                            transactionForm.recurrence_frequency === 'none'
-                                ? t('budget:fields.date')
-                                : t('budget:fields.startDate')
-                        }
-                        type="date"
-                        value={transactionForm.date}
-                        onChange={(v) => setTransactionForm((f) => ({ ...f, date: v }))}
-                        required
-                    />
-
-                    <div>
-                        <label className="block text-sm font-medium text-foreground mb-1">
-                            {t('budget:fields.repeat')}
-                        </label>
-                        <select
-                            value={transactionForm.recurrence_frequency}
-                            onChange={(e) => setTransactionForm((f) => ({
-                                ...f,
-                                recurrence_frequency: e.target.value as typeof f.recurrence_frequency,
-                            }))}
-                            className="w-full px-3 py-2.5 rounded-xl border border-border bg-surface-1 text-foreground text-base
-                                       focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
-                        >
-                            {!editingRecurring && (
-                                <option value="none">{t('budget:recurring.frequency.none')}</option>
-                            )}
-                            {!editingEntry && (
-                                <>
-                                    <option value="daily">{t('budget:recurring.frequency.daily')}</option>
-                                    <option value="weekly">{t('budget:recurring.frequency.weekly')}</option>
-                                    <option value="monthly">{t('budget:recurring.frequency.monthly')}</option>
-                                    <option value="yearly">{t('budget:recurring.frequency.yearly')}</option>
-                                </>
-                            )}
-                        </select>
-                    </div>
-
-                    {transactionForm.recurrence_frequency !== 'none' && (
-                        <>
-                            <div>
-                                <label className="block text-sm font-medium text-foreground mb-1">
-                                    {t('budget:fields.every')}
-                                </label>
-                                <div className="flex items-center gap-3">
-                                    <input
-                                        type="number"
-                                        value={transactionForm.recurrence_interval}
-                                        onChange={(e) => setTransactionForm((f) => ({
-                                            ...f,
-                                            recurrence_interval: e.target.value,
-                                        }))}
-                                        min="1"
-                                        max="365"
-                                        step="1"
-                                        required
-                                        className="w-24 px-3 py-2.5 rounded-xl border border-border bg-surface-1 text-foreground text-base
-                                                   focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
-                                    />
-                                    <span className="text-sm text-muted-foreground">
-                                        {t(`budget:recurring.units.${transactionForm.recurrence_frequency}`, {
-                                            count: parseInt(transactionForm.recurrence_interval, 10) || 1,
-                                        })}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <Field
-                                label={t('budget:fields.repeatUntil')}
-                                type="date"
-                                value={transactionForm.recurrence_until}
-                                onChange={(v) => setTransactionForm((f) => ({
-                                    ...f,
-                                    recurrence_until: v,
-                                }))}
-                                min={transactionForm.date}
-                            />
-                        </>
-                    )}
-
-                    <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-border bg-surface-2/40 p-3">
-                        <input
-                            type="checkbox"
-                            checked={transactionAddToCalendar}
-                            onChange={(e) => setTransactionAddToCalendar(e.target.checked)}
-                            className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                        />
-                        <span>
-                            <span className="block text-sm font-medium">
-                                {t('budget:fields.addToCalendar')}
-                            </span>
-                            <span className="block text-xs text-muted-foreground">
-                                {t('budget:fields.addToCalendarHint')}
-                            </span>
-                        </span>
-                    </label>
-
-                    {/* Rappels de la série récurrente (feature 3) : les deux
-                        mécanismes coexistent — A = rappels de l'événement de
-                        calendrier lié (case ci-dessus), B = rappel budget J-X. */}
-                    {transactionForm.recurrence_frequency !== 'none' && (
-                        <div className="space-y-3 rounded-xl border border-border bg-surface-2/40 p-3">
-                            <p className="text-sm font-medium">{t('budget:reminders.title')}</p>
-                            {editingRecurring?.linked_calendar_event_id && (
-                                <p className="text-xs text-muted-foreground">
-                                    {t('budget:reminders.calendarLinked')}{' '}
-                                    <button
-                                        type="button"
-                                        onClick={() => { setSheetTransaction(false); navigate('/calendar'); }}
-                                        className="text-primary underline"
-                                    >
-                                        {t('budget:reminders.calendarLink')}
-                                    </button>
-                                </p>
-                            )}
-                            <Field
-                                label={t('budget:reminders.budgetLabel')}
-                                type="number"
-                                value={reminderDays}
-                                onChange={setReminderDays}
-                                placeholder={t('budget:reminders.budgetPlaceholder')}
-                                min="0"
-                                max="365"
-                                step="1"
-                            />
-                            <p className="text-xs text-muted-foreground">{t('budget:reminders.budgetHint')}</p>
-                        </div>
-                    )}
-
                     <div className="flex gap-3 pt-2">
                         <button
                             type="button"
                             onClick={() => setSheetTransaction(false)}
-                            className="flex-1 py-3 rounded-xl border border-border text-foreground font-medium active:scale-95 transition-transform"
+                            className="flex-1 min-h-11 py-3 rounded-xl border border-border text-foreground font-medium active:scale-95 transition-transform"
                         >
                             {t('common:actions.cancel')}
                         </button>
                         <button
                             type="submit"
-                            className="flex-1 py-3 rounded-xl bg-primary text-white font-medium active:scale-95 transition-transform"
+                            className="flex-1 min-h-11 py-3 rounded-xl bg-primary text-white font-medium active:scale-95 transition-transform"
                         >
                             {editingRecurring || editingEntry
                                 ? t('common:actions.save')
                                 : t('common:actions.add')}
                         </button>
+                    </div>
+                    {/* Secondaires : sobres et directement visibles (finding 1),
+                        jamais derrière une double révélation */}
+                    <div className="space-y-4 rounded-xl border border-border bg-surface-2/40 p-3">
+                        <p className="text-micro font-medium uppercase tracking-wide text-muted-foreground">
+                            {t('budget:sheets.secondary')}
+                        </p>
+                <Field
+                    label={t('budget:fields.description')}
+                    value={transactionForm.description}
+                    onChange={(v) => setTransactionForm((f) => ({ ...f, description: v }))}
+                    placeholder={t('budget:fields.descriptionPlaceholder')}
+                />
+
+                {/* Feature 13: prefill from a Paperless document (one-time entries
+                    only; hidden when the server has no Paperless configured) */}
+                {!editingRecurring && paperlessAvailable && (
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setSheetPaperless(true)}
+                            className="flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-medium text-primary active:scale-95 transition-transform"
+                        >
+                            <FileText className="h-4 w-4" />
+                            {t('budget:paperless.fromPaperless')}
+                        </button>
+                        {transactionForm.paperless_document_id !== null && (
+                            <span className="flex items-center gap-1 rounded-full bg-surface-2 px-2 py-1 text-xs text-foreground">
+                                <FileText className="h-3 w-3 shrink-0 text-primary" />
+                                <span className="max-w-[10rem] truncate">
+                                    {paperlessTitle || `#${transactionForm.paperless_document_id}`}
+                                </span>
+                                <button
+                                    type="button"
+                                    aria-label={t('budget:paperless.unlink')}
+                                    title={t('budget:paperless.unlink')}
+                                    onClick={() => {
+                                        setTransactionForm((f) => ({ ...f, paperless_document_id: null }));
+                                        setPaperlessTitle('');
+                                    }}
+                                    className="rounded-full -m-3.5 p-3.5 hover:bg-danger/10"
+                                >
+                                    <X className="h-3 w-3 text-muted-foreground" />
+                                </button>
+                            </span>
+                        )}
+                    </div>
+                )}
+
+                <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">
+                        {t('budget:fields.repeat')}
+                    </label>
+                    <select
+                        value={transactionForm.recurrence_frequency}
+                        onChange={(e) => setTransactionForm((f) => ({
+                            ...f,
+                            recurrence_frequency: e.target.value as typeof f.recurrence_frequency,
+                        }))}
+                        className="w-full px-3 py-2.5 rounded-xl border border-border bg-surface-1 text-foreground text-base
+                                   focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
+                    >
+                        {!editingRecurring && (
+                            <option value="none">{t('budget:recurring.frequency.none')}</option>
+                        )}
+                        {!editingEntry && (
+                            <>
+                                <option value="daily">{t('budget:recurring.frequency.daily')}</option>
+                                <option value="weekly">{t('budget:recurring.frequency.weekly')}</option>
+                                <option value="monthly">{t('budget:recurring.frequency.monthly')}</option>
+                                <option value="yearly">{t('budget:recurring.frequency.yearly')}</option>
+                            </>
+                        )}
+                    </select>
+                </div>
+
+                {transactionForm.recurrence_frequency !== 'none' && (
+                    <>
+                        <div>
+                            <label className="block text-sm font-medium text-foreground mb-1">
+                                {t('budget:fields.every')}
+                            </label>
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="number"
+                                    value={transactionForm.recurrence_interval}
+                                    onChange={(e) => setTransactionForm((f) => ({
+                                        ...f,
+                                        recurrence_interval: e.target.value,
+                                    }))}
+                                    min="1"
+                                    max="365"
+                                    step="1"
+                                    required
+                                    className="w-24 px-3 py-2.5 rounded-xl border border-border bg-surface-1 text-foreground text-base
+                                               focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
+                                />
+                                <span className="text-sm text-muted-foreground">
+                                    {t(`budget:recurring.units.${transactionForm.recurrence_frequency}`, {
+                                        count: parseInt(transactionForm.recurrence_interval, 10) || 1,
+                                    })}
+                                </span>
+                            </div>
+                        </div>
+
+                        <Field
+                            label={t('budget:fields.repeatUntil')}
+                            type="date"
+                            value={transactionForm.recurrence_until}
+                            onChange={(v) => setTransactionForm((f) => ({
+                                ...f,
+                                recurrence_until: v,
+                            }))}
+                            min={transactionForm.date}
+                        />
+                    </>
+                )}
+
+                <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-border bg-surface-2/40 p-3">
+                    <input
+                        type="checkbox"
+                        checked={transactionAddToCalendar}
+                        onChange={(e) => setTransactionAddToCalendar(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                    />
+                    <span>
+                        <span className="block text-sm font-medium">
+                            {t('budget:fields.addToCalendar')}
+                        </span>
+                        <span className="block text-xs text-muted-foreground">
+                            {t('budget:fields.addToCalendarHint')}
+                        </span>
+                    </span>
+                </label>
+
+                {/* Rappels de la série récurrente (feature 3) : les deux
+                    mécanismes coexistent — A = rappels de l'événement de
+                    calendrier lié (case ci-dessus), B = rappel budget J-X. */}
+                {transactionForm.recurrence_frequency !== 'none' && (
+                    <div className="space-y-3 rounded-xl border border-border bg-surface-2/40 p-3">
+                        <p className="text-sm font-medium">{t('budget:reminders.title')}</p>
+                        {editingRecurring?.linked_calendar_event_id && (
+                            <p className="text-xs text-muted-foreground">
+                                {t('budget:reminders.calendarLinked')}{' '}
+                                <button
+                                    type="button"
+                                    onClick={() => { setSheetTransaction(false); navigate('/calendar'); }}
+                                    className="text-primary underline"
+                                >
+                                    {t('budget:reminders.calendarLink')}
+                                </button>
+                            </p>
+                        )}
+                        <Field
+                            label={t('budget:reminders.budgetLabel')}
+                            type="number"
+                            value={reminderDays}
+                            onChange={setReminderDays}
+                            placeholder={t('budget:reminders.budgetPlaceholder')}
+                            min="0"
+                            max="365"
+                            step="1"
+                        />
+                        <p className="text-xs text-muted-foreground">{t('budget:reminders.budgetHint')}</p>
+                    </div>
+                )}
+
                     </div>
                 </form>
             </Sheet>

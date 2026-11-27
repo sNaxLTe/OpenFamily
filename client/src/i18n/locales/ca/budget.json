@@ -90,7 +90,8 @@
   "sheets": {
     "new": "Afegeix un moviment",
     "edit": "Edita el moviment",
-    "limit": "Límit mensual"
+    "limit": "Límit mensual",
+    "secondary": "Informació addicional"
   },
   "toggle": {
     "expense": "Despesa",
@@ -293,10 +294,5 @@
     "paperlessLinked": "Document de Paperless vinculat"
   },
   "prevMonth": "Mes anterior",
-  "nextMonth": "Mes següent",
-  "quick": {
-    "title": "Entrada ràpida",
-    "moreOptions": "Més opcions",
-    "openFullForm": "Obre el formulari complet"
-  }
+  "nextMonth": "Mes següent"
 }
